@@ -1,0 +1,9 @@
+# Keep the scripts and sources with Unix line endings, even when checked out or zipped on Windows
+* text=auto
+*.sh   text eol=lf
+*.c    text eol=lf
+*.tcl  text eol=lf
+*.test text eol=lf
+*.py   text eol=lf
+*.md   text eol=lf
+*.txt  text eol=lf
