@@ -47,8 +47,8 @@ A value outside the range is an error; nothing is wrapped or truncated.
 * **Tcl 9.1 (trunk).** Tested only against trunk revision `3d77be8951` (2026-10-11), which reports itself as 9.1.1. It needs
   `TCL_OBJTYPE_V2`, i.e. the abstract-list hooks. Tcl 8.x cannot work. Tcl 9.0.x was not tried.
 * **Headers and the stubs library**: `tcl.h` and `libtclstub.a`, from an installed Tcl or a built source tree.
-* A C compiler (`cc`, tested with gcc) and a POSIX `sh`.
-* Tested on 64-bit Linux only.
+* A C compiler (`cc`, tested with gcc) and a POSIX `sh`; on Windows, Visual Studio 2022 and `cmd` (see the next section).
+* Tested on 64-bit Linux and, with Visual Studio 2022, on 64-bit Windows (see below). Not tested anywhere else.
 
 ## Get it, build it, test it
 
@@ -65,6 +65,24 @@ sh ./run_tests.sh --tclsh /path/to/tcl9.1/bin/tclsh9.1
 Expected last line of the tests: `bitarray.test:	Total	134	Passed	134	Skipped	0	Failed	0`
 
 (`sh ./script` works even if unpacking lost the executable bit, which happens when a ZIP is made or unpacked on Windows.)
+
+### On Windows (Visual Studio 2022)
+
+`build.bat`, `run_tests.bat` and `run_sieves.bat` do the same three jobs with Microsoft Visual C. They have been run, by
+the repository owner, on two 64-bit Windows 10 machines (versions 1903 and 22H2) with Visual Studio 2022 and a Tcl 9.1.1 built from trunk: the build gave no warnings,
+the tests passed (133 passed, 1 skipped) and the sieve passed. A 32-bit build and other Visual Studio versions are untried.
+Unpack the ZIP anywhere and, from a Command Prompt in that folder:
+
+```bat
+build.bat     --tclsh C:\path\to\tcl9.1\bin\tclsh91.exe     rem makes bitarray.dll next to build.bat
+run_tests.bat --tclsh C:\path\to\tcl9.1\bin\tclsh91.exe
+run_sieves.bat --tclsh C:\path\to\tcl9.1\bin\tclsh91.exe
+```
+
+`build.bat` finds the headers and the stubs library (`include\tcl.h`, `lib\tclstub.lib`) from the shell you name, or from
+`--tcl-prefix DIR`, finds Visual Studio itself with `vswhere` if `cl` is not already on your `PATH`, and builds the 64-bit or
+32-bit DLL to match the shell. `run_tests.bat` should end with `Total 134  Passed 133  Skipped 1  Failed 0`: one test, which
+reads `/proc`, is skipped on Windows. `--help` on each prints the options.
 
 ### Telling `build.sh` where Tcl is
 
@@ -193,6 +211,8 @@ Notes. The 8-bit version (F) uses 1.63x fewer instructions than the 1-bit versio
 4790K and 1.44x on the 12700K; my guess is cache size (the byte array is 500 KB, the bit array 62 KB), but I did not
 measure cache misses. Python's entry in the same drag race, which does the same thing with `bytearray` slice assignment, is
 listed at 1,188 passes/s in the results report I was given; that was a different machine, so it is only roughly comparable.
+On 64-bit Windows 10 (1903) with Visual C, natively on the same i7-4790K, the same sieve gave A 661,985, B 209,065, C 84,709, D 1,181, E 85,725 and
+F 1,217 µs per pass (`RESULTS.txt` section 12a); there D and F are within 3% of each other, unlike on Linux, and I do not know why (a second Windows 10 machine, an i7-12700K, gave A 435,763, B 138,342, C 51,966, D 686, E 52,368, F 568; the same pattern against its Linux numbers: D faster, F equal, the rest slower). The compiler may be part of it, but the OS, C library and Tcl build differ too, so that is not established.
 Whether an extension like this counts as a "faithful" entry in Dave's Garage rules I do not know — I did not read them.
 
 ## Quality checks
@@ -215,7 +235,8 @@ Details and numbers: `RESULTS.txt`.
 ## Limits and what was not tested
 
 * Only Tcl 9.1 trunk `3d77be8951` on 64-bit Linux with gcc. **Not tested:** a real 32-bit build (the 32-bit size limits were
-  only exercised on a 64-bit build), Windows or MSVC, macOS, big-endian machines, threads, Tcl 9.0.x, anything above a few
+  only exercised on a 64-bit build), Windows or MSVC (only 64-bit Windows with Visual Studio 2022 was run; a MinGW cross-compile for 64-bit and 32-bit
+  Windows builds without warnings but was never run), macOS, big-endian machines, threads, Tcl 9.0.x, anything above a few
   hundred MB of array.
 * No and/or/xor between arrays, no bulk copy, no conversion to or from a binary string yet.
 * The code is written to be portable (`#if SIZE_MAX` selects the size limit; `memcpy` for multi-byte elements) but that is
@@ -262,6 +283,7 @@ I would like people who are interested in this to read it critically, and to use
 
 ```
 build.sh  run_tests.sh  run_sieves.sh     the three scripts (POSIX sh)
+build.bat run_tests.bat run_sieves.bat    the same three for Windows / Visual Studio 2022
 bitarray.c                                the extension (one file)
 tests/                                    bitarray.test and the random-comparison scripts
 sieve/                                    the six sieve variants, the runner, and Frank's sieve unchanged

@@ -1172,7 +1172,7 @@ BitarrayCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     return TCL_ERROR;
 }
 
-int
+DLLEXPORT int
 Bitarray_Init(Tcl_Interp *interp)
 {
     if (Tcl_InitStubs(interp, "9.1", 0) == NULL) return TCL_ERROR;

@@ -91,8 +91,33 @@ arrays only it is still true of the 1-bit code, which 0.3 keeps (the 66 old test
    (0.86 for the 4790K, 1.5 for the 12700K) puts F at roughly 900 and 1,170 passes/s on the report's machine, close to the
    Python entry's 1,188; the scaling is crude (A is bound by the Tcl interpreter, F by memory) so treat it as +-30%.
 
+12a. Windows (build.bat, run_tests.bat, run_sieves.bat; run by the repository owner on 2026-10-13)
+   Visual Studio 2022 (cl /O2 /W3 /MD), 64-bit, against a Tcl 9.1.1 built from trunk (a merged Tcl/Tk install; only bin\tclsh91.exe,
+   include\tcl.h and lib\tclstub.lib are used).  Both machines ran from a RAM disk (drive A:).
+   Run 1: the same Intel i7-4790K as the Linux runs above (stock speed), but Windows 10 version 1903 (build 18362.356) running natively, not in
+   the virtual machine the Linux runs used.
+   Build: no compiler warnings at /W3.  Tests: Total 134, Passed 133, Skipped 1 (mem-1.1, needs /proc), Failed 0.
+   Sieve: RESULT: PASS (every variant, every limit).  Microseconds per pass at limit 1,000,000, best of 3:
+     A 661,985   B 209,065   C 84,709   D 1,181   E 85,725   F 1,217      (vs A: B 3.2x, C 7.8x, D 560x, E 7.7x, F 544x)
+   Run 2: an Intel i7-12700K at stock speed, Windows 10 version 22H2 (build number not recorded), 128 GB RAM of which 64 GB is
+   the RAM disk (A:) the files were on.  Tcl 9.1.1 built from trunk on this machine (clean rebuild), DLL built with build.bat.
+   Tests: Total 134, Passed 133, Skipped 1, Failed 0.  Sieve: PASS.  Microseconds per pass:
+     A 435,763   B 138,342   C 51,966   D 686   E 52,368   F 568      (vs A: B 3.1x, C 8.4x, D 635x, E 8.3x, F 768x)
+   Windows against the Linux runs in section 12 (same CPU in each case): on the 4790K (Linux in a virtual machine, today's run:
+   A 623,974  B 199,564  C 78,996  D 1,521  E 78,932  F 1,223) Windows is 5-9% slower on A, B, C, E, 22% faster on D, equal on F.
+   On the 12700K (Linux figures as in section 12) the Windows time is 1.11x A, 1.09x B, 1.21x C, 0.85x D, 1.24x E, 1.01x F
+   of the Linux time.  So both CPUs show D faster and F equal on Windows, and the other four slower, C and E much more so on the
+   12700K.
+   The cause is not established: the compiler is one candidate, but the operating system, C library, allocator, VM versus native,
+   and the compiler that built each tclsh all differ as well.  Not tested: a MinGW or gcc build on Windows, or a Linux build with
+   -DBA_NO_BUILTINS (which would use the same portable bit-scan code as the Visual C build), either of which would narrow it down.
+   A 5-minute test on Linux that raised the glibc mmap threshold, so malloc could not hand out fresh pages for the array, did not
+   change D or F beyond run-to-run noise, so that is not the explanation for F's smaller advantage on Linux.
+   Not checked on Windows: a 32-bit build, other Visual Studio versions, MinGW (a MinGW cross-compile built without warnings
+   but was never run), the memory-growth test mem-1.1.
+
 13. Not checked
-   An actual 32-bit build; Windows, macOS, MSVC; a big-endian machine; threads; any Tcl other than the trunk build.
+   An actual 32-bit build; macOS, other Windows toolchains than the one in 12a; a big-endian machine; threads; any Tcl other than the trunk build.
    The README's 128 GiB / 2^40-bit limit was exercised only at its edges (refusals), not by allocating.
    Wide arrays larger than a few hundred MB were not tried.
 

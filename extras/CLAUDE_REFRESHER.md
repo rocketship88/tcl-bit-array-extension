@@ -22,7 +22,7 @@ Garage "Primes" drag race, included unchanged. Say so plainly when asked who wro
 |---|---|
 | What it does, commands, how it differs from a list | `README.md` |
 | Source (one file) | `bitarray.c` |
-| Build, run the tests, run the sieve benchmark | `build.sh`, `run_tests.sh`, `run_sieves.sh` |
+| Build, run the tests, run the sieve benchmark | `build.sh`, `run_tests.sh`, `run_sieves.sh` (Windows: the `.bat` equivalents) |
 | The tests (134) | `tests/bitarray.test`; random comparisons against plain lists: `tests/diff_*.tcl`; memory growth: `tests/leak_check.tcl` |
 | All measured results, with the commands that produced them | `RESULTS.txt` |
 | The sieve variants A-F and Frank's file | `sieve/` (`sieve/README.md`) |
@@ -59,7 +59,7 @@ Checked: 134 tests pass natively and with `-DBA_NO_BUILTINS` and `-DBA_FORCE_32B
 accesses, nothing definitely lost); a 200,000-step random comparison against plain lists across all five widths with no
 differences; flat memory over 16 million `lindex` calls.
 
-**Not tested:** a real 32-bit build, Windows or MSVC, macOS, big-endian machines, threads, Tcl 9.0.x (the package refuses to
+**Not tested:** a real 32-bit build, Windows other than the cases run on 2026-10-13 (64-bit Windows 10 1903 and 22H2, Visual Studio 2022, Tcl 9.1.1: build without warnings, 133 of 134 tests pass with 1 skipped, sieve passes; `RESULTS.txt` section 12a), a 32-bit Windows build, a MinGW build (a cross-compile built without warnings but was never run), macOS, big-endian machines, threads, Tcl 9.0.x (the package refuses to
 load there: it requires Tcl 9.1), arrays above a few hundred MB. Not measured: cache-miss counts (the README says so where it
 guesses). Not compared: Python's drag-race entry was never run here, so there is no measured statement about parity with
 Python. Not read: the drag race's own rules about extensions. Do not state any of these as established.
