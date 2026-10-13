@@ -1,0 +1,242 @@
+id    result   class                  lines tests     description
+----------------------------------------------------------------------------------------------------
+M01   CAUGHT   changed:constant       122   5         GETBIT shift mask 63->31
+M02   CAUGHT   changed:operator       123   5         SETBIT or -> xor
+M03   CAUGHT   deleted:clause         124   15        CLRBIT loses ~
+M04   CAUGHT   changed:constant       47    3         size limit 2^40 -> 2^41
+M05   CAUGHT   changed:operator       553   2         index bound > for >=
+M06   MISSED   changed:operator       571   -         slice upper clamp
+M07   MISSED   deleted:clause         585   -         slice tail mask removed
+M08   MISSED   deleted:clause         570   -         slice lower clamp removed
+M09   CAUGHT   deleted:clause         605   4         reverse off by one
+M10   CAUGHT   changed:operator       681   9         setElement append disabled
+M11   CAUGHT   changed:expression     686   5         setElement never duplicates
+M12   CAUGHT   deleted:clause         255   1         Touch keeps string rep
+M13   CAUGHT   deleted:clause         255   5         Touch keeps element cache
+M14   CAUGHT   deleted:statement      746   1         replace delete clamp removed
+M15   CAUGHT   changed:+tokens        799   7         replace tail move count off by one
+M16   CAUGHT   changed:operator       830   3         in-operator zero test
+M17   CAUGHT   changed:+tokens        296   13        count first mask
+M18   CAUGHT   changed:constant       297   10        count last mask
+M19   CAUGHT   deleted:clause         317   5         next start mask removed
+M20   CAUGHT   deleted:clause         321   6         next tail check removed
+M21   CAUGHT   deleted:clause         277   4         fill single-word mask
+M22   CAUGHT   changed:operator       281   3         fill middle loop <=
+M23   CAUGHT   changed:operator       1123  3         fill step stop early (1-bit)
+M24   CAUGHT   deleted:statement      1107  1         fill empty range check removed
+M25   CAUGHT   changed:operator       405   1         ParseBit fast path accepts longer
+M26   CAUGHT   changed:token          516   26        string rep separator
+M27   CAUGHT   changed:+tokens        494   7         dup copies one word short
+M28   CAUGHT   deleted:statement      198   1         new: no memset
+M29   CAUGHT   changed:operator       1032  1         count last clamp
+M30   CAUGHT   changed:2 tokens       640   5         elems cache swapped
+M31   MISSED   changed:expression     965   -         new init-one tail not masked
+M32   CAUGHT   deleted:clause         813   1         replace leaves stale string
+M33   MISSED   deleted:clause         956   -         new: size check on narrowed value dropped
+M34   MISSED   changed:expression     753   -         replace: growth limit dropped
+M35   MISSED   changed:expression     767   -         capacity not doubled
+M36   MISSED   deleted:clause         806   -         shrink does not clear vacated bits
+M37   CAUGHT   changed:operator       717   4         MoveElems direction reversed
+M38   MISSED   deleted:statement      788   -         new capacity not zeroed
+M39   CAUGHT   deleted:clause         791   0         rep pointer not updated after realloc
+M40   CAUGHT   deleted:clause         813   3         word count not updated
+M41   CAUGHT   deleted:statement      794   0         element cache not dropped by replace
+M42   MISSED   deleted:statement      744   -         first-index clamp removed
+W01   CAUGHT   changed:constant       148   9         GetElem 16 wrong offset
+W02   CAUGHT   changed:constant       149   5         GetElem 32 wrong offset
+W03   CAUGHT   changed:constant       150   7         GetElem 64 wrong offset
+W04   CAUGHT   changed:+tokens        165   2         PutElem 8 ORs instead of assigns
+W05   CAUGHT   changed:constant       166   8         PutElem 16 wrong offset
+W06   CAUGHT   changed:constant       167   5         PutElem 32 wrong offset
+W07   CAUGHT   changed:constant       168   9         PutElem 64 wrong offset
+W08   MISSED   changed:constant       265   -         ElemObj sign only for 32
+W09   CAUGHT   changed:name/variable  264   2         ElemObj 1 returns zero
+W10   CAUGHT   deleted:clause         448   6         ParseValue upper bound off by one
+W11   CAUGHT   changed:expression     448   1         ParseValue accepts -1
+W12   CAUGHT   changed:constant       444   10        ParseValue 64-bit path skipped
+W13   CAUGHT   changed:token          439   1         ParseValue digit fast path too wide
+W14   MISSED   deleted:clause         180   -         NewRep limit ignores width
+W15   CAUGHT   changed:expression     188   7         NewRep allocates for 1-bit only
+W16   CAUGHT   changed:constant       130   2         WORDS_FOR rounds down by one
+W17   CAUGHT   changed:expression     214   1         FreeElems never releases owned elements
+W18   CAUGHT   changed:expression     219   0         FreeElems also releases shared 0/1
+W19   CAUGHT   deleted:statement      646   0         GetElements forgets to take a reference
+W20   CAUGHT   deleted:statement      650   1         GetElements does not record its length
+W21   CAUGHT   deleted:clause         579   2         Slice wide copies from offset 0 units
+W22   CAUGHT   deleted:clause         580   2         Slice wide copies too few bytes
+W23   CAUGHT   deleted:clause         609   2         Reverse wide off by one
+W24   MISSED   changed:name/variable  713   -         MoveElems wide memmove -> memcpy
+W25   CAUGHT   deleted:clause         713   1         MoveElems wide wrong destination unit
+W26   MISSED   deleted:clause         808   -         Replace wide vacated storage not cleared
+W27   CAUGHT   changed:expression     529   3         string rep 64-bit printed unsigned
+W28   CAUGHT   changed:token          527   25        string rep wrong separator (wide)
+W29   CAUGHT   changed:expression     846   2         in: canonical check dropped
+W30   CAUGHT   changed:constant       847   3         in: searches nonzero instead of value
+W31   CAUGHT   changed:operator       344   3         CountWide 8-bit nonzero inverted
+W32   CAUGHT   changed:operator       348   2         CountWide 8-bit equal inverted
+W33   CAUGHT   changed:operator       355   2         CountWide generic nonzero inverted
+W34   CAUGHT   changed:+tokens        372   1         NextWide memchr reads one byte too many
+W35   CAUGHT   deleted:clause         384   3         NextWide word skip never stops
+W36   CAUGHT   changed:operator       394   4         NextWide generic compares wrong
+W37   CAUGHT   deleted:clause         1131  3         fill 8-bit memset one short
+W38   CAUGHT   deleted:clause         1131  2         fill 8-bit memset wrong start
+W39   CAUGHT   changed:operator       1134  2         fill 8-bit step stop early
+W40   CAUGHT   changed:operator       1140  2         fill generic step stop early
+W41   CAUGHT   changed:+tokens        995   25        newfrom stores only values above 1
+W42   CAUGHT   changed:+tokens        967   4         new 8-bit init one short
+W43   CAUGHT   changed:+tokens        969   4         new generic init one short
+W44   CAUGHT   deleted:clause         1044  2         count zeros of bits off by one
+W45   CAUGHT   deleted:clause         1036  5         count ignores a given value
+W46   CAUGHT   deleted:clause         1065  4         next ignores a given value
+W47   CAUGHT   deleted:statement      901   0         -width without argument not detected
+W48   CAUGHT   deleted:clause         875   16        width 16 rejected
+W49   CAUGHT   changed:expression     490   7         dup loses width
+W50   CAUGHT   changed:expression     685   9         setElement parses as 1-bit
+W51   CAUGHT   changed:expression     748   6         replace validates as 1-bit
+W52   CAUGHT   changed:expression     762   1         replace sizes storage for 1-bit
+W53   CAUGHT   added:code             555   4         index out of range for wide returns last
+
+Tests by number of mutants they failed on (only mutants that ran to completion are counted; crashes list the test running at the time separately)
+  diff-4.1        35
+  diff-1.1        23
+  diff-4.2        21
+  diff-3.1        14
+  diff-2.1        13
+  elem-1.19       11
+  elem-1.4        10
+  elem-1.9         9
+  elem-1.7         8
+  bulk-16.2        7
+  bulk-64.1        7
+  repl-1.1         6
+  range-64.1       6
+  elem-1.10        6
+  elem-1.11        6
+  elem-1.12        6
+  mem-1.1          6
+  grow-1.3         5
+  elem-1.15        5
+  bulk-8.1         5
+  bulk-16.1        5
+  bulk-64.2        5
+  bulk-w.2         5
+  bulk-1.9         5
+  set-1.4          4
+  rev-1.2          4
+  grow-1.5         4
+  width-1.14       4
+  range-16.1       4
+  elem-1.1         4
+  elem-1.18        4
+  bulk-8.2         4
+  bulk-8.4         4
+  bulk-8.5         4
+  bulk-w.1         4
+  set-1.11         3
+  rev-1.1          3
+  repl-1.3         3
+  count-1.1        3
+  grow-1.1         3
+  range-32.1       3
+  elem-1.13        3
+  new-1.1          2
+  new-1.7          2
+  from-1.1         2
+  set-1.1          2
+  set-1.2          2
+  set-1.3          2
+  set-1.10         2
+  range-1.1        2
+  range-1.2        2
+  range-1.3        2
+  in-1.2           2
+  iter-1.1         2
+  iter-1.2         2
+  next-1.1         2
+  fill-1.3         2
+  fill-1.4         2
+  fill-1.6         2
+  fill-1.13        2
+  misc-1.2         2
+  misc-1.3         2
+  big-1.1          2
+  grow-1.2         2
+  grow-1.4         2
+  width-1.3        2
+  width-1.4        2
+  width-1.5        2
+  width-1.11       2
+  range-16.2       2
+  elem-1.2         2
+  elem-1.5         2
+  elem-1.6         2
+  elem-1.14        2
+  elem-1.17        2
+  bulk-32.1        2
+  new-1.2          1
+  new-1.5          1
+  index-1.1        1
+  set-1.9          1
+  next-1.2         1
+  fill-1.1         1
+  fill-1.2         1
+  fill-1.5         1
+  fill-1.12        1
+  fill-1.14        1
+  width-1.2        1
+  range-8.1        1
+  range-8.2        1
+  range-8.3        1
+  range-8.4        1
+  range-32.2       1
+  range-x.1        1
+  range-x.2        1
+  range-x.3        1
+  elem-1.3         1
+  elem-1.8         1
+  bulk-8.3         1
+  bulk-8.6         1
+  bulk-w.3         1
+  new-1.3          0
+  new-1.4          0
+  new-1.6          0
+  from-1.2         0
+  from-1.3         0
+  from-1.4         0
+  is-1.1           0
+  set-1.5          0
+  set-1.6          0
+  set-1.7          0
+  set-1.8          0
+  repl-1.2         0
+  in-1.1           0
+  count-1.2        0
+  fill-1.7         0
+  fill-1.8         0
+  fill-1.9         0
+  fill-1.10        0
+  fill-1.11        0
+  misc-1.1         0
+  width-1.1        0
+  width-1.6        0
+  width-1.7        0
+  width-1.8        0
+  width-1.9        0
+  width-1.10       0
+  width-1.12       0
+  width-1.13       0
+  range-64.2       0
+  range-64.3       0
+  range-1.4        0
+  elem-1.16        0
+  bulk-1.10        0
+  bulk-1.11        0
+
+Tests that failed on no mutant: new-1.3 new-1.4 new-1.6 from-1.2 from-1.3 from-1.4 is-1.1 set-1.5 set-1.6 set-1.7 set-1.8 repl-1.2 in-1.1 count-1.2 fill-1.7 fill-1.8 fill-1.9 fill-1.10 fill-1.11 misc-1.1 width-1.1 width-1.6 width-1.7 width-1.8 width-1.9 width-1.10 width-1.12 width-1.13 range-64.2 range-64.3 range-1.4 elem-1.16 bulk-1.10 bulk-1.11
+Mutants that crashed the run (test running at the time): M39:grow-1.4, M40:diff-4.1, M41:diff-1.1, M24:diff-2.1, M28:new-1.2, W05:diff-4.1, W15:bulk-32.1, W16:diff-3.1, W18:elem-1.16, W19:diff-4.1, W47:width-1.8, W49:diff-4.1, W52:diff-4.1
+
+  added      CAUGHT   1
+  changed    CAUGHT   51
+  changed    MISSED   6
+  deleted    CAUGHT   29
+  deleted    MISSED   8

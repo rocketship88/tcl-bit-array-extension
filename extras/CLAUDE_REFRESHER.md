@@ -1,0 +1,82 @@
+# Briefing for an AI assistant (and for people)
+
+Written 2026-10-13 by Claude, from the session that produced this repository. It is a map and a summary of what is known,
+not a substitute for the files. **Where it disagrees with a file, the file is right**; the code, tests and logs may have
+changed since this date. Name functions and tests when you cite things, not line numbers, which drift.
+
+## What this is
+
+`bitarray` is an extension-only C package for Tcl 9.1 (trunk `3d77be8951`, 64-bit Linux, gcc): packed arrays of 1, 8, 16, 32
+(unsigned) or 64 (signed) bit integers that behave like ordinary Tcl lists, through the Tcl 9 abstract-list hooks
+(`Tcl_ObjType` version 2, documented in `doc/ObjectType.3` of the Tcl source), the machinery `lseq` uses. It is loaded
+with `load ./libbitarray.so Bitarray` (it also does `Tcl_PkgProvide bitarray 0.3`, but there is no `pkgIndex.tcl`).
+A bitarray is an ordinary `Tcl_Obj` of a custom list type: a value, not a handle or a TclOO object.
+
+Authorship: the code, tests and documentation were written by Claude (Anthropic) with Eric Taylor directing and reviewing.
+The design follows Brian Griffin's `lseq`/arithseries code. `sieve/frank_sieve.tcl` is Frank van Bakel's entry for Dave's
+Garage "Primes" drag race, included unchanged. Say so plainly when asked who wrote what.
+
+## Where to look
+
+| Question | File |
+|---|---|
+| What it does, commands, how it differs from a list | `README.md` |
+| Source (one file) | `bitarray.c` |
+| Build, run the tests, run the sieve benchmark | `build.sh`, `run_tests.sh`, `run_sieves.sh` |
+| The tests (134) | `tests/bitarray.test`; random comparisons against plain lists: `tests/diff_*.tcl`; memory growth: `tests/leak_check.tcl` |
+| All measured results, with the commands that produced them | `RESULTS.txt` |
+| The sieve variants A-F and Frank's file | `sieve/` (`sieve/README.md`) |
+| Mutation testing: the 95 deliberate bugs | `extras/mutate5.py` (the list), `extras/mutate6.py` (runner and report) |
+| Which test caught which bug | `extras/mutants.json`, `extras/bitarray.mutants`, `extras/mutation_summary.txt` |
+
+## Mutation testing, and how to trace one
+
+Each mutant is one deliberate change to `bitarray.c`. The suite is run against it. **CAUGHT** means at least one test fails or
+the run crashes; **MISSED** means every test passed. Current numbers: 95 mutants, 81 caught, 14 missed.
+
+Worked example, M04. `BA_MAX_BITS`, the largest array allowed counted in total bits (elements times width), is
+`1 << 40`; M04 changes it to `1 << 41`. It is caught by exactly three tests, each asking for an array one element over the
+limit: `new-1.5` (2^40 + 1 one-bit elements), `range-x.2` (2^34 + 1 elements at `-width 64`) and `range-x.3` (2^37 + 1
+elements at `-width 8`). With the bug, those requests are no longer refused. The tests check that the limit counts bits, not
+elements, at three widths. (The `x` in `range-x` is only a label for extra range tests.)
+
+To trace any mutant: find its id in `extras/mutants.json` (its `tests` list) or in `extras/bitarray.mutants` (the changed
+line with a comment at the right), then read those tests in `tests/bitarray.test`.
+
+The 14 missed, and why (full reasons in `RESULTS.txt`, section 10): M06, M08, M42 are unreachable because the Tcl core clamps
+the indexes first; M07, M31, M36, M38, W26 leave stray bits or bytes beyond the end of the array, which nothing can read;
+M33, M34, W14 repeat a size check that an earlier check already makes on a 64-bit build; M35 (capacity doubling) is invisible
+at test sizes; W08 is an equivalent mutant; W24 changes `memmove` to `memcpy`, undefined for overlapping data in standard C but
+identical on glibc. 34 of the 134 tests failed on none of the 95 mutants; that list is in `mutation_summary.txt`. It is not by
+itself a defect, since the mutants cover only part of the code, and a crashing mutant stops the run before later tests.
+
+The "kind" label on each mutant (`deleted:clause`, `changed:operator`, ...) is worked out automatically from the text; treat
+it as a rough label. Almost all mutants delete or edit existing code; only one (W53) adds a new branch.
+
+## What was and was not checked
+
+Checked: 134 tests pass natively and with `-DBA_NO_BUILTINS` and `-DBA_FORCE_32BIT_LIMITS`; valgrind clean (no invalid
+accesses, nothing definitely lost); a 200,000-step random comparison against plain lists across all five widths with no
+differences; flat memory over 16 million `lindex` calls.
+
+**Not tested:** a real 32-bit build, Windows or MSVC, macOS, big-endian machines, threads, Tcl 9.0.x (the package refuses to
+load there: it requires Tcl 9.1), arrays above a few hundred MB. Not measured: cache-miss counts (the README says so where it
+guesses). Not compared: Python's drag-race entry was never run here, so there is no measured statement about parity with
+Python. Not read: the drag race's own rules about extensions. Do not state any of these as established.
+
+## Open questions
+
+* **Type loss.** Core `lappend` and `linsert` of a single element at the end can turn a bitarray into an ordinary list,
+  which then costs ordinary list memory (about 8 bytes per element, an estimate; only `{*}$bits` expansion was measured:
+  roughly 76-150 MB for 10 million elements). In the Tcl source read (`generic/tclListObj.c`), `TclListObjAppendElements`
+  calls `TclListObjGetRep`, which calls `SetListFromAny` and converts an abstract list in place instead of calling the
+  type's Replace hook. The same call sometimes keeps the type (inside a loop or proc) and sometimes does not (at the top level
+  of a script); the cause of that difference has not been found. Both results are correct lists. A minimal reproduction and
+  root cause are still to do.
+* Unknown whether the Tcl core team will take an interest; nothing has been posted to them as of the date above.
+
+## When answering questions about this repository
+
+Read the relevant file before answering and quote it. Say which statements come from the files and which are inferences.
+Keep the list under "Not tested" in view; do not describe the package as fully verified. If a file and this briefing disagree,
+say so and go with the file.

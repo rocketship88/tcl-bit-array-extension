@@ -23,8 +23,10 @@ is a list, so existing list code works on it unchanged.
 
 > **Who wrote this.** The code, tests and documentation were written by Claude (an AI model made by Anthropic), working
 > with Eric Taylor, who directed the work and reviewed it. It is an independent study, not part of Tcl and not an
-> official Tcl project. Everything claimed below was measured or tested; what was *not* tested is listed under
+> official Tcl project. Everything claimed below was measured or tested, except where it says "guess"; what was *not* tested is listed under
 > [Limits](#limits-and-what-was-not-tested).
+
+Because an AI wrote it, independent review matters. See [Reviewing it, with or without an AI assistant](#reviewing-it-with-or-without-an-ai-assistant).
 
 ## Element widths
 
@@ -204,7 +206,8 @@ Whether an extension like this counts as a "faithful" entry in Dave's Garage rul
   loop leaves memory flat.
 * **Mutation testing** (`extras/mutate5.py`): 95 deliberate bugs inserted into the C code, 81 caught by the tests; the 14
   missed are explained in `RESULTS.txt` (mostly unreachable code, stray bits nobody can read, or checks that are repeated
-  elsewhere on a 64-bit build).
+  elsewhere on a 64-bit build). `extras/bitarray.mutants` is `bitarray.c` with every one of the 95 bugs applied and, beside
+  each, the tests that caught it, for reading in a side-by-side compare tool (see `extras/README.md`).
 * The same 134 tests also pass with `-DBA_NO_BUILTINS` (portable popcount code) and `-DBA_FORCE_32BIT_LIMITS`.
 
 Details and numbers: `RESULTS.txt`.
@@ -217,6 +220,28 @@ Details and numbers: `RESULTS.txt`.
 * No and/or/xor between arrays, no bulk copy, no conversion to or from a binary string yet.
 * The code is written to be portable (`#if SIZE_MAX` selects the size limit; `memcpy` for multi-byte elements) but that is
   not the same as tested.
+
+## Reviewing it, with or without an AI assistant
+
+I would like people who are interested in this to read it critically, and to use an AI assistant to do so if that helps.
+
+1. **Give the assistant the repository.** One that can run commands (Claude Code, for example) can clone it, build it and
+   run the tests. In a plain chat window, upload the ZIP, or at least `bitarray.c` and `tests/bitarray.test`.
+2. **Start it with [`extras/CLAUDE_REFRESHER.md`](extras/CLAUDE_REFRESHER.md)**, a map of the files with what was and was not
+   checked, written by the assistant that wrote the code.
+3. **Things worth asking about:**
+   * Read `bitarray.c` function by function (`BAIndex`, `BASlice`, `BASetElement`, `BAReplace`, `MoveElems`, `ParseValue`) for
+     memory errors, integer overflow, 32-bit problems and wrong assumptions about the abstract-list hooks in `doc/ObjectType.3`.
+   * Pick a mutant in `extras/bitarray.mutants`, find the tests that caught it in `tests/bitarray.test`, and judge whether
+     they test what they claim to.
+   * The 14 mutants that no test caught are listed in `RESULTS.txt` section 10 with reasons. Are the reasons right?
+   * Try to break it: write a test that fails, using `tests/` as a model, or extend the random comparisons in `tests/diff_*.tcl`.
+   * Explain why core `lappend` or `linsert` sometimes turn a bitarray into an ordinary list (an open question, described in
+     the refresher), and whether the extension can prevent it.
+   * Port it: a real 32-bit build, Windows, macOS and big-endian machines are all untested.
+   * Check every claim in this README against `RESULTS.txt` and the code.
+4. **Treat answers as leads, not verdicts.** An assistant can be wrong, as the one that wrote this was more than once while
+   it was being built. Check what it says against the files, and run `./run_tests.sh` after any change.
 
 ## Troubleshooting
 
@@ -240,7 +265,7 @@ build.sh  run_tests.sh  run_sieves.sh     the three scripts (POSIX sh)
 bitarray.c                                the extension (one file)
 tests/                                    bitarray.test and the random-comparison scripts
 sieve/                                    the six sieve variants, the runner, and Frank's sieve unchanged
-extras/                                   mutation-testing script and logs
+extras/                                   mutation-testing scripts, logs, and bitarray.mutants (each bug and the tests that caught it)
 RESULTS.txt                               measurements, test and mutation details
 ```
 
