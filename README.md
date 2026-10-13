@@ -80,7 +80,7 @@ run_sieves.bat --tclsh C:\path\to\tcl9.1\bin\tclsh91.exe
 ```
 
 `build.bat` finds the headers and the stubs library (`include\tcl.h`, `lib\tclstub.lib`) from the shell you name, or from
-`--tcl-prefix DIR`, finds Visual Studio itself with `vswhere` if `cl` is not already on your `PATH`, and builds the 64-bit or
+`--tcl-prefix DIR`, finds Visual Studio itself with `vswhere` if `cl` is not already on your `PATH` (so a plain `cmd` window works; it was run that way on 2026-10-13 and set up `vcvars64.bat` itself), and builds the 64-bit or
 32-bit DLL to match the shell. `run_tests.bat` should end with `Total 134  Passed 133  Skipped 1  Failed 0`: one test, which
 reads `/proc`, is skipped on Windows. `--help` on each prints the options.
 

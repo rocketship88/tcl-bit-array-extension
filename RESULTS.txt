@@ -113,6 +113,8 @@ arrays only it is still true of the 1-bit code, which 0.3 keeps (the 66 old test
    -DBA_NO_BUILTINS (which would use the same portable bit-scan code as the Visual C build), either of which would narrow it down.
    A 5-minute test on Linux that raised the glibc mmap threshold, so malloc could not hand out fresh pages for the array, did not
    change D or F beyond run-to-run noise, so that is not the explanation for F's smaller advantage on Linux.
+   build.bat was also run from a plain cmd window (no Visual Studio prompt, so cl was not on the PATH): it found Visual Studio 2022
+   Community with vswhere, ran vcvars64.bat, built the DLL, and run_tests.bat then gave 133 passed, 1 skipped, 0 failed.
    Not checked on Windows: a 32-bit build, other Visual Studio versions, MinGW (a MinGW cross-compile built without warnings
    but was never run), the memory-growth test mem-1.1.
 
