@@ -15,7 +15,7 @@ arrays only it is still true of the 1-bit code, which 0.3 keeps (the 66 old test
    spellings) / lsort / foreach / count and next (with and without a value) against a plain list holding the same values
    (edge values 0, 1, max, max-1, min, min+1 are drawn often).  In the suite: 4 widths x 3 seeds x 60 iterations, plus
    2 seeds at width 1.  By hand: 5 widths x 10 seeds x 100 iterations x 40 steps = 200,000 steps, 0 differences.
-   The only legitimate type loss in these runs is the linsert-of-one-element-at-the-end case noted in README.txt; the test
+   The only legitimate type loss in these runs is the linsert-of-one-element-at-the-end case noted in README.md (explained in section 13a); the test
    expects it and fails on any other loss of the bitarray type or of the width.
    Test bugs found and fixed while writing them: wrong expectations for list-quoting of "<>" and for a string-reversed
    copy (which is a string, not a bitarray), a value generator that could draw 45 for a 1-bit array.  No bug in
@@ -122,6 +122,30 @@ arrays only it is still true of the 1-bit code, which 0.3 keeps (the 66 old test
    An actual 32-bit build; macOS, other Windows toolchains than the one in 12a; a big-endian machine; threads; any Tcl other than the trunk build.
    The README's 128 GiB / 2^40-bit limit was exercised only at its edges (refusals), not by allocating.
    Wide arrays larger than a few hundred MB were not tried.
+
+13a. lappend / linsert turning a bitarray into an ordinary list (core behaviour; found 2026-10-13)
+   Not specific to bitarray.  Tcl core code appends through two different paths; the one through Tcl_ListObjReplace calls the
+   type's Replace hook (the type is kept), the one through Tcl_ListObjAppendElement / TclListObjAppendElements -> TclListObjGetRep ->
+   SetListFromAny converts the object to a real list in place.  Which path runs depends on how the command is evaluated:
+      linsert $l end X   compiled (INST_LREPLACE -> Tcl_ListObjReplace)               kept
+      linsert $l end X   not compiled (Tcl_LinsertObjCmd special case)               LOST
+      linsert, 2+ elements or not at the end                                         kept
+      lappend v X [Y..]  compiled in a proc (lappendScalar / lappendListDirect)      LOST
+      lappend            compiled at global/namespace level (lappendListStk)         kept
+      lappend            not compiled (Tcl_LappendObjCmd)                            kept
+   lset, lrange, lreverse, lreplace, lindex, llength keep the type in every context tried.
+   The earlier "top level loses, loop keeps" impression was this: the main script file given to tclsh is, from reading
+   Tcl_FSEvalFileEx, evaluated directly (not compiled), a sourced file and a proc body are compiled.  Not confirmed in a debugger.
+   Reproduced with stock Tcl and no extension, using the core's own test type [lstring] (it has a Replace hook; it exists only in the
+   tcltest shell): extras/typeloss_lstring_repro.tcl, output in extras/typeloss_lstring_repro_output.txt, run on a clean tcltk/tcl checkout
+   e36db3376a2d7d4857f6c766bd6133fc7b29e821 (2026-10-02) and, by the repository owner, on a second Linux machine (stock tree,
+   Fossil check-in 4991a47b94705ddff07bd81cab83291e5f6d219a8a75b54a32c954e73b05eaae); identical output.  The same table with
+   bitarray: extras/typeloss_bitarray_repro.tcl (output typeloss_bitarray_repro_output.txt) (earlier trunk 3d77be8951).
+   tests/abstractlist.test in Tcl checks several [lstring] commands for type loss but, as far as I found, not lappend onto an
+   lstring, a single-element linsert at the end, or compiled versus uncompiled.
+   Reported to the Tcl core by the repository owner on 2026-10-13: https://core.tcl-lang.org/tcl/tktview/0c82728f85760f36361fe42a15f55453c94d285d
+   Not tested: other platforms, Tcl 9.0.x (no version-2 abstract lists), other compilers.  Whether the core team treats it as a bug
+   is not known.  The text of the report is extras/typeloss_ticket.md.
 
 --- 0.2 results, kept for history (run 2026-10-12) ---
 

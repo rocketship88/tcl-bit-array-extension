@@ -1,0 +1,7 @@
+linsert end 1 elem  compiled (INST_LREPLACE)     : lstring
+lappend 1 elem       compiled in a proc           : list
+lappend 2 elems      compiled in a proc           : list
+linsert end 1 elem   NOT compiled (Tcl_LinsertObjCmd): list
+linsert end 2 elems  NOT compiled                  : lstring
+linsert middle       NOT compiled                  : lstring
+lappend 1 elem       NOT compiled (Tcl_LappendObjCmd): lstring

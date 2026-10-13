@@ -24,5 +24,9 @@ Development material; none of it is needed to build or use the extension.
   These files describe the `bitarray.c` in this repository; run `mutate6.py` again after changing it (about 35 minutes on two
   cores; an interrupted run resumes). The kind of each mutant is classified automatically from the text, so treat it as a rough label.
 
+* `typeloss_*` — why core `lappend` / `linsert` sometimes turn a bitarray into an ordinary list: `typeloss_lstring_repro.tcl` (stock Tcl only;
+  needs the `tcltest` shell), `typeloss_bitarray_repro.tcl` (the same with this extension), their `..._output.txt` files, and
+  `typeloss_ticket.md`, the text of the report sent to the Tcl core.
+
 * `CLAUDE_REFRESHER.md` — a briefing for an AI assistant (or a person) asked about this repository: where each kind of answer
   lives, how to trace a mutant to the tests that caught it, what was and was not checked, and the open questions.

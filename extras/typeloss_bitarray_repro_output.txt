@@ -1,0 +1,7 @@
+linsert end 1 elem   compiled (INST_LREPLACE)      : bitarray
+lappend 1 elem        compiled in a proc            : list
+lappend 2 elems       compiled in a proc            : list
+linsert end 1 elem    NOT compiled (Tcl_LinsertObjCmd): list
+linsert end 2 elems   NOT compiled                  : bitarray
+linsert middle        NOT compiled                  : bitarray
+lappend 1 elem        NOT compiled (Tcl_LappendObjCmd): bitarray

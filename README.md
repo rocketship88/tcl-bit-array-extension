@@ -168,16 +168,23 @@ All deliberate, and covered by the tests.
 
 * Elements must be integers that fit the width. Any spelling Tcl accepts (`0x10`, `0o17`, `+5`) is accepted and printed back
   in plain decimal. For width 1, `01` is accepted as 1; `10`, `2` and `x` are errors.
-* `lset`, `lrange`, `lreverse`, `lreplace` and `lappend` keep the type and the width. `linsert` does too, except when it
-  inserts exactly one element at or past the end: then the result is an ordinary list (same values). I saw this with the trunk
-  build and did not look into why. `concat`, `lmap` and similar also give ordinary lists; `bitarray newfrom` packs one again.
+* `lset`, `lrange`, `lreverse` and `lreplace` keep the type and the width. Two core commands sometimes do not, and the extension
+  cannot prevent it, because the core converts the value before any of the extension's code is called:
+  * `lappend` compiled inside a proc (a compiled local variable) turns the bitarray into an ordinary list (same values). At
+    global or namespace level (`source`, `eval`, `uplevel`) it keeps the type.
+  * `linsert` of exactly one element at the end keeps the type when the command is bytecode-compiled and loses it when it is
+    not (for example when it is the main script file given to `tclsh`, or the command name comes from a variable).
+  * Cause and a reproduction with stock Tcl only: `extras/typeloss_*` (start with `typeloss_ticket.md`), `RESULTS.txt` section 13a, and Tcl ticket
+  https://core.tcl-lang.org/tcl/tktview/0c82728f85760f36361fe42a15f55453c94d285d . Whether the core team considers it a bug is not known.
+  * `concat`, `lmap` and similar also give ordinary lists; `bitarray newfrom` packs one again.
 * `lset` with a nested index (`lset a 0 0 1`) is an error: elements are not lists.
 * `7 in $a` compares string forms, as for a list: `"007" in $a` and `"0x7" in $a` are false.
 * The string form is built only if something asks for it (a million 1-bit elements: 2 MB of text).
 * Size limit: 2^40 bits (128 GiB) in total on a 64-bit build, 2^30−1 bits on a 32-bit one. A 64-bit-wide array can hold up to
   2^34 elements, an 8-bit one 2^37, a 1-bit one 2^40.
 * Growing (`lappend`, `lset` at the end, `linsert`, `lreplace`) edits the array in place and keeps spare capacity, doubling it
-  when full, so appending one at a time costs about the same as for a list (80,000 appends: 44 ms against 41 ms).
+  when full, so appending one at a time costs about the same as for a list (80,000 appends: 44 ms against 41 ms; measured at
+  global level, where `lappend` keeps the bitarray: inside a proc the first `lappend` converts it to an ordinary list, see above).
 * Reading an element returns the shared `0` and `1` objects for those values and a new integer object otherwise;
   `lsort`, `foreach` and `{*}` build a vector of element objects once and drop it on the next change.
 
@@ -257,8 +264,9 @@ I would like people who are interested in this to read it critically, and to use
      they test what they claim to.
    * The 14 mutants that no test caught are listed in `RESULTS.txt` section 10 with reasons. Are the reasons right?
    * Try to break it: write a test that fails, using `tests/` as a model, or extend the random comparisons in `tests/diff_*.tcl`.
-   * Explain why core `lappend` or `linsert` sometimes turn a bitarray into an ordinary list (an open question, described in
-     the refresher), and whether the extension can prevent it.
+   * Check the explanation of why core `lappend` or `linsert` sometimes turn a bitarray into an ordinary list
+     (`extras/typeloss_*`, `RESULTS.txt` section 13a): do the C functions it names do what it says? The extension cannot prevent
+     it as far as I can tell; is that right?
    * Port it: a real 32-bit build, Windows, macOS and big-endian machines are all untested.
    * Check every claim in this README against `RESULTS.txt` and the code.
 4. **Treat answers as leads, not verdicts.** An assistant can be wrong, as the one that wrote this was more than once while

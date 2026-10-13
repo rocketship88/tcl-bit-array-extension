@@ -28,6 +28,7 @@ Garage "Primes" drag race, included unchanged. Say so plainly when asked who wro
 | The sieve variants A-F and Frank's file | `sieve/` (`sieve/README.md`) |
 | Mutation testing: the 95 deliberate bugs | `extras/mutate5.py` (the list), `extras/mutate6.py` (runner and report) |
 | Which test caught which bug | `extras/mutants.json`, `extras/bitarray.mutants`, `extras/mutation_summary.txt` |
+| The `lappend`/`linsert` type loss: cause, reproductions, ticket text | `extras/typeloss_*`, `RESULTS.txt` section 13a |
 
 ## Mutation testing, and how to trace one
 
@@ -66,14 +67,15 @@ Python. Not read: the drag race's own rules about extensions. Do not state any o
 
 ## Open questions
 
-* **Type loss.** Core `lappend` and `linsert` of a single element at the end can turn a bitarray into an ordinary list,
-  which then costs ordinary list memory (about 8 bytes per element, an estimate; only `{*}$bits` expansion was measured:
-  roughly 76-150 MB for 10 million elements). In the Tcl source read (`generic/tclListObj.c`), `TclListObjAppendElements`
-  calls `TclListObjGetRep`, which calls `SetListFromAny` and converts an abstract list in place instead of calling the
-  type's Replace hook. The same call sometimes keeps the type (inside a loop or proc) and sometimes does not (at the top level
-  of a script); the cause of that difference has not been found. Both results are correct lists. A minimal reproduction and
-  root cause are still to do.
-* Unknown whether the Tcl core team will take an interest; nothing has been posted to them as of the date above.
+* **Type loss (core behaviour, reported).** Core `lappend` compiled inside a proc, and `linsert` of one element at the end when the
+  command is not compiled, turn a bitarray into an ordinary list (which then costs ordinary list memory; only `{*}$bits` expansion
+  was measured, roughly 76-150 MB for 10 million elements). The cause, read from `generic/tclListObj.c`, `tclCmdIL.c`, `tclExecute.c`
+  and `tclVar.c`: those paths call `Tcl_ListObjAppendElement` / `TclListObjAppendElements`, which convert the object through
+  `TclListObjGetRep` -> `SetListFromAny` and never call the type's Replace hook, while the other paths use `Tcl_ListObjReplace`.
+  Reproduced with stock Tcl (the core's `lstring` test type, in the `tcltest` shell) and with this extension: see `extras/typeloss_*`
+  and `RESULTS.txt` section 13a. The repository owner reported it to the Tcl core on 2026-10-13:
+  https://core.tcl-lang.org/tcl/tktview/0c82728f85760f36361fe42a15f55453c94d285d . Whether the core team regards it as a bug is not known. The extension cannot prevent it.
+* Unknown whether the Tcl core team will take an interest beyond that ticket.
 
 ## When answering questions about this repository
 
