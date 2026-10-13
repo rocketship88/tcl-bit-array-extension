@@ -1,0 +1,34 @@
+M01 GETBIT shift mask 63->31 -> CAUGHT (2 tests fail)
+M02 SETBIT or -> xor -> CAUGHT (2 tests fail)
+M03 CLRBIT loses ~ -> CAUGHT (5 tests fail)
+M04 size limit 2^40 -> 2^41 -> CAUGHT (1 tests fail)
+M33 new: size check on narrowed value dropped -> MISSED
+M34 replace: growth limit dropped -> MISSED
+M05 index bound > for >= -> CAUGHT (1 tests fail)
+M06 slice upper clamp -> MISSED
+M07 slice tail mask removed -> MISSED
+M08 slice lower clamp removed -> MISSED
+M09 reverse off by one -> CAUGHT (3 tests fail)
+M10 setElement append disabled -> CAUGHT (4 tests fail)
+M11 setElement never duplicates -> CAUGHT (4 tests fail)
+M12 Touch keeps string rep -> CAUGHT (1 tests fail)
+M13 Touch keeps element cache -> CAUGHT (2 tests fail)
+M14 replace delete clamp removed -> CAUGHT (1 tests fail)
+M15 replace tail copy off by one -> CAUGHT (2 tests fail)
+M16 in-operator zero test -> CAUGHT (2 tests fail)
+M17 count first mask -> CAUGHT (8 tests fail)
+M18 count last mask -> CAUGHT (6 tests fail)
+M19 next start mask removed -> CAUGHT (3 tests fail)
+M20 next tail check removed -> CAUGHT (4 tests fail)
+M21 fill single-word mask -> CAUGHT (3 tests fail)
+M22 fill middle loop <= -> CAUGHT (2 tests fail)
+M23 fill step stop early -> CAUGHT (2 tests fail)
+M24 fill empty range check removed -> CAUGHT (crash rc=-11)
+M25 ParseBit fast path accepts longer -> CAUGHT (1 tests fail)
+M26 string rep separator -> CAUGHT (25 tests fail)
+M27 dup copies one word short -> CAUGHT (1 tests fail)
+M28 new: no memset -> CAUGHT (crash rc=-4)
+M29 count last clamp -> CAUGHT (1 tests fail)
+M30 elems cache swapped -> CAUGHT (3 tests fail)
+M31 new init-one tail not masked -> MISSED
+M32 replace leaves stale string -> CAUGHT (1 tests fail)

@@ -1,0 +1,180 @@
+RESULTS -- bitarray 0.3 (run 2026-10-13, Linux container, gcc -O2, Tcl trunk 3d77be8951)
+
+Sections 8-13 are new in 0.3.  Sections 1-7 are the 0.2 results, kept for history; where a number there was for 1-bit
+arrays only it is still true of the 1-bit code, which 0.3 keeps (the 66 old tests pass unchanged apart from "from" ->
+"newfrom").
+
+8. Test suite (0.3)
+   tests/bitarray.test: Total 134, Passed 134, Failed 0.  Also with -DBA_NO_BUILTINS, with -DBA_FORCE_32BIT_LIMITS, and with
+   both.  68 new tests: width option parsing, value ranges and error text for each width, lindex/lset/lrange/lreverse/
+   lappend/linsert/lreplace/foreach/lsort/in on wide arrays, copy-on-write, fill/count/next for each width (including
+   word-boundary starts for the byte scan and the memchr path), 64-bit extremes, canonical-spelling rules for "in", a
+   check that the removed command "from" is gone, and a memory-growth test (mem-1.1, needs /proc).
+   New randomized test tests/diff_width.tcl: for width W in 8/16/32/64 (and 1), random lappend / linsert / lreplace /
+   lset (including at the end) / lrange / lreverse / fill with step / alias-copy safety / "in" (including non-canonical
+   spellings) / lsort / foreach / count and next (with and without a value) against a plain list holding the same values
+   (edge values 0, 1, max, max-1, min, min+1 are drawn often).  In the suite: 4 widths x 3 seeds x 60 iterations, plus
+   2 seeds at width 1.  By hand: 5 widths x 10 seeds x 100 iterations x 40 steps = 200,000 steps, 0 differences.
+   The only legitimate type loss in these runs is the linsert-of-one-element-at-the-end case noted in README.txt; the test
+   expects it and fails on any other loss of the bitarray type or of the width.
+   Test bugs found and fixed while writing them: wrong expectations for list-quoting of "<>" and for a string-reversed
+   copy (which is a string, not a bitarray), a value generator that could draw 45 for a 1-bit array.  No bug in
+   bitarray.c was found by the new tests on the first run; the first full differential run reported only the known
+   linsert case (which the test now expects).
+
+9. Memory safety (0.3)
+   valgrind --leak-check=full on the whole 134-test suite: 0 invalid reads or writes, 0 uninitialised reads, 0 definitely
+   lost, 0 indirectly lost.  valgrind prints 100 "possibly lost" records; they are blocks that Tcl's own allocator is
+   still holding at exit (start-up allocations, the byte-code cache, the global test variables).  Two of them are reached
+   through bitarray's getElements (an element vector and the integer objects it holds for an array still alive when
+   tclsh exited).  I read them as memory still in use at exit, not leaks, for two reasons: they are the same kind as
+   the other 98, and the growth test below is flat.
+   Memory-growth test (tests/leak_check.tcl, run by mem-1.1): at every width, build 300,000 distinct values, build the
+   element cache (lsort), drop it (lset), append, slice, unset; resident size after rounds 2 and 6 differs by less than
+   40 MB (typically about 0 MB).  Run with two leaking mutants (the cache's integer objects never released, or the cache
+   length not recorded) the same loop grows by about 260 MB per 2 rounds, and the test fails.  16 million lindex calls
+   returning values above 1 (new integer objects with reference count 0) leave the resident size unchanged.  Earlier,
+   in 0.2: unset after creating a 953 MiB array returns the memory (960 MB -> 6.6 MB RSS); the same for an array held in
+   a list or as an array element, and overwriting a variable.
+
+10. Mutation testing, 0.3 (extras/mutate5.py, extras/mutation_round5.txt)
+   95 mutants of bitarray.c (the 42 from round 4, updated to the new code, plus 53 aimed at the width code: element
+   offsets and widths in GetElem/PutElem, value-range checks, sign handling, allocation sizing, the element cache, slice/
+   reverse/move/replace for wide data, string form, "in", count/next/fill for each width, option parsing).
+   "Caught" = a test fails or the run crashes.  81 caught, 14 missed.
+   The first run had 79 caught, 16 missed; the two extra misses were mutants that leak memory (the cache's integer objects
+   never released; the cache length not recorded).  No test can see a leak, so I added the memory-growth test mem-1.1
+   (section 9), which catches both.  I made no other test change for this round.
+   The 14 misses and my reasons (judgement, not proof):
+     M06 M08 M42  checks the core already makes before calling the hook (it clamps the indexes), so unreachable.
+     M07 M31 M36 M38  stray bits beyond the end of a 1-bit array (an unmasked slice tail, a fill-with-ones tail, bits not
+                  cleared when the array shrinks, spare capacity not zeroed).  Every reader bounds or masks by the
+                  length and every newly exposed bit is written first.
+     W26          the same for wide arrays: bytes beyond the end are not cleared when an array shrinks; no reader looks there.
+     M33 M34 W14  size checks that on a 64-bit build the allocator or the next check makes again; they matter only on 32-bit.
+     M35          capacity grows by exactly the words needed instead of doubling; no visible difference at test sizes.
+     W08          an equivalent mutant: converting a 64-bit pattern to a signed value gives the same result either way here.
+     W24          memcpy instead of memmove for overlapping moves; glibc's memcpy behaves like memmove for these sizes, so no
+                  test can see it, but the C standard says it is undefined, so the code keeps memmove.
+   Raw output: extras/mutation_round5.txt (and extras/mutation_round5_first_run.txt for the run with 16 misses).
+
+11. Sieve (0.3)
+   Instructions per pass at limit 100,000 (callgrind, passes 3 minus passes 1, divided by 2):
+     A  Frank's run_sieve unchanged            582,002,161   (0.2 measurement; code unchanged)
+     B  bit proc inlined, same data structure  191,532,469   (0.2 measurement; code unchanged)
+     C  bitarray 1-bit, lindex/lset per bit     84,045,733   (0.2: 82,578,271; 1.8% more, the cost of the extra width
+                                                            checks on the 1-bit path in lindex/lset)
+     D  bitarray 1-bit, fill step + next         2,076,484   (0.2: 2,073,535)
+     E  bitarray 8-bit, lindex/lset             83,571,209
+     F  bitarray 8-bit, fill step + next         1,273,319   (1.63x fewer than D)
+   All six variants find the same prime list at limits 11, 100, 1000, 10000, 100000 and 1000000 (run_sieves.sh).
+   Wall clock in this container (noisy; limit 1,000,000, microseconds per pass): D about 1,940-2,050, F about 1,040.
+   A C-only model of the same sieve (one byte per flag against one bit per flag, 2,000 passes, noisy):
+   bytes 654-769 us, bits 1,102-1,544 us, so bytes are about 1.4-2.4 times faster for the clearing loop (see section 12
+   for what real machines showed).  ./run_sieves.sh prints all six variants on your own machine.
+   Reference: a drag-race results report given to the author lists Python solution_2 (ssovest) at 1,188 passes per second and
+   the best Tcl entry at 9.1; that Python entry uses bytearray slice assignment (one byte per flag, strided store)
+   for the clearing loop, which is the same idea as F.  Different machines, so only roughly comparable.
+
+12. Wall-clock measurements on two machines (run_sieves.sh, limit 1,000,000, best of 3, microseconds per pass; run by the
+    repository owner, stock clocks)
+                       i7-4790K            i7-12700K
+     A  Frank's        695,313 (1.44/s)    394,209 (2.54/s)
+     B  inlined        223,324 (4.48/s)    126,951 (7.88/s)
+     C  1-bit l/lset    84,082 (11.9/s)     43,080 (23.2/s)
+     D  1-bit fill/next  1,573 (636/s)         808 (1,238/s)
+     E  8-bit l/lset    83,224 (12.0/s)     42,353 (23.6/s)
+     F  8-bit fill/next  1,280 (781/s)         561 (1,783/s)
+   F against D: 1.23x on the 4790K, 1.44x on the 12700K, although F executes 1.63x fewer instructions.  I predicted about
+   2x from my sandbox and a C model; that was too optimistic for the 4790K.  A plausible reason is cache size (500 KB of
+   flags against 62 KB) but I did not measure cache misses.  Scaling by the ratio of A to the drag-race report's 1.67 passes/s
+   (0.86 for the 4790K, 1.5 for the 12700K) puts F at roughly 900 and 1,170 passes/s on the report's machine, close to the
+   Python entry's 1,188; the scaling is crude (A is bound by the Tcl interpreter, F by memory) so treat it as +-30%.
+
+13. Not checked
+   An actual 32-bit build; Windows, macOS, MSVC; a big-endian machine; threads; any Tcl other than the trunk build.
+   The README's 128 GiB / 2^40-bit limit was exercised only at its edges (refusals), not by allocating.
+   Wide arrays larger than a few hundred MB were not tried.
+
+--- 0.2 results, kept for history (run 2026-10-12) ---
+
+1. Test suite
+   tests/bitarray.test: Total 66, Passed 66, Failed 0 (also with -DBA_NO_BUILTINS, the portable bit-count code).  Includes 2 randomized differential tests:
+     diff_lists.tcl : random lindex/lset/lrange/lreverse/lreplace/linsert/lappend/foreach/in/lsearch/lsort/
+                      join/lmap/alias-copy operations, bitarray vs plain list, values AND error messages compared.
+                      Manual runs: 12 seeds x 800 iterations x 12 operations, 0 differences.
+     diff_bulk.tcl  : fill (with steps), count (ranges), next, new, alias safety vs naive list code.
+                      Manual runs: 6 seeds x 500 iterations x 10 operations, 0 differences.
+   The core's own lset behaviour (index == length appends, the empty-list special case, error text
+   'index "N" out of range') is matched exactly; the differential tests found two such differences early
+   (error text, append at length) and one test-script bug; all fixed.
+   This is the first shipped use of the abstract-list set-element hook (no core type implements it); no core
+   bug showed up.
+
+2. Memory safety
+   valgrind --leak-check=full on bitarray.test and on both differential scripts: 0 invalid accesses,
+   0 uninitialised reads, 0 definite/indirect leaks.  (Tcl's own start-up allocations show as "possibly lost"; none
+   from libbitarray.so.)
+
+3. Mutation testing (an earlier script, superseded by extras/mutate5.py; 32 mutants of bitarray.c; "caught" = a test fails or the run crashes)
+   Round 1: 27 caught, 5 missed.  Added tests range-1.3 and set-1.11.  Round 2 (extras/mutation_round2.txt):
+   28 caught, 4 missed:
+     M06 slice upper clamp ">" for ">="   the core already clamps the index before calling the hook (a test with
+                                          to == length passed under the mutant), so the code is unreachable.
+     M08 slice lower clamp removed         same: the core passes a non-negative start.
+     M07 slice tail mask removed,
+     M31 new-with-ones tail not masked     leave stray 1 bits past the end of the last word, but every reader
+                                          (count, next, in, string form, copy) masks or bounds by length, so I
+                                          believe it cannot be observed.  Treated as defensive code.
+   These four are my judgement, not proof.
+
+4. Sieve comparison (limit 1,000,000 for wall clock, 100,000 for instruction counts; all four variants produce
+   the identical prime list at 11, 12345, 100000 and 1000000 -> 78498 primes)
+   Instructions per pass (callgrind, passes 3 minus 1, / 2), limit 100,000:
+     A  Frank's run_sieve unchanged            582,002,161
+     B  bit proc inlined, same data structure  191,532,469   (3.04x fewer than A)
+     C  bitarray, lindex/lset per bit           82,578,271   (7.05x fewer than A, 2.32x fewer than B)
+     D  bitarray + fill step + next              2,073,535   (281x fewer than A, 39.8x fewer than C)
+   Wall clock per pass, limit 1,000,000, best of 3 (timerate), three separate runs in a noisy sandbox:
+     A 768,963 / 843,935 / 812,410 us      B 294,935 / 301,368 / 274,695 us
+     C 101,444 /  88,753 /  97,582 us      D   1,980 /   1,732 /   1,686 us
+   Where variant C's remaining cost goes (callgrind profile taken just before a small final tweak to the value
+   parser, so approximate): about half is the bytecode interpreter loop itself; most of the rest is split between
+   the core's generic lset path (TclLsetList, index parsing) and the extension's set-element hook with the
+   number parsing it calls.  The core's share is outside the extension's reach.
+   Not measured: anything on your machine, other limits, memory use.
+
+5. 32-bit / portability changes (0.1.1)
+   Sizes are now range-checked as 64-bit values before being narrowed to Tcl_Size; the limit comes from #if SIZE_MAX
+   (2^40 on 64-bit, 2^30-1 on 32-bit); a fill step is clamped before narrowing; the new length in lreplace/linsert/
+   lappend is computed in 64-bit arithmetic; the element-vector allocation is overflow-checked.  Bit count and
+   count-trailing-zeros use gcc/clang builtins, or plain C elsewhere.
+   Checked: suite passes with builtins and with -DBA_NO_BUILTINS; the plain-C functions match the builtins on
+   5,000,064 values; the 32-bit limits were exercised on this 64-bit machine with -DBA_FORCE_32BIT_LIMITS
+   (2^30-1 ok, 2^30 refused, growth past it refused, a step of 4294967301 handled).
+   NOT checked: an actual 32-bit compile or run (-m32 headers are not installed here); Windows/MSVC.
+   Mutation testing (extras/mutation_round3.txt): 34 mutants, 28 caught, 6 missed.  The two new misses, M33 and M34,
+   remove the new range checks in "bitarray new" and in lreplace/linsert; on a 64-bit build they are redundant with
+   the check inside the allocator, so they can only matter on a 32-bit build, which I could not run.
+6. Growth (0.2)
+   lreplace / linsert / lappend / lset-at-the-end now edit the array in place with spare capacity that doubles when
+   full (0.1 built a new array and copied it bit by bit every time).
+   Appending one element at a time, microseconds:      10,000     20,000     40,000     80,000
+       0.1  bitarray                                    104,634    516,968  1,999,569  6,828,442
+       0.2  bitarray                                      5,847     13,064     22,048     44,123
+            plain Tcl list (same run)                     6,506     13,909     26,148     41,423
+   New tests: shrink-then-grow, shrink-to-empty, mid-array insert across word boundaries, 200,000 appends
+   compared in time with a plain list, repeated lset-at-end, and a random grow/shrink/insert comparison against a plain
+   list on arrays up to a few thousand elements (8 seeds in the suite, 12 more run by hand: 0 differences).
+   The suite also passes under valgrind (no errors, no leaks) and with -DBA_NO_BUILTINS.
+7. Mutation testing, final (extras/mutation_round4.txt): 42 mutants, 32 caught, 10 missed.  My reasons for the misses:
+     M06 M08 M42  checks the core already makes before calling the hook (it clamps the indexes), so unreachable.
+     M07 M31 M36 M38  stray bits beyond the end of the array (an unmasked slice tail, a fill-with-ones tail, bits not
+                  cleared when the array shrinks, spare capacity not zeroed).  Every reader bounds or masks by the
+                  length and every newly exposed bit is written first, so I could not make any of these visible; M38 is
+                  also clean under valgrind.
+     M33 M34      the new size checks; on a 64-bit build the allocator makes the same check, so they matter only on 32-bit.
+     M35          capacity grows by exactly the words needed instead of doubling; no visible difference at test sizes
+                  because realloc usually extends in place.  The doubling is by design; I did not find a test that
+                  distinguishes it without running for a long time.
+   These are my judgements, not proof.
