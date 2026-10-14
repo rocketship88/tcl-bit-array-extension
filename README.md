@@ -184,7 +184,22 @@ lset a 0 74; bitarray fill a 5 to 6 with 46        ;# change single bytes in pla
 set fh [open out.bin wb]; puts -nonewline $fh [bitarray tobytes $a]; close $fh
 ```
 
-Load it with `load /full/path/libbitarray.so Bitarray`. There is no `package require` wrapper yet.
+Load it with `load /full/path/libbitarray.so Bitarray` (on Windows `bitarray.dll`), or use the package index below.
+
+### Using `package require`
+
+`pkgIndex.tcl` (in the top-level folder, next to `build.sh`) registers the package. Put the folder that holds `pkgIndex.tcl` and the
+built library on `auto_path`, and then `package require bitarray` finds and loads it:
+
+```tcl
+lappend auto_path /full/path/to/bitarray     ;# the folder with pkgIndex.tcl and libbitarray.so (bitarray.dll on Windows)
+package require bitarray                     ;# returns 0.5
+```
+
+You can also set the environment variable `TCLLIBPATH` to that folder before starting `tclsh`. The two files do not have to stay where
+you built them: copy `pkgIndex.tcl` and `libbitarray.so` (or `bitarray.dll`) together into any folder you like and put that folder on `auto_path`.
+A Tcl older than 9.1 reports "can't find package bitarray".
+This was tried on Linux and on Windows 10 (Tcl 9.1.1, x64) with the same result.
 
 A complete example, a sieve of Eratosthenes using the bulk commands:
 
@@ -338,6 +353,7 @@ I would like people who are interested in this to read it critically, and to use
 build.sh  run_tests.sh  run_sieves.sh     the three scripts (POSIX sh)
 build.bat run_tests.bat run_sieves.bat    the same three for Windows / Visual Studio 2022
 bitarray.c                                the extension (one file)
+pkgIndex.tcl                              lets "package require bitarray" find the built library
 tests/                                    bitarray.test and the random-comparison scripts
 sieve/                                    the six sieve variants, the runner, and Frank's sieve unchanged
 extras/                                   mutation-testing scripts, logs, and bitarray.mutants (each bug and the tests that caught it)

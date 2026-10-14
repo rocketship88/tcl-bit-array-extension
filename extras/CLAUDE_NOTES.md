@@ -23,6 +23,7 @@ Garage "Primes" drag race, included unchanged. Say so plainly when asked who wro
 |---|---|
 | What it does, commands, how it differs from a list | `README.md` |
 | Source (one file) | `bitarray.c` |
+| Load as a package | `pkgIndex.tcl` in the top level: `lappend auto_path <folder>` then `package require bitarray` (tested on Linux and, by ET, on Windows 10 with Tcl 9.1.1 x64: `bitarray.dll` is picked and `package require` returns 0.5) |
 | Build, run the tests, run the sieve benchmark | `build.sh`, `run_tests.sh`, `run_sieves.sh` (Windows: the `.bat` equivalents) |
 | The tests (222) | `tests/bitarray.test`; random comparisons against plain lists: `tests/diff_*.tcl`; memory growth: `tests/leak_check.tcl` |
 | All measured results, with the commands that produced them | `RESULTS.txt` |
