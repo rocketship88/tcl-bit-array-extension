@@ -287,6 +287,120 @@ test count-w.14 {a prefix of a helper word is not a helper word} -returnCodes er
 test next-w.9 {a prefix of a helper word is not a helper word} -returnCodes error -body {
     set a [bitarray new 10 1]; bitarray next $a 2 w
 } -result {expected 0 or 1 but got "w"}
+test conv-1.1 {frombytes gives an 8-bit array of byte values} -body {
+    set a [bitarray frombytes "Hi\n"]; list [bitarray width $a] $a
+} -result {8 {72 105 10}}
+test conv-1.2 {frombytes of the empty string} -body {
+    set a [bitarray frombytes ""]; list [llength $a] [bitarray is $a] [bitarray width $a]
+} -result {0 1 8}
+test conv-1.3 {frombytes takes characters 0..255 as bytes} -body {
+    bitarray frombytes "\u00e9\u00ff\u0000"
+} -result {233 255 0}
+test conv-1.4 {frombytes of a character above 255 is an error} -returnCodes error -body {
+    bitarray frombytes "a\u20ac"
+} -match glob -result {expected code point values below 0xff*}
+test conv-1.5 {frombytes of binary data (all 256 values)} -body {
+    set a [bitarray frombytes [binary format cu* [lseq 0 255]]]; list [llength $a] [lindex $a 0] [lindex $a 127] [lindex $a 128] [lindex $a 255] [expr {[lrange $a 0 end] eq [lseq 0 255]}]
+} -result {256 0 127 128 255 1}
+test conv-1.6 {frombytes usage} -returnCodes error -body {
+    bitarray frombytes
+} -result {wrong # args: should be "bitarray frombytes data"}
+test conv-1.7 {frombytes usage with two arguments} -returnCodes error -body {
+    bitarray frombytes a b
+} -result {wrong # args: should be "bitarray frombytes data"}
+test conv-2.1 {tobytes round trip} -body {
+    set d "Hello\u0000\u00ff\n"; expr {[bitarray tobytes [bitarray frombytes $d]] eq $d}
+} -result {1}
+test conv-2.2 {tobytes of all 256 values equals binary format} -body {
+    set d [binary format cu* [lseq 0 255]]; expr {[bitarray tobytes [bitarray frombytes $d]] eq $d}
+} -result {1}
+test conv-2.3 {tobytes of the empty array} -body {
+    string length [bitarray tobytes [bitarray frombytes ""]]
+} -result {0}
+test conv-2.4 {tobytes sees an edited element} -body {
+    set a [bitarray frombytes "abc"]; lset a 1 66; bitarray tobytes $a
+} -result {aBc}
+test conv-2.5 {tobytes after fill} -body {
+    set a [bitarray frombytes "abcdef"]; bitarray fill a 1 to 4 with 46; bitarray tobytes $a
+} -result {a....f}
+test conv-2.6 {tobytes of a 1-bit array is an error} -returnCodes error -body {
+    bitarray tobytes [bitarray new 3]
+} -result {tobytes: array has width 1; only width 8 can be written as bytes}
+test conv-2.7 {tobytes of a 16-bit array is an error} -returnCodes error -body {
+    bitarray tobytes [bitarray new 3 0 -width 16]
+} -result {tobytes: array has width 16; only width 8 can be written as bytes}
+test conv-2.8 {tobytes of a plain list is an error} -returnCodes error -body {
+    bitarray tobytes {1 2 3}
+} -result {not a bitarray: "1 2 3"}
+test conv-2.9 {tobytes usage} -returnCodes error -body {
+    bitarray tobytes
+} -result {wrong # args: should be "bitarray tobytes array"}
+test conv-3.1 {fromchars defaults to width 8} -body {
+    set a [bitarray fromchars "Az"]; list [bitarray width $a] $a
+} -result {8 {65 122}}
+test conv-3.2 {fromchars width 16 holds characters up to 65535} -body {
+    set a [bitarray fromchars "A\u00e9\u20ac\uffff" -width 16]; list [bitarray width $a] $a
+} -result {16 {65 233 8364 65535}}
+test conv-3.3 {fromchars width 32 holds any character} -body {
+    set a [bitarray fromchars "A\U0001F600" -width 32]; list [bitarray width $a] $a
+} -result {32 {65 128512}}
+test conv-3.4 {fromchars width 8 rejects a character above 255 and names it} -returnCodes error -body {
+    bitarray fromchars "ab\u0100"
+} -result {character U+0100 at index 2 does not fit in width 8}
+test conv-3.5 {fromchars width 16 rejects a character above 65535} -returnCodes error -body {
+    bitarray fromchars "a\U0001F600" -width 16
+} -result {character U+1F600 at index 1 does not fit in width 16}
+test conv-3.6 {fromchars only allows widths 8, 16 and 32} -body {
+    list [catch {bitarray fromchars a -width 1} r1] $r1 [catch {bitarray fromchars a -width 64} r2] $r2
+} -result {1 {fromchars: -width must be 8, 16 or 32} 1 {fromchars: -width must be 8, 16 or 32}}
+test conv-3.7 {fromchars of the empty string} -body {
+    list [llength [bitarray fromchars ""]] [llength [bitarray fromchars "" -width 32]]
+} -result {0 0}
+test conv-3.8 {fromchars usage} -returnCodes error -body {
+    bitarray fromchars
+} -result {wrong # args: should be "bitarray fromchars string ?-width w?"}
+test conv-3.9 {fromchars with a bad option name} -returnCodes error -body {
+    bitarray fromchars abc -w 8
+} -result {wrong # args: should be "bitarray fromchars string ?-width w?"}
+test conv-3.10 {fromchars with a bad width value} -returnCodes error -body {
+    bitarray fromchars abc -width 7
+} -match glob -result {*}
+test conv-3.11 {fromchars keeps the characters 0 and 1} -body {
+    list [bitarray fromchars "\u0000\u0001A"] [bitarray fromchars "\u0000\u0001A" -width 16] [bitarray fromchars "\u0001\u0000" -width 32]
+} -result {{0 1 65} {0 1 65} {1 0}}
+test conv-4.1 {tochars round trip, all widths} -body {
+    set s "A\u00e9\u20ac\U0001F600z"; list [expr {[bitarray tochars [bitarray fromchars $s -width 32]] eq $s}] [expr {[bitarray tochars [bitarray fromchars "A\u00e9\u20ac" -width 16]] eq "A\u00e9\u20ac"}] [expr {[bitarray tochars [bitarray fromchars "Ae\u00ff"]] eq "Ae\u00ff"}]
+} -result {1 1 1}
+test conv-4.2 {tochars of the empty array} -body {
+    string length [bitarray tochars [bitarray fromchars ""]]
+} -result {0}
+test conv-4.3 {tochars keeps a NUL character} -body {
+    string length [bitarray tochars [bitarray newfrom {0 65 0} -width 8]]
+} -result {3}
+test conv-4.4 {tochars of a 1-bit array is an error} -returnCodes error -body {
+    bitarray tochars [bitarray new 3 1]
+} -result {tochars: array has width 1; need width 8, 16 or 32}
+test conv-4.5 {tochars of a 64-bit array is an error} -returnCodes error -body {
+    bitarray tochars [bitarray new 3 1 -width 64]
+} -result {tochars: array has width 64; need width 8, 16 or 32}
+test conv-4.6 {tochars rejects a surrogate code} -returnCodes error -body {
+    bitarray tochars [bitarray newfrom {65 55357} -width 16]
+} -result {element 1 (55357) is not a valid character code}
+test conv-4.7 {tochars rejects a value above 0x10FFFF} -returnCodes error -body {
+    bitarray tochars [bitarray newfrom {1114112} -width 32]
+} -result {element 0 (1114112) is not a valid character code}
+test conv-4.8 {tochars accepts the highest valid code} -body {
+    string length [bitarray tochars [bitarray newfrom {1114111} -width 32]]
+} -result {1}
+test conv-4.9 {tochars usage} -returnCodes error -body {
+    bitarray tochars
+} -result {wrong # args: should be "bitarray tochars array"}
+test conv-5.1 {a long string survives frombytes/tobytes and fromchars/tochars} -body {
+    set s [string repeat "abc\u00e9" 50000]; list [expr {[bitarray tobytes [bitarray frombytes $s]] eq $s}] [expr {[bitarray tochars [bitarray fromchars $s]] eq $s}] [llength [bitarray fromchars $s]]
+} -result {1 1 200000}
+test conv-5.2 {the new commands work on a copy, the source is unchanged} -body {
+    set a [bitarray frombytes "abc"]; set b [bitarray fromchars [bitarray tochars $a]]; lset b 0 0; list $a $b
+} -result {{97 98 99} {0 98 99}}
 test misc-0.1 {width usage names the argument array} -returnCodes error -body {bitarray width} -result {wrong # args: should be "bitarray width array"}
 test misc-1.1 {unknown subcommand} -returnCodes error -body {bitarray frob} -match glob -result {bad subcommand "frob"*}
 test misc-1.2 {value is a plain list after string round trip} -body {
@@ -373,7 +487,7 @@ test width-1.9 {two values} -returnCodes error -body {bitarray new 3 1 2} -resul
 test width-1.10 {width of a non-bitarray} -returnCodes error -body {bitarray width {1 2 3}} -result {not a bitarray: "1 2 3"}
 test width-1.11 {newfrom takes -width} -body {bitarray newfrom {1 2 3} -width 8} -result {1 2 3}
 test width-1.12 {newfrom: a bare extra argument is an error} -returnCodes error -body {bitarray newfrom {1 2} 8} -result {wrong # args: should be "bitarray newfrom list ?-width w?"}
-test width-1.13 {from is gone} -returnCodes error -body {bitarray from {1 0}} -match glob -result {bad subcommand "from": must be *}
+test width-1.13 {from is gone (it is now only an ambiguous prefix of frombytes and fromchars)} -returnCodes error -body {bitarray from {1 0}} -match glob -result {ambiguous subcommand "from": must be *}
 test width-1.14 {width survives slice, reverse, replace, and a copy made by lset} -body {
     set a [bitarray new 10 5 -width 16]; set b $a; lset b 0 6
     list [bitarray width [lrange $a 2 5]] [bitarray width [lreverse $a]] \

@@ -7,7 +7,7 @@
   "cls": "changed:constant",
   "line1": 122,
   "line2": 122,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
@@ -17,7 +17,7 @@
    "diff-2.1",
    "diff-4.2"
   ],
-  "secs": 19.3
+  "secs": 19.7
  },
  {
   "id": "M02",
@@ -27,7 +27,7 @@
   "cls": "changed:operator",
   "line1": 123,
   "line2": 123,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
@@ -37,7 +37,7 @@
    "diff-2.1",
    "diff-4.2"
   ],
-  "secs": 18.9
+  "secs": 20.1
  },
  {
   "id": "M03",
@@ -47,7 +47,7 @@
   "cls": "deleted:clause",
   "line1": 124,
   "line2": 124,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "21 tests fail",
   "tests": [
@@ -73,7 +73,7 @@
    "diff-2.1",
    "diff-4.2"
   ],
-  "secs": 18.7
+  "secs": 20.4
  },
  {
   "id": "M04",
@@ -83,7 +83,7 @@
   "cls": "changed:constant",
   "line1": 47,
   "line2": 47,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "3 tests fail",
   "tests": [
@@ -91,7 +91,7 @@
    "range-x.2",
    "range-x.3"
   ],
-  "secs": 20.3
+  "secs": 22.1
  },
  {
   "id": "M33",
@@ -99,13 +99,13 @@
   "old": "if (w < 0 || w > BA_MAX_BITS / width) {",
   "new": "if (w < 0) {",
   "cls": "deleted:clause",
-  "line1": 970,
-  "line2": 970,
-  "total": 184,
+  "line1": 972,
+  "line2": 972,
+  "total": 222,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 20.0
+  "secs": 21.0
  },
  {
   "id": "M34",
@@ -115,11 +115,11 @@
   "cls": "changed:expression",
   "line1": 753,
   "line2": 753,
-  "total": 184,
+  "total": 222,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 19.7
+  "secs": 20.8
  },
  {
   "id": "M35",
@@ -129,11 +129,11 @@
   "cls": "changed:expression",
   "line1": 767,
   "line2": 767,
-  "total": 184,
+  "total": 222,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 19.9
+  "secs": 22.0
  },
  {
   "id": "M36",
@@ -143,11 +143,11 @@
   "cls": "deleted:clause",
   "line1": 806,
   "line2": 806,
-  "total": 184,
+  "total": 222,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 20.5
+  "secs": 21.9
  },
  {
   "id": "M37",
@@ -157,7 +157,7 @@
   "cls": "changed:operator",
   "line1": 717,
   "line2": 718,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "4 tests fail",
   "tests": [
@@ -166,7 +166,7 @@
    "diff-3.1",
    "diff-4.2"
   ],
-  "secs": 19.1
+  "secs": 20.2
  },
  {
   "id": "M38",
@@ -176,11 +176,11 @@
   "cls": "deleted:statement",
   "line1": 788,
   "line2": 789,
-  "total": 184,
+  "total": 222,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 20.5
+  "secs": 21.5
  },
  {
   "id": "M39",
@@ -195,7 +195,7 @@
   "how": "crash rc=-4",
   "tests": [],
   "running": "grow-1.4",
-  "secs": 0.9
+  "secs": 1.0
  },
  {
   "id": "M40",
@@ -214,7 +214,7 @@
    "elem-1.19"
   ],
   "running": "diff-4.1",
-  "secs": 2.1
+  "secs": 2.0
  },
  {
   "id": "M41",
@@ -229,7 +229,7 @@
   "how": "crash rc=-11",
   "tests": [],
   "running": "diff-1.1",
-  "secs": 0.4
+  "secs": 0.5
  },
  {
   "id": "M42",
@@ -239,11 +239,11 @@
   "cls": "deleted:statement",
   "line1": 744,
   "line2": 744,
-  "total": 184,
+  "total": 222,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 20.4
+  "secs": 21.2
  },
  {
   "id": "M05",
@@ -253,14 +253,14 @@
   "cls": "changed:operator",
   "line1": 553,
   "line2": 554,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "diff-1.1",
    "elem-1.1"
   ],
-  "secs": 20.0
+  "secs": 21.6
  },
  {
   "id": "M06",
@@ -270,11 +270,11 @@
   "cls": "changed:operator",
   "line1": 571,
   "line2": 571,
-  "total": 184,
+  "total": 222,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 19.8
+  "secs": 21.0
  },
  {
   "id": "M07",
@@ -284,11 +284,11 @@
   "cls": "deleted:clause",
   "line1": 585,
   "line2": 585,
-  "total": 184,
+  "total": 222,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 20.0
+  "secs": 21.4
  },
  {
   "id": "M08",
@@ -298,11 +298,11 @@
   "cls": "deleted:clause",
   "line1": 570,
   "line2": 571,
-  "total": 184,
+  "total": 222,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 19.6
+  "secs": 21.0
  },
  {
   "id": "M09",
@@ -312,7 +312,7 @@
   "cls": "deleted:clause",
   "line1": 605,
   "line2": 605,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "4 tests fail",
   "tests": [
@@ -321,7 +321,7 @@
    "diff-1.1",
    "diff-4.2"
   ],
-  "secs": 20.3
+  "secs": 21.1
  },
  {
   "id": "M10",
@@ -331,7 +331,7 @@
   "cls": "changed:operator",
   "line1": 681,
   "line2": 682,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "9 tests fail",
   "tests": [
@@ -345,7 +345,7 @@
    "diff-4.1",
    "diff-4.2"
   ],
-  "secs": 15.7
+  "secs": 17.1
  },
  {
   "id": "M11",
@@ -355,7 +355,7 @@
   "cls": "changed:expression",
   "line1": 686,
   "line2": 689,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
@@ -365,7 +365,7 @@
    "diff-1.1",
    "elem-1.9"
   ],
-  "secs": 19.9
+  "secs": 21.2
  },
  {
   "id": "M12",
@@ -375,13 +375,13 @@
   "cls": "deleted:clause",
   "line1": 255,
   "line2": 256,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "diff-1.1"
   ],
-  "secs": 19.3
+  "secs": 21.1
  },
  {
   "id": "M13",
@@ -391,7 +391,7 @@
   "cls": "deleted:clause",
   "line1": 255,
   "line2": 256,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
@@ -401,7 +401,7 @@
    "diff-4.1",
    "diff-4.2"
   ],
-  "secs": 14.9
+  "secs": 15.7
  },
  {
   "id": "M14",
@@ -411,13 +411,13 @@
   "cls": "deleted:statement",
   "line1": 746,
   "line2": 746,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "repl-1.1"
   ],
-  "secs": 19.9
+  "secs": 21.5
  },
  {
   "id": "M15",
@@ -427,7 +427,7 @@
   "cls": "changed:+tokens",
   "line1": 799,
   "line2": 799,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "7 tests fail",
   "tests": [
@@ -439,7 +439,7 @@
    "diff-4.1",
    "diff-4.2"
   ],
-  "secs": 16.9
+  "secs": 18.1
  },
  {
   "id": "M16",
@@ -449,7 +449,7 @@
   "cls": "changed:operator",
   "line1": 830,
   "line2": 830,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "3 tests fail",
   "tests": [
@@ -457,7 +457,7 @@
    "diff-1.1",
    "diff-4.2"
   ],
-  "secs": 19.5
+  "secs": 21.2
  },
  {
   "id": "M17",
@@ -467,7 +467,7 @@
   "cls": "changed:+tokens",
   "line1": 296,
   "line2": 299,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "18 tests fail",
   "tests": [
@@ -490,7 +490,7 @@
    "bulk-1.9",
    "diff-4.2"
   ],
-  "secs": 19.1
+  "secs": 20.3
  },
  {
   "id": "M18",
@@ -500,7 +500,7 @@
   "cls": "changed:constant",
   "line1": 297,
   "line2": 299,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "12 tests fail",
   "tests": [
@@ -517,7 +517,7 @@
    "bulk-1.9",
    "diff-4.2"
   ],
-  "secs": 19.3
+  "secs": 20.9
  },
  {
   "id": "M19",
@@ -527,7 +527,7 @@
   "cls": "deleted:clause",
   "line1": 317,
   "line2": 317,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "8 tests fail",
   "tests": [
@@ -540,7 +540,7 @@
    "diff-2.1",
    "diff-4.2"
   ],
-  "secs": 19.6
+  "secs": 20.4
  },
  {
   "id": "M20",
@@ -550,7 +550,7 @@
   "cls": "deleted:clause",
   "line1": 321,
   "line2": 321,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "7 tests fail",
   "tests": [
@@ -562,7 +562,7 @@
    "diff-2.1",
    "diff-4.2"
   ],
-  "secs": 19.5
+  "secs": 20.9
  },
  {
   "id": "M21",
@@ -572,7 +572,7 @@
   "cls": "deleted:clause",
   "line1": 277,
   "line2": 277,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "9 tests fail",
   "tests": [
@@ -586,7 +586,7 @@
    "diff-2.1",
    "diff-4.2"
   ],
-  "secs": 19.9
+  "secs": 21.3
  },
  {
   "id": "M22",
@@ -596,7 +596,7 @@
   "cls": "changed:operator",
   "line1": 281,
   "line2": 282,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "3 tests fail",
   "tests": [
@@ -604,7 +604,7 @@
    "diff-2.1",
    "diff-4.2"
   ],
-  "secs": 19.5
+  "secs": 20.7
  },
  {
   "id": "M23",
@@ -612,9 +612,9 @@
   "old": "if (bit) SETBIT(b, i); else CLRBIT(b, i);\n\t\t    if (last - i < step) break;",
   "new": "if (bit) SETBIT(b, i); else CLRBIT(b, i);\n\t\t    if (last - i <= step) break;",
   "cls": "changed:operator",
-  "line1": 1178,
-  "line2": 1179,
-  "total": 184,
+  "line1": 1285,
+  "line2": 1286,
+  "total": 222,
   "result": "CAUGHT",
   "how": "4 tests fail",
   "tests": [
@@ -623,7 +623,7 @@
    "diff-2.1",
    "diff-4.2"
   ],
-  "secs": 19.3
+  "secs": 20.5
  },
  {
   "id": "M24",
@@ -631,8 +631,8 @@
   "old": "\tif (first > last) return TCL_OK;\n",
   "new": "",
   "cls": "deleted:statement",
-  "line1": 1162,
-  "line2": 1162,
+  "line1": 1269,
+  "line2": 1269,
   "total": null,
   "result": "CAUGHT",
   "how": "crash rc=-11",
@@ -641,7 +641,7 @@
    "fill-w.25"
   ],
   "running": "diff-2.1",
-  "secs": 2.4
+  "secs": 2.8
  },
  {
   "id": "M25",
@@ -651,13 +651,13 @@
   "cls": "changed:operator",
   "line1": 405,
   "line2": 406,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "set-1.11"
   ],
-  "secs": 19.4
+  "secs": 20.5
  },
  {
   "id": "M26",
@@ -667,7 +667,7 @@
   "cls": "changed:token",
   "line1": 516,
   "line2": 516,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "38 tests fail",
   "tests": [
@@ -710,7 +710,7 @@
    "diff-1.1",
    "grow-1.2"
   ],
-  "secs": 19.0
+  "secs": 21.1
  },
  {
   "id": "M27",
@@ -720,7 +720,7 @@
   "cls": "changed:+tokens",
   "line1": 494,
   "line2": 494,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "7 tests fail",
   "tests": [
@@ -732,7 +732,7 @@
    "diff-4.1",
    "diff-4.2"
   ],
-  "secs": 17.0
+  "secs": 17.2
  },
  {
   "id": "M28",
@@ -749,7 +749,7 @@
    "new-1.1"
   ],
   "running": "new-1.2",
-  "secs": 0.4
+  "secs": 0.5
  },
  {
   "id": "M29",
@@ -757,15 +757,15 @@
   "old": "if (last >= b->len) last = b->len - 1;\n\t}\n\tval = 1;",
   "new": "if (last > b->len) last = b->len - 1;\n\t}\n\tval = 1;",
   "cls": "changed:operator",
-  "line1": 1057,
-  "line2": 1059,
-  "total": 184,
+  "line1": 1059,
+  "line2": 1061,
+  "total": 222,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "diff-2.1"
   ],
-  "secs": 19.5
+  "secs": 20.3
  },
  {
   "id": "M30",
@@ -775,7 +775,7 @@
   "cls": "changed:2 tokens",
   "line1": 640,
   "line2": 640,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
@@ -785,7 +785,7 @@
    "diff-2.1",
    "diff-4.2"
   ],
-  "secs": 18.0
+  "secs": 17.7
  },
  {
   "id": "M31",
@@ -793,13 +793,13 @@
   "old": "SetRangeOnes(n, 0, n->len - 1, 1);",
   "new": "memset(n->words, 0xff, (size_t)n->nwords * 8);",
   "cls": "changed:expression",
-  "line1": 979,
-  "line2": 979,
-  "total": 184,
+  "line1": 981,
+  "line2": 981,
+  "total": 222,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 19.5
+  "secs": 19.3
  },
  {
   "id": "M32",
@@ -809,13 +809,13 @@
   "cls": "deleted:clause",
   "line1": 813,
   "line2": 814,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "diff-1.1"
   ],
-  "secs": 18.9
+  "secs": 20.5
  },
  {
   "id": "W01",
@@ -825,10 +825,14 @@
   "cls": "changed:constant",
   "line1": 148,
   "line2": 148,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
-  "how": "9 tests fail",
+  "how": "13 tests fail",
   "tests": [
+   "conv-3.2",
+   "conv-3.11",
+   "conv-4.1",
+   "conv-4.6",
    "range-16.1",
    "elem-1.4",
    "elem-1.7",
@@ -839,7 +843,7 @@
    "bulk-w.2",
    "diff-4.1"
   ],
-  "secs": 18.7
+  "secs": 19.9
  },
  {
   "id": "W02",
@@ -849,17 +853,19 @@
   "cls": "changed:constant",
   "line1": 149,
   "line2": 149,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
-  "how": "5 tests fail",
+  "how": "7 tests fail",
   "tests": [
+   "conv-3.3",
+   "conv-4.1",
    "range-32.1",
    "elem-1.4",
    "elem-1.9",
    "bulk-32.1",
    "diff-4.1"
   ],
-  "secs": 19.6
+  "secs": 20.5
  },
  {
   "id": "W03",
@@ -869,7 +875,7 @@
   "cls": "changed:constant",
   "line1": 150,
   "line2": 150,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "8 tests fail",
   "tests": [
@@ -882,7 +888,7 @@
    "bulk-64.2",
    "diff-4.1"
   ],
-  "secs": 18.9
+  "secs": 20.7
  },
  {
   "id": "W04",
@@ -892,14 +898,16 @@
   "cls": "changed:+tokens",
   "line1": 165,
   "line2": 165,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
-  "how": "2 tests fail",
+  "how": "4 tests fail",
   "tests": [
+   "conv-2.4",
+   "conv-5.2",
    "elem-1.12",
    "diff-4.1"
   ],
-  "secs": 18.6
+  "secs": 20.8
  },
  {
   "id": "W05",
@@ -913,6 +921,10 @@
   "result": "CAUGHT",
   "how": "crash rc=-11",
   "tests": [
+   "conv-3.2",
+   "conv-3.11",
+   "conv-4.1",
+   "conv-4.6",
    "range-16.1",
    "elem-1.4",
    "elem-1.7",
@@ -923,7 +935,7 @@
    "bulk-w.2"
   ],
   "running": "diff-4.1",
-  "secs": 3.6
+  "secs": 4.1
  },
  {
   "id": "W06",
@@ -933,17 +945,19 @@
   "cls": "changed:constant",
   "line1": 167,
   "line2": 167,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
-  "how": "5 tests fail",
+  "how": "7 tests fail",
   "tests": [
+   "conv-3.3",
+   "conv-4.1",
    "range-32.1",
    "elem-1.4",
    "elem-1.9",
    "bulk-32.1",
    "diff-4.1"
   ],
-  "secs": 17.6
+  "secs": 19.8
  },
  {
   "id": "W07",
@@ -953,7 +967,7 @@
   "cls": "changed:constant",
   "line1": 168,
   "line2": 168,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "10 tests fail",
   "tests": [
@@ -968,7 +982,7 @@
    "bulk-64.2",
    "diff-4.1"
   ],
-  "secs": 17.4
+  "secs": 18.9
  },
  {
   "id": "W08",
@@ -978,11 +992,11 @@
   "cls": "changed:constant",
   "line1": 265,
   "line2": 265,
-  "total": 184,
+  "total": 222,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 18.6
+  "secs": 21.0
  },
  {
   "id": "W09",
@@ -992,14 +1006,14 @@
   "cls": "changed:name/variable",
   "line1": 264,
   "line2": 264,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "elem-1.1",
    "diff-4.1"
   ],
-  "secs": 17.0
+  "secs": 17.8
  },
  {
   "id": "W10",
@@ -1009,7 +1023,7 @@
   "cls": "deleted:clause",
   "line1": 448,
   "line2": 448,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "6 tests fail",
   "tests": [
@@ -1020,7 +1034,7 @@
    "elem-1.13",
    "bulk-8.3"
   ],
-  "secs": 18.5
+  "secs": 21.1
  },
  {
   "id": "W11",
@@ -1030,13 +1044,13 @@
   "cls": "changed:expression",
   "line1": 448,
   "line2": 448,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "range-8.3"
   ],
-  "secs": 18.9
+  "secs": 20.2
  },
  {
   "id": "W12",
@@ -1046,7 +1060,7 @@
   "cls": "changed:constant",
   "line1": 444,
   "line2": 445,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "11 tests fail",
   "tests": [
@@ -1062,7 +1076,7 @@
    "diff-4.1",
    "mem-1.1"
   ],
-  "secs": 6.7
+  "secs": 7.0
  },
  {
   "id": "W13",
@@ -1072,13 +1086,13 @@
   "cls": "changed:token",
   "line1": 439,
   "line2": 439,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "range-8.4"
   ],
-  "secs": 18.5
+  "secs": 21.0
  },
  {
   "id": "W14",
@@ -1088,11 +1102,11 @@
   "cls": "deleted:clause",
   "line1": 180,
   "line2": 180,
-  "total": 184,
+  "total": 222,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 18.8
+  "secs": 20.9
  },
  {
   "id": "W15",
@@ -1104,18 +1118,10 @@
   "line2": 188,
   "total": null,
   "result": "CAUGHT",
-  "how": "crash rc=-4",
-  "tests": [
-   "range-64.1",
-   "elem-1.9",
-   "elem-1.15",
-   "elem-1.19",
-   "bulk-8.2",
-   "bulk-8.5",
-   "bulk-8.6"
-  ],
-  "running": "bulk-32.1",
-  "secs": 2.9
+  "how": "crash rc=-11",
+  "tests": [],
+  "running": "conv-1.5",
+  "secs": 0.5
  },
  {
   "id": "W16",
@@ -1133,7 +1139,7 @@
    "grow-1.5"
   ],
   "running": "diff-3.1",
-  "secs": 1.8
+  "secs": 2.1
  },
  {
   "id": "W17",
@@ -1143,13 +1149,13 @@
   "cls": "changed:expression",
   "line1": 214,
   "line2": 215,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "mem-1.1"
   ],
-  "secs": 11.1
+  "secs": 13.4
  },
  {
   "id": "W18",
@@ -1164,7 +1170,7 @@
   "how": "crash rc=-11",
   "tests": [],
   "running": "elem-1.16",
-  "secs": 3.0
+  "secs": 3.2
  },
  {
   "id": "W19",
@@ -1179,7 +1185,7 @@
   "how": "crash rc=-11",
   "tests": [],
   "running": "diff-4.1",
-  "secs": 3.0
+  "secs": 3.6
  },
  {
   "id": "W20",
@@ -1189,13 +1195,13 @@
   "cls": "deleted:statement",
   "line1": 650,
   "line2": 650,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "mem-1.1"
   ],
-  "secs": 11.2
+  "secs": 12.8
  },
  {
   "id": "W21",
@@ -1205,14 +1211,14 @@
   "cls": "deleted:clause",
   "line1": 579,
   "line2": 579,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "elem-1.10",
    "diff-4.1"
   ],
-  "secs": 16.8
+  "secs": 21.0
  },
  {
   "id": "W22",
@@ -1222,14 +1228,14 @@
   "cls": "deleted:clause",
   "line1": 580,
   "line2": 581,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "elem-1.10",
    "diff-4.1"
   ],
-  "secs": 17.8
+  "secs": 18.7
  },
  {
   "id": "W23",
@@ -1239,14 +1245,14 @@
   "cls": "deleted:clause",
   "line1": 609,
   "line2": 609,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "elem-1.11",
    "diff-4.1"
   ],
-  "secs": 19.4
+  "secs": 20.9
  },
  {
   "id": "W24",
@@ -1256,11 +1262,11 @@
   "cls": "changed:name/variable",
   "line1": 713,
   "line2": 713,
-  "total": 184,
+  "total": 222,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 19.3
+  "secs": 19.9
  },
  {
   "id": "W25",
@@ -1270,13 +1276,13 @@
   "cls": "deleted:clause",
   "line1": 713,
   "line2": 713,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "diff-4.1"
   ],
-  "secs": 17.4
+  "secs": 19.8
  },
  {
   "id": "W26",
@@ -1286,11 +1292,11 @@
   "cls": "deleted:clause",
   "line1": 808,
   "line2": 809,
-  "total": 184,
+  "total": 222,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 18.7
+  "secs": 21.1
  },
  {
   "id": "W27",
@@ -1300,7 +1306,7 @@
   "cls": "changed:expression",
   "line1": 529,
   "line2": 529,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "4 tests fail",
   "tests": [
@@ -1309,7 +1315,7 @@
    "bulk-64.1",
    "bulk-64.2"
   ],
-  "secs": 19.1
+  "secs": 20.9
  },
  {
   "id": "W28",
@@ -1319,12 +1325,20 @@
   "cls": "changed:token",
   "line1": 527,
   "line2": 527,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
-  "how": "27 tests fail",
+  "how": "35 tests fail",
   "tests": [
    "fill-w.10",
    "fill-w.11",
+   "conv-1.1",
+   "conv-1.3",
+   "conv-1.5",
+   "conv-3.1",
+   "conv-3.2",
+   "conv-3.3",
+   "conv-3.11",
+   "conv-5.2",
    "width-1.3",
    "width-1.4",
    "width-1.5",
@@ -1351,7 +1365,7 @@
    "bulk-w.1",
    "bulk-w.2"
   ],
-  "secs": 18.8
+  "secs": 21.2
  },
  {
   "id": "W29",
@@ -1361,14 +1375,14 @@
   "cls": "changed:expression",
   "line1": 846,
   "line2": 846,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "elem-1.17",
    "diff-4.1"
   ],
-  "secs": 18.2
+  "secs": 21.8
  },
  {
   "id": "W30",
@@ -1378,7 +1392,7 @@
   "cls": "changed:constant",
   "line1": 847,
   "line2": 847,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "3 tests fail",
   "tests": [
@@ -1386,7 +1400,7 @@
    "elem-1.18",
    "diff-4.1"
   ],
-  "secs": 18.4
+  "secs": 21.4
  },
  {
   "id": "W31",
@@ -1396,7 +1410,7 @@
   "cls": "changed:operator",
   "line1": 344,
   "line2": 344,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "3 tests fail",
   "tests": [
@@ -1404,7 +1418,7 @@
    "bulk-8.4",
    "diff-4.1"
   ],
-  "secs": 19.0
+  "secs": 21.7
  },
  {
   "id": "W32",
@@ -1414,7 +1428,7 @@
   "cls": "changed:operator",
   "line1": 348,
   "line2": 348,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "3 tests fail",
   "tests": [
@@ -1422,7 +1436,7 @@
    "bulk-8.4",
    "diff-4.1"
   ],
-  "secs": 18.2
+  "secs": 21.1
  },
  {
   "id": "W33",
@@ -1432,14 +1446,14 @@
   "cls": "changed:operator",
   "line1": 355,
   "line2": 355,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "bulk-16.2",
    "diff-4.1"
   ],
-  "secs": 18.4
+  "secs": 21.2
  },
  {
   "id": "W34",
@@ -1449,13 +1463,13 @@
   "cls": "changed:+tokens",
   "line1": 372,
   "line2": 372,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "diff-4.1"
   ],
-  "secs": 18.4
+  "secs": 20.7
  },
  {
   "id": "W35",
@@ -1465,7 +1479,7 @@
   "cls": "deleted:clause",
   "line1": 384,
   "line2": 384,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "3 tests fail",
   "tests": [
@@ -1473,7 +1487,7 @@
    "bulk-8.5",
    "diff-4.1"
   ],
-  "secs": 18.3
+  "secs": 21.7
  },
  {
   "id": "W36",
@@ -1483,7 +1497,7 @@
   "cls": "changed:operator",
   "line1": 394,
   "line2": 394,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "4 tests fail",
   "tests": [
@@ -1492,7 +1506,7 @@
    "bulk-64.1",
    "diff-4.1"
   ],
-  "secs": 18.1
+  "secs": 22.0
  },
  {
   "id": "W37",
@@ -1500,18 +1514,19 @@
   "old": "memset(p + first, c, (size_t)(last - first + 1));",
   "new": "memset(p + first, c, (size_t)(last - first));",
   "cls": "deleted:clause",
-  "line1": 1186,
-  "line2": 1186,
-  "total": 184,
+  "line1": 1293,
+  "line2": 1293,
+  "total": 222,
   "result": "CAUGHT",
-  "how": "4 tests fail",
+  "how": "5 tests fail",
   "tests": [
    "fill-w.10",
+   "conv-2.5",
    "bulk-8.2",
    "bulk-w.1",
    "diff-4.1"
   ],
-  "secs": 18.6
+  "secs": 20.9
  },
  {
   "id": "W38",
@@ -1519,17 +1534,18 @@
   "old": "memset(p + first, c,",
   "new": "memset(p, c,",
   "cls": "deleted:clause",
-  "line1": 1186,
-  "line2": 1186,
-  "total": 184,
+  "line1": 1293,
+  "line2": 1293,
+  "total": 222,
   "result": "CAUGHT",
-  "how": "3 tests fail",
+  "how": "4 tests fail",
   "tests": [
    "fill-w.10",
+   "conv-2.5",
    "bulk-8.2",
    "diff-4.1"
   ],
-  "secs": 18.3
+  "secs": 20.1
  },
  {
   "id": "W39",
@@ -1537,16 +1553,16 @@
   "old": "p[i] = c;\n\t\t    if (last - i < step) break;",
   "new": "p[i] = c;\n\t\t    if (last - i <= step) break;",
   "cls": "changed:operator",
-  "line1": 1189,
-  "line2": 1190,
-  "total": 184,
+  "line1": 1296,
+  "line2": 1297,
+  "total": 222,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "bulk-8.1",
    "diff-4.1"
   ],
-  "secs": 18.6
+  "secs": 19.5
  },
  {
   "id": "W40",
@@ -1554,16 +1570,16 @@
   "old": "PutElem(b, i, val);\n\t\tif (last - i < step) break;",
   "new": "PutElem(b, i, val);\n\t\tif (last - i <= step) break;",
   "cls": "changed:operator",
-  "line1": 1195,
-  "line2": 1196,
-  "total": 184,
+  "line1": 1302,
+  "line2": 1303,
+  "total": 222,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "bulk-64.1",
    "diff-4.1"
   ],
-  "secs": 18.1
+  "secs": 20.0
  },
  {
   "id": "W41",
@@ -1571,9 +1587,9 @@
   "old": "if (val) PutElem(n, i, val);",
   "new": "if (val > 1) PutElem(n, i, val);",
   "cls": "changed:+tokens",
-  "line1": 1009,
-  "line2": 1009,
-  "total": 184,
+  "line1": 1011,
+  "line2": 1011,
+  "total": 222,
   "result": "CAUGHT",
   "how": "35 tests fail",
   "tests": [
@@ -1613,7 +1629,7 @@
    "diff-4.1",
    "diff-4.2"
   ],
-  "secs": 15.3
+  "secs": 17.6
  },
  {
   "id": "W42",
@@ -1621,9 +1637,9 @@
   "old": "memset(n->words, (int)val, (size_t)n->len);",
   "new": "memset(n->words, (int)val, (size_t)n->len - 1);",
   "cls": "changed:+tokens",
-  "line1": 981,
-  "line2": 981,
-  "total": 184,
+  "line1": 983,
+  "line2": 983,
+  "total": 222,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
@@ -1633,7 +1649,7 @@
    "elem-1.6",
    "bulk-w.1"
   ],
-  "secs": 18.5
+  "secs": 20.8
  },
  {
   "id": "W43",
@@ -1641,9 +1657,9 @@
   "old": "for (i = 0; i < n->len; i++) PutElem(n, i, val);",
   "new": "for (i = 0; i < n->len - 1; i++) PutElem(n, i, val);",
   "cls": "changed:+tokens",
-  "line1": 983,
-  "line2": 983,
-  "total": 184,
+  "line1": 985,
+  "line2": 985,
+  "total": 222,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
@@ -1653,7 +1669,7 @@
    "bulk-16.1",
    "bulk-w.2"
   ],
-  "secs": 18.9
+  "secs": 20.3
  },
  {
   "id": "W44",
@@ -1661,9 +1677,9 @@
   "old": "(Tcl_WideInt)(last - first + 1) - cnt;",
   "new": "(Tcl_WideInt)(last - first) - cnt;",
   "cls": "deleted:clause",
-  "line1": 1069,
-  "line2": 1069,
-  "total": 184,
+  "line1": 1071,
+  "line2": 1071,
+  "total": 222,
   "result": "CAUGHT",
   "how": "4 tests fail",
   "tests": [
@@ -1672,7 +1688,7 @@
    "bulk-1.9",
    "diff-4.2"
   ],
-  "secs": 18.8
+  "secs": 19.8
  },
  {
   "id": "W45",
@@ -1680,9 +1696,9 @@
   "old": "\t    if (ParseValue(interp, valObj, b->width, &val) != TCL_OK) {\n\t\treturn TCL_ERROR;\n\t    }\n\t    anyNZ = 0;",
   "new": "\t    if (ParseValue(interp, valObj, b->width, &val) != TCL_OK) {\n\t\treturn TCL_ERROR;\n\t    }",
   "cls": "deleted:clause",
-  "line1": 1061,
-  "line2": 1064,
-  "total": 184,
+  "line1": 1063,
+  "line2": 1066,
+  "total": 222,
   "result": "CAUGHT",
   "how": "8 tests fail",
   "tests": [
@@ -1695,7 +1711,7 @@
    "diff-4.1",
    "diff-4.2"
   ],
-  "secs": 19.2
+  "secs": 20.2
  },
  {
   "id": "W46",
@@ -1703,9 +1719,9 @@
   "old": "\t    if (ParseValue(interp, valObjN, b->width, &val) != TCL_OK) {\n\t\treturn TCL_ERROR;\n\t    }\n\t    anyNZ = 0;",
   "new": "\t    if (ParseValue(interp, valObjN, b->width, &val) != TCL_OK) {\n\t\treturn TCL_ERROR;\n\t    }",
   "cls": "deleted:clause",
-  "line1": 1099,
-  "line2": 1102,
-  "total": 184,
+  "line1": 1101,
+  "line2": 1104,
+  "total": 222,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
@@ -1715,7 +1731,7 @@
    "bulk-16.2",
    "diff-4.1"
   ],
-  "secs": 18.7
+  "secs": 20.5
  },
  {
   "id": "W47",
@@ -1730,7 +1746,7 @@
   "how": "crash rc=-11",
   "tests": [],
   "running": "width-1.8",
-  "secs": 2.9
+  "secs": 3.3
  },
  {
   "id": "W48",
@@ -1740,10 +1756,16 @@
   "cls": "deleted:clause",
   "line1": 889,
   "line2": 889,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
-  "how": "16 tests fail",
+  "how": "22 tests fail",
   "tests": [
+   "conv-2.7",
+   "conv-3.2",
+   "conv-3.5",
+   "conv-3.11",
+   "conv-4.1",
+   "conv-4.6",
    "width-1.2",
    "width-1.5",
    "width-1.14",
@@ -1761,7 +1783,7 @@
    "diff-4.1",
    "mem-1.1"
   ],
-  "secs": 4.4
+  "secs": 5.0
  },
  {
   "id": "W49",
@@ -1784,7 +1806,7 @@
    "bulk-w.1"
   ],
   "running": "diff-4.1",
-  "secs": 3.0
+  "secs": 3.3
  },
  {
   "id": "W50",
@@ -1794,10 +1816,11 @@
   "cls": "changed:expression",
   "line1": 685,
   "line2": 685,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
-  "how": "9 tests fail",
+  "how": "10 tests fail",
   "tests": [
+   "conv-2.4",
    "width-1.14",
    "elem-1.4",
    "elem-1.5",
@@ -1808,7 +1831,7 @@
    "diff-4.1",
    "mem-1.1"
   ],
-  "secs": 3.5
+  "secs": 4.0
  },
  {
   "id": "W51",
@@ -1818,7 +1841,7 @@
   "cls": "changed:expression",
   "line1": 748,
   "line2": 748,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "6 tests fail",
   "tests": [
@@ -1829,7 +1852,7 @@
    "diff-4.1",
    "mem-1.1"
   ],
-  "secs": 3.7
+  "secs": 4.0
  },
  {
   "id": "W52",
@@ -1846,7 +1869,7 @@
    "elem-1.19"
   ],
   "running": "diff-4.1",
-  "secs": 2.8
+  "secs": 3.1
  },
  {
   "id": "W53",
@@ -1856,16 +1879,17 @@
   "cls": "added:code",
   "line1": 555,
   "line2": 557,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
-  "how": "4 tests fail",
+  "how": "5 tests fail",
   "tests": [
+   "conv-1.5",
    "elem-1.1",
    "elem-1.3",
    "elem-1.19",
    "diff-4.1"
   ],
-  "secs": 18.1
+  "secs": 20.5
  },
  {
   "id": "P01",
@@ -1873,11 +1897,11 @@
   "old": "IsWord(objv[k], \"to\") ||",
   "new": "0 ||",
   "cls": "changed:expression",
-  "line1": 1130,
-  "line2": 1130,
-  "total": 184,
+  "line1": 1237,
+  "line2": 1237,
+  "total": 222,
   "result": "CAUGHT",
-  "how": "11 tests fail",
+  "how": "12 tests fail",
   "tests": [
    "fill-w.1",
    "fill-w.5",
@@ -1889,9 +1913,10 @@
    "fill-w.21",
    "fill-w.22",
    "fill-w.24",
-   "fill-w.25"
+   "fill-w.25",
+   "conv-2.5"
   ],
-  "secs": 18.0
+  "secs": 20.6
  },
  {
   "id": "P02",
@@ -1899,9 +1924,9 @@
   "old": "|| IsWord(objv[k], \"..\"))",
   "new": "|| 0)",
   "cls": "changed:expression",
-  "line1": 1130,
-  "line2": 1130,
-  "total": 184,
+  "line1": 1237,
+  "line2": 1237,
+  "total": 222,
   "result": "CAUGHT",
   "how": "3 tests fail",
   "tests": [
@@ -1909,7 +1934,7 @@
    "fill-w.6",
    "fill-w.11"
   ],
-  "secs": 18.3
+  "secs": 20.2
  },
  {
   "id": "P03",
@@ -1917,11 +1942,11 @@
   "old": "if (k < objc && IsWord(objv[k], \"with\")) k++;",
   "new": ";",
   "cls": "deleted:clause",
-  "line1": 1133,
-  "line2": 1133,
-  "total": 184,
+  "line1": 1240,
+  "line2": 1240,
+  "total": 222,
   "result": "CAUGHT",
-  "how": "14 tests fail",
+  "how": "15 tests fail",
   "tests": [
    "fill-w.3",
    "fill-w.5",
@@ -1936,9 +1961,10 @@
    "fill-w.22",
    "fill-w.23",
    "fill-w.24",
-   "fill-w.25"
+   "fill-w.25",
+   "conv-2.5"
   ],
-  "secs": 18.5
+  "secs": 20.0
  },
  {
   "id": "P04",
@@ -1946,9 +1972,9 @@
   "old": "if (k < objc && IsWord(objv[k], \"by\")) {",
   "new": "if (0) {",
   "cls": "changed:expression",
-  "line1": 1136,
-  "line2": 1136,
-  "total": 184,
+  "line1": 1243,
+  "line2": 1243,
+  "total": 222,
   "result": "CAUGHT",
   "how": "7 tests fail",
   "tests": [
@@ -1960,7 +1986,7 @@
    "fill-w.12",
    "fill-w.17"
   ],
-  "secs": 19.2
+  "secs": 20.5
  },
  {
   "id": "P05",
@@ -1968,16 +1994,16 @@
   "old": "if (k != objc - 1) goto fillUsage;",
   "new": ";",
   "cls": "deleted:clause",
-  "line1": 1138,
-  "line2": 1138,
-  "total": 184,
+  "line1": 1245,
+  "line2": 1245,
+  "total": 222,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "fill-w.12",
    "fill-w.16"
   ],
-  "secs": 18.6
+  "secs": 19.7
  },
  {
   "id": "P06",
@@ -1985,15 +2011,15 @@
   "old": "} else if (k < objc - 1) {",
   "new": "} else if (0) {",
   "cls": "changed:expression",
-  "line1": 1139,
-  "line2": 1139,
-  "total": 184,
+  "line1": 1246,
+  "line2": 1246,
+  "total": 222,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "fill-w.15"
   ],
-  "secs": 18.4
+  "secs": 20.6
  },
  {
   "id": "P07",
@@ -2003,7 +2029,7 @@
   "cls": "deleted:clause",
   "line1": 867,
   "line2": 867,
-  "total": 184,
+  "total": 222,
   "result": "CAUGHT",
   "how": "3 tests fail",
   "tests": [
@@ -2011,7 +2037,7 @@
    "count-w.14",
    "next-w.9"
   ],
-  "secs": 17.9
+  "secs": 19.9
  },
  {
   "id": "P08",
@@ -2019,16 +2045,16 @@
   "old": "IndexError(interp, first < 0 ? firstObj : lastObj);",
   "new": "IndexError(interp, lastObj);",
   "cls": "deleted:clause",
-  "line1": 1164,
-  "line2": 1164,
-  "total": 184,
+  "line1": 1271,
+  "line2": 1271,
+  "total": 222,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "fill-w.20",
    "diff-2.1"
   ],
-  "secs": 17.6
+  "secs": 20.4
  },
  {
   "id": "P09",
@@ -2036,9 +2062,9 @@
   "old": "IsWord(objv[kc], \"to\") ||",
   "new": "0 ||",
   "cls": "changed:expression",
-  "line1": 1041,
-  "line2": 1041,
-  "total": 184,
+  "line1": 1043,
+  "line2": 1043,
+  "total": 222,
   "result": "CAUGHT",
   "how": "6 tests fail",
   "tests": [
@@ -2049,7 +2075,7 @@
    "count-w.9",
    "count-w.10"
   ],
-  "secs": 18.4
+  "secs": 20.1
  },
  {
   "id": "P10",
@@ -2057,16 +2083,16 @@
   "old": "|| IsWord(objv[kc], \"..\"))",
   "new": "|| 0)",
   "cls": "changed:expression",
-  "line1": 1041,
-  "line2": 1041,
-  "total": 184,
+  "line1": 1043,
+  "line2": 1043,
+  "total": 222,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "count-w.2",
    "count-w.8"
   ],
-  "secs": 18.0
+  "secs": 20.5
  },
  {
   "id": "P11",
@@ -2074,9 +2100,9 @@
   "old": "if (kc < objc && IsWord(objv[kc], \"with\")) {",
   "new": "if (0) {",
   "cls": "changed:expression",
-  "line1": 1044,
-  "line2": 1044,
-  "total": 184,
+  "line1": 1046,
+  "line2": 1046,
+  "total": 222,
   "result": "CAUGHT",
   "how": "6 tests fail",
   "tests": [
@@ -2087,7 +2113,7 @@
    "count-w.9",
    "count-w.11"
   ],
-  "secs": 18.1
+  "secs": 20.2
  },
  {
   "id": "P12",
@@ -2095,15 +2121,15 @@
   "old": "if (kc != objc) goto countUsage;",
   "new": ";",
   "cls": "deleted:clause",
-  "line1": 1049,
-  "line2": 1049,
-  "total": 184,
+  "line1": 1051,
+  "line2": 1051,
+  "total": 222,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "count-w.13"
   ],
-  "secs": 18.5
+  "secs": 20.9
  },
  {
   "id": "P13",
@@ -2111,9 +2137,9 @@
   "old": "hasVal = (valObj != NULL);",
   "new": "hasVal = 0;",
   "cls": "changed:expression",
-  "line1": 1050,
-  "line2": 1050,
-  "total": 184,
+  "line1": 1052,
+  "line2": 1052,
+  "total": 222,
   "result": "CAUGHT",
   "how": "9 tests fail",
   "tests": [
@@ -2127,7 +2153,7 @@
    "diff-4.1",
    "diff-4.2"
   ],
-  "secs": 18.2
+  "secs": 20.6
  },
  {
   "id": "P14",
@@ -2135,9 +2161,9 @@
   "old": "if (kn < objc && IsWord(objv[kn], \"with\")) {",
   "new": "if (0) {",
   "cls": "changed:expression",
-  "line1": 1088,
-  "line2": 1088,
-  "total": 184,
+  "line1": 1090,
+  "line2": 1090,
+  "total": 222,
   "result": "CAUGHT",
   "how": "4 tests fail",
   "tests": [
@@ -2146,7 +2172,7 @@
    "next-w.4",
    "next-w.5"
   ],
-  "secs": 18.4
+  "secs": 20.8
  },
  {
   "id": "P15",
@@ -2154,14 +2180,243 @@
   "old": "if (kn != objc) goto nextUsage;",
   "new": ";",
   "cls": "deleted:clause",
-  "line1": 1093,
-  "line2": 1093,
-  "total": 184,
+  "line1": 1095,
+  "line2": 1095,
+  "total": 222,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "next-w.6"
   ],
-  "secs": 17.9
+  "secs": 20.8
+ },
+ {
+  "id": "Q01",
+  "name": "Q01 frombytes copies one byte short",
+  "old": "if (nb > 0) memcpy(n->words, bytes, (size_t)nb);",
+  "new": "if (nb > 0) memcpy(n->words, bytes, (size_t)nb - 1);",
+  "cls": "changed:+tokens",
+  "line1": 1129,
+  "line2": 1129,
+  "total": 222,
+  "result": "CAUGHT",
+  "how": "8 tests fail",
+  "tests": [
+   "conv-1.1",
+   "conv-1.5",
+   "conv-2.1",
+   "conv-2.2",
+   "conv-2.4",
+   "conv-2.5",
+   "conv-5.1",
+   "conv-5.2"
+  ],
+  "secs": 20.3
+ },
+ {
+  "id": "Q02",
+  "name": "Q02 tobytes accepts any width",
+  "old": "if (b->width != 8) {\n\t    Tcl_SetObjResult(interp, Tcl_ObjPrintf(\n\t\t    \"tobytes",
+  "new": "if (0) {\n\t    Tcl_SetObjResult(interp, Tcl_ObjPrintf(\n\t\t    \"tobytes",
+  "cls": "changed:expression",
+  "line1": 1139,
+  "line2": 1141,
+  "total": 222,
+  "result": "CAUGHT",
+  "how": "2 tests fail",
+  "tests": [
+   "conv-2.6",
+   "conv-2.7"
+  ],
+  "secs": 19.9
+ },
+ {
+  "id": "Q03",
+  "name": "Q03 tobytes drops the last byte",
+  "old": "(const unsigned char *)b->words, b->len));",
+  "new": "(const unsigned char *)b->words, b->len > 0 ? b->len - 1 : 0));",
+  "cls": "changed:+tokens",
+  "line1": 1147,
+  "line2": 1147,
+  "total": 222,
+  "result": "CAUGHT",
+  "how": "5 tests fail",
+  "tests": [
+   "conv-2.1",
+   "conv-2.2",
+   "conv-2.4",
+   "conv-2.5",
+   "conv-5.1"
+  ],
+  "secs": 20.6
+ },
+ {
+  "id": "Q04",
+  "name": "Q04 fromchars default width 16",
+  "old": "width = 8;\n\tif (objc == 5) {",
+  "new": "width = 16;\n\tif (objc == 5) {",
+  "cls": "changed:constant",
+  "line1": 1158,
+  "line2": 1159,
+  "total": 222,
+  "result": "CAUGHT",
+  "how": "2 tests fail",
+  "tests": [
+   "conv-3.1",
+   "conv-3.4"
+  ],
+  "secs": 20.2
+ },
+ {
+  "id": "Q05",
+  "name": "Q05 fromchars range check off by one",
+  "old": "(uint64_t)ch > maxv",
+  "new": "(uint64_t)ch >= maxv",
+  "cls": "changed:operator",
+  "line1": 1176,
+  "line2": 1176,
+  "total": 222,
+  "result": "CAUGHT",
+  "how": "2 tests fail",
+  "tests": [
+   "conv-3.2",
+   "conv-4.1"
+  ],
+  "secs": 21.0
+ },
+ {
+  "id": "Q06",
+  "name": "Q06 fromchars accepts width 64",
+  "old": "if (width != 8 && width != 16 && width != 32) {\n\t    Tcl_SetObjResult(interp, Tcl_NewStringObj(\n\t\t    \"fromchars",
+  "new": "if (width != 8 && width != 16 && width != 32 && width != 64) {\n\t    Tcl_SetObjResult(interp, Tcl_NewStringObj(\n\t\t    \"fromchars",
+  "cls": "changed:+tokens",
+  "line1": 1166,
+  "line2": 1168,
+  "total": 222,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "conv-3.6"
+  ],
+  "secs": 21.1
+ },
+ {
+  "id": "Q07",
+  "name": "Q07 fromchars loses characters 0 and 1",
+  "old": "if (ch) PutElem(n, i, (uint64_t)ch);",
+  "new": "if (ch > 1) PutElem(n, i, (uint64_t)ch);",
+  "cls": "changed:+tokens",
+  "line1": 1187,
+  "line2": 1187,
+  "total": 222,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "conv-3.11"
+  ],
+  "secs": 21.7
+ },
+ {
+  "id": "Q08",
+  "name": "Q08 tochars accepts surrogates",
+  "old": "(v >= 0xD800 && v <= 0xDFFF)",
+  "new": "0",
+  "cls": "changed:expression",
+  "line1": 1209,
+  "line2": 1209,
+  "total": 222,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "conv-4.6"
+  ],
+  "secs": 21.3
+ },
+ {
+  "id": "Q09",
+  "name": "Q09 tochars limit 0x10FFFF -> 0x110000",
+  "old": "v > 0x10FFFF",
+  "new": "v > 0x110000",
+  "cls": "changed:constant",
+  "line1": 1209,
+  "line2": 1209,
+  "total": 222,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "conv-4.7"
+  ],
+  "secs": 21.1
+ },
+ {
+  "id": "Q10",
+  "name": "Q10 tochars accepts width 64",
+  "old": "b->width != 8 && b->width != 16 && b->width != 32) {\n\t    Tcl_SetObjResult(interp, Tcl_ObjPrintf(\n\t\t    \"tochars",
+  "new": "b->width != 8 && b->width != 16 && b->width != 32 && b->width != 64) {\n\t    Tcl_SetObjResult(interp, Tcl_ObjPrintf(\n\t\t    \"tochars",
+  "cls": "changed:+tokens",
+  "line1": 1201,
+  "line2": 1203,
+  "total": 222,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "conv-4.5"
+  ],
+  "secs": 21.3
+ },
+ {
+  "id": "Q11",
+  "name": "Q11 tochars drops the last character",
+  "old": "Tcl_NewUnicodeObj(buf, b->len)",
+  "new": "Tcl_NewUnicodeObj(buf, b->len > 0 ? b->len - 1 : 0)",
+  "cls": "changed:+tokens",
+  "line1": 1219,
+  "line2": 1219,
+  "total": 222,
+  "result": "CAUGHT",
+  "how": "5 tests fail",
+  "tests": [
+   "conv-4.1",
+   "conv-4.3",
+   "conv-4.8",
+   "conv-5.1",
+   "conv-5.2"
+  ],
+  "secs": 20.7
+ },
+ {
+  "id": "Q12",
+  "name": "Q12 tochars skips element 0",
+  "old": "for (i = 0; i < b->len; i++) buf[i] = (Tcl_UniChar)GetElem(b, i);",
+  "new": "for (i = 1; i < b->len; i++) buf[i] = (Tcl_UniChar)GetElem(b, i);",
+  "cls": "changed:constant",
+  "line1": 1218,
+  "line2": 1218,
+  "total": 222,
+  "result": "CAUGHT",
+  "how": "3 tests fail",
+  "tests": [
+   "conv-4.1",
+   "conv-5.1",
+   "conv-5.2"
+  ],
+  "secs": 20.8
+ },
+ {
+  "id": "Q13",
+  "name": "Q13 fromchars error names the wrong index",
+  "old": "ch, i, width));",
+  "new": "ch, i + 1, width));",
+  "cls": "changed:+tokens",
+  "line1": 1179,
+  "line2": 1179,
+  "total": 222,
+  "result": "CAUGHT",
+  "how": "2 tests fail",
+  "tests": [
+   "conv-3.4",
+   "conv-3.5"
+  ],
+  "secs": 21.6
  }
 ]

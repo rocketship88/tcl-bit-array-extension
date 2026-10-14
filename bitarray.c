@@ -933,9 +933,11 @@ static int
 BitarrayCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 {
     static const char *const subs[] = {
-	"new", "newfrom", "width", "is", "count", "next", "fill", NULL
+	"new", "newfrom", "width", "is", "count", "next", "fill",
+	"frombytes", "tobytes", "fromchars", "tochars", NULL
     };
-    enum { S_NEW, S_NEWFROM, S_WIDTH, S_IS, S_COUNT, S_NEXT, S_FILL };
+    enum { S_NEW, S_NEWFROM, S_WIDTH, S_IS, S_COUNT, S_NEXT, S_FILL,
+	   S_FROMBYTES, S_TOBYTES, S_FROMCHARS, S_TOCHARS };
     int sub, bit, width;
     BitArr *b = NULL, *n;
     Tcl_Size i, first, last;
@@ -1113,6 +1115,111 @@ BitarrayCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	Tcl_WrongNumArgs(interp, 2, objv, "array start ?with? ?value?");
 	return TCL_ERROR;
     }
+    case S_FROMBYTES: {
+	const unsigned char *bytes;
+	Tcl_Size nb;
+
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "data");
+	    return TCL_ERROR;
+	}
+	bytes = Tcl_GetBytesFromObj(interp, objv[2], &nb);
+	if (bytes == NULL) return TCL_ERROR;
+	if ((n = NewRep(interp, nb, 8)) == NULL) return TCL_ERROR;
+	if (nb > 0) memcpy(n->words, bytes, (size_t)nb);
+	Tcl_SetObjResult(interp, WrapRep(n));
+	return TCL_OK;
+    }
+    case S_TOBYTES:
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "array");
+	    return TCL_ERROR;
+	}
+	if (NeedBA(interp, objv[2], &b) != TCL_OK) return TCL_ERROR;
+	if (b->width != 8) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "tobytes: array has width %d; only width 8 can be written as bytes",
+		    b->width));
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(
+		(const unsigned char *)b->words, b->len));
+	return TCL_OK;
+    case S_FROMCHARS: {
+	Tcl_Size nc;
+	int ch;
+	uint64_t maxv;
+
+	if (objc != 3 && objc != 5) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "string ?-width w?");
+	    return TCL_ERROR;
+	}
+	width = 8;
+	if (objc == 5) {
+	    if (strcmp(Tcl_GetString(objv[3]), "-width") != 0) {
+		Tcl_WrongNumArgs(interp, 2, objv, "string ?-width w?");
+		return TCL_ERROR;
+	    }
+	    if (ParseWidthArg(interp, objv[4], &width) != TCL_OK) return TCL_ERROR;
+	}
+	if (width != 8 && width != 16 && width != 32) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "fromchars: -width must be 8, 16 or 32", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
+	    return TCL_ERROR;
+	}
+	maxv = ((uint64_t)1 << width) - 1;
+	nc = Tcl_GetCharLength(objv[2]);
+	for (i = 0; i < nc; i++) {
+	    ch = Tcl_GetUniChar(objv[2], i);
+	    if (ch < 0 || (uint64_t)ch > maxv) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"character U+%04X at index %" TCL_SIZE_MODIFIER "d does not fit in width %d",
+			ch, i, width));
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
+		return TCL_ERROR;
+	    }
+	}
+	if ((n = NewRep(interp, nc, width)) == NULL) return TCL_ERROR;
+	for (i = 0; i < nc; i++) {
+	    ch = Tcl_GetUniChar(objv[2], i);
+	    if (ch) PutElem(n, i, (uint64_t)ch);
+	}
+	Tcl_SetObjResult(interp, WrapRep(n));
+	return TCL_OK;
+    }
+    case S_TOCHARS: {
+	Tcl_UniChar *buf;
+	uint64_t v;
+
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "array");
+	    return TCL_ERROR;
+	}
+	if (NeedBA(interp, objv[2], &b) != TCL_OK) return TCL_ERROR;
+	if (b->width != 8 && b->width != 16 && b->width != 32) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "tochars: array has width %d; need width 8, 16 or 32", b->width));
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
+	    return TCL_ERROR;
+	}
+	for (i = 0; i < b->len; i++) {
+	    v = GetElem(b, i);
+	    if (v > 0x10FFFF || (v >= 0xD800 && v <= 0xDFFF)) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"element %" TCL_SIZE_MODIFIER "d (%" TCL_LL_MODIFIER "u) is not a valid character code",
+			i, (unsigned long long)v));
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
+		return TCL_ERROR;
+	    }
+	}
+	buf = (Tcl_UniChar *)Tcl_Alloc((size_t)(b->len > 0 ? b->len : 1) * sizeof(Tcl_UniChar));
+	for (i = 0; i < b->len; i++) buf[i] = (Tcl_UniChar)GetElem(b, i);
+	Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(buf, b->len));
+	Tcl_Free(buf);
+	return TCL_OK;
+    }
     case S_FILL: {
 	Tcl_Obj *obj, *work;
 	Tcl_WideInt step = 1;
@@ -1216,5 +1323,5 @@ Bitarray_Init(Tcl_Interp *interp)
 {
     if (Tcl_InitStubs(interp, "9.1", 0) == NULL) return TCL_ERROR;
     Tcl_CreateObjCommand2(interp, "bitarray", BitarrayCmd, NULL, NULL);
-    return Tcl_PkgProvide(interp, "bitarray", "0.4");
+    return Tcl_PkgProvide(interp, "bitarray", "0.5");
 }

@@ -62,7 +62,7 @@ sh ./build.sh     --tclsh /path/to/tcl9.1/bin/tclsh9.1   # makes libbitarray.so 
 sh ./run_tests.sh --tclsh /path/to/tcl9.1/bin/tclsh9.1
 ```
 
-Expected last line of the tests: `bitarray.test:	Total	184	Passed	184	Skipped	0	Failed	0`
+Expected last line of the tests: `bitarray.test:	Total	222	Passed	222	Skipped	0	Failed	0`
 
 (`sh ./script` works even if unpacking lost the executable bit, which happens when a ZIP is made or unpacked on Windows.)
 
@@ -70,7 +70,7 @@ Expected last line of the tests: `bitarray.test:	Total	184	Passed	184	Skipped	0	
 
 `build.bat`, `run_tests.bat` and `run_sieves.bat` do the same three jobs with Microsoft Visual C. They have been run, by
 the repository owner, on two 64-bit Windows 10 machines (versions 1903 and 22H2) with Visual Studio 2022 and a Tcl 9.1.1 built from trunk: the build gave no warnings,
-the tests passed (version 0.3: 133 passed, 1 skipped; version 0.4, on both: 183 passed, 1 skipped) and the sieve passed. A 32-bit build and other Visual Studio versions are untried.
+the tests passed (version 0.3: 133 passed, 1 skipped; version 0.4, on both: 183 passed, 1 skipped; version 0.5, which adds the byte and character conversions: 221 passed, 1 skipped, on both) and the sieve passed. A 32-bit build and other Visual Studio versions are untried.
 Unpack the ZIP anywhere and, from a Command Prompt in that folder:
 
 ```bat
@@ -81,7 +81,7 @@ run_sieves.bat --tclsh C:\path\to\tcl9.1\bin\tclsh91.exe
 
 `build.bat` finds the headers and the stubs library (`include\tcl.h`, `lib\tclstub.lib`) from the shell you name, or from
 `--tcl-prefix DIR`, finds Visual Studio itself with `vswhere` if `cl` is not already on your `PATH` (so a plain `cmd` window works; it was run that way on 2026-10-13 and set up `vcvars64.bat` itself), and builds the 64-bit or
-32-bit DLL to match the shell. `run_tests.bat` should end with `Total 184  Passed 183  Skipped 1  Failed 0`: one test, which
+32-bit DLL to match the shell. `run_tests.bat` should end with `Total 222  Passed 221  Skipped 1  Failed 0`: one test, which
 reads `/proc`, is skipped on Windows. `--help` on each prints the options.
 
 ### Telling `build.sh` where Tcl is
@@ -145,6 +145,7 @@ In the synopses and examples below:
 * `?...?` marks an optional part. `size`, `first`, `last`, `start` and `step` are integers; the index arguments `first`, `last` and
   `start` also accept `end` and `end-N`.
 * `value` is an integer that fits the width (see the limits below).
+* `data` is binary data (a byte array, or a string whose characters are all 0 to 255); `string` is any text.
 * `to` (or `..`), `with` and `by` are optional helper words, as in `lseq 5 to 50 by 5`. They only make a command easier to read; leaving them out
   gives the same result, and the plain forms such as `fill b 0 end 0 2` still work.
 * `=>` shows what a command returns. Every example was run.
@@ -163,6 +164,19 @@ that do not mention `$a` or `$w` create their own arrays. With no `value` given,
 | `bitarray count array ?first ?to? last ?with? ?value??` | **Returns** the number of elements equal to `value`, or the number of non-zero elements if no `value`; whole array or an index range (`end-N` allowed). `value` needs a range. For 1-bit arrays without `value` this is a popcount.<br>`a` -> `{1 0 1 1 0 1 1 1}`<br>`bitarray count $a` => `6`<br>`bitarray count $a 0 3 1` => `3`<br>`bitarray count $a 4 end 0` => `1`<br>`bitarray count $a 2 end-1 1` => `4`<br>`bitarray count $a 0 to 3 with 1` => `3`<br>`bitarray count $a 4 .. end with 0` => `1`<br>`w` -> `{0 7 0 9}`<br>`bitarray count $w` => `2` (value omitted means != 0) |
 | `bitarray next array start ?with? ?value?` | **Returns** the index of the first element **at or after** `start` equal to `value` (non-zero if omitted), or `-1` if there is none.<br>`a` -> `{1 0 1 1 0 1 1 1}`<br>`bitarray next $a 0 0` => `1`<br>`bitarray next $a 2 0` => `4`<br>`bitarray next $a 5 0` => `-1`<br>`bitarray next $a 2 with 0` => `4`<br>`w` -> `{0 7 0 9}`<br>`bitarray next $w 0` => `1` (value omitted means != 0)<br>`bitarray next $w 0 0` => `0` (element 0 is itself 0) |
 | `bitarray fill varName first ?to? last ?with? value ?by? ?step?` | Sets every element from `first` to `last` to `value`, or only every `step`-th one if `step` is given, in the array stored in variable `varName`. **Returns** the empty string; the result is the changed array in `varName`.<br>`set b [bitarray new 10 1]` => `1 1 1 1 1 1 1 1 1 1`<br>`bitarray fill b 0 end 0 2` -> `0 1 0 1 0 1 0 1 0 1`<br>`set b [bitarray new 10 1]` => `1 1 1 1 1 1 1 1 1 1`<br>`bitarray fill b 0 to end with 0 by 2` -> `0 1 0 1 0 1 0 1 0 1`<br>`set c [bitarray new 10 5 -width 8]` => `5 5 5 5 5 5 5 5 5 5`<br>`bitarray fill c 2 5 0` -> `5 5 0 0 0 0 5 5 5 5`<br>`bitarray fill c 2 .. 5 with 0` -> same result |
+| `bitarray frombytes data` | **Returns** a new 8-bit array with one element per byte of `data`, without making a temporary list. Characters 0 to 255 are taken as bytes (read a file with `open ... rb`); a character above 255 is an error.<br>`bitarray frombytes "Hi!"` => `72 105 33` |
+| `bitarray tobytes array` | **Returns** the elements of an 8-bit `array` as binary data (a byte array), the reverse of `frombytes`. Any other width is an error.<br>`bitarray tobytes [bitarray frombytes "Hi!"]` => `Hi!` |
+| `bitarray fromchars string ?-width w?` | **Returns** a new array with one element per character of `string`, holding its code point. `w` is 8 (the default), 16 or 32; a character that does not fit is an error that names it (`character U+20AC at index 1 does not fit in width 8`).<br>`bitarray fromchars "Hi"` => `72 105`<br>`bitarray fromchars "A\u20ac" -width 16` => `65 8364` |
+| `bitarray tochars array` | **Returns** the string whose characters have the code points held in a width 8, 16 or 32 `array`, the reverse of `fromchars`. Width 1 and 64 arrays, surrogate codes and values above 0x10FFFF are errors.<br>`bitarray tochars [bitarray newfrom {72 105 8364} -width 16]` => `Hi€` |
+
+To work on a file byte by byte, read it in binary mode and convert it in one step; `lset`, `fill`, `count` and `next` then work on the bytes, and `tobytes` turns the result back into data to write:
+
+```tcl
+set fh [open data.bin rb]; set a [bitarray frombytes [read $fh]]; close $fh
+puts [bitarray count $a 0 end with 10]            ;# number of newline bytes
+lset a 0 74; bitarray fill a 5 to 6 with 46        ;# change single bytes in place
+set fh [open out.bin wb]; puts -nonewline $fh [bitarray tobytes $a]; close $fh
+```
 
 Load it with `load /full/path/libbitarray.so Bitarray`. There is no `package require` wrapper yet.
 
@@ -249,18 +263,18 @@ Whether an extension like this counts as a "faithful" entry in Dave's Garage rul
 
 ## Quality checks
 
-* **184 tests** (`tests/bitarray.test`): option parsing, ranges and error messages at every width, every list command on
+* **222 tests** (`tests/bitarray.test`): option parsing, ranges and error messages at every width, every list command on
   every width, copy-on-write, `fill`/`count`/`next`, word-boundary cases, memory growth.
 * **Random comparison against plain Tcl lists** (`tests/diff_*.tcl`): thousands of random operations per run, values and error
   messages compared. Last big run: 5 widths × 10 seeds × 100 iterations × 40 steps, 0 differences.
 * **valgrind** on the whole suite: 0 invalid accesses, 0 definite leaks.
 * **Memory:** `unset` returns the memory (a 953 MiB array: 960 MB → 6.6 MB resident); building and dropping wide arrays in a
   loop leaves memory flat.
-* **Mutation testing** (`extras/mutate5.py`): 110 deliberate bugs inserted into the C code, 96 caught by the tests; the 14
+* **Mutation testing** (`extras/mutate5.py`): 123 deliberate bugs inserted into the C code, 109 caught by the tests; the 14
   missed are explained in `RESULTS.txt` (mostly unreachable code, stray bits nobody can read, or checks that are repeated
-  elsewhere on a 64-bit build). `extras/bitarray.mutants` is `bitarray.c` with every one of the 110 bugs applied and, beside
+  elsewhere on a 64-bit build). `extras/bitarray.mutants` is `bitarray.c` with every one of the 123 bugs applied and, beside
   each, the tests that caught it, for reading in a side-by-side compare tool (see `extras/README.md`).
-* The same 184 tests also pass with `-DBA_NO_BUILTINS` (portable popcount code) and `-DBA_FORCE_32BIT_LIMITS`.
+* The same 222 tests also pass with `-DBA_NO_BUILTINS` (portable popcount code) and `-DBA_FORCE_32BIT_LIMITS`.
 
 Details and numbers: `RESULTS.txt`.
 
@@ -280,7 +294,7 @@ I would like people who are interested in this to read it critically, and to use
 
 1. **Give the assistant the repository.** One that can run commands (Claude Code, for example) can clone it, build it and
    run the tests. In a plain chat window, upload the ZIP, or at least `bitarray.c` and `tests/bitarray.test`.
-2. **Start it with [`extras/CLAUDE_REFRESHER.md`](extras/CLAUDE_REFRESHER.md)**, a map of the files with what was and was not
+2. **Start it with [`extras/CLAUDE_NOTES.md`](extras/CLAUDE_NOTES.md)**, a map of the files with what was and was not
    checked, written by the assistant that wrote the code.
 3. **Things worth asking about:**
    * Read `bitarray.c` function by function (`BAIndex`, `BASlice`, `BASetElement`, `BAReplace`, `MoveElems`, `ParseValue`) for

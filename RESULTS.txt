@@ -1,4 +1,4 @@
-RESULTS -- bitarray 0.4 (sections 8-13a are the 0.3 results; section 14 is 0.4) (run 2026-10-13, Linux container, gcc -O2, Tcl trunk 3d77be8951)
+RESULTS -- bitarray 0.5 (sections 8-13a are the 0.3 results; section 14 is 0.4; section 15 is 0.5) (run 2026-10-13, Linux container, gcc -O2, Tcl trunk 3d77be8951)
 
 Sections 8-13 are new in 0.3.  Sections 1-7 are the 0.2 results, kept for history; where a number there was for 1-bit
 arrays only it is still true of the 1-bit code, which 0.3 keeps (the 66 old tests pass unchanged apart from "from" ->
@@ -181,6 +181,35 @@ arrays only it is still true of the 1-bit code, which 0.3 keeps (the 66 old test
    12a), same build.bat/run_tests.bat/run_sieves.bat with Tcl 9.1.1 x64 from A:\aaa\tcltk-merged-release: build without
    warnings, Total 184, Passed 183, Skipped 1 (procfs), Failed 0, sieve PASS at every limit.  Microseconds per pass:
    A 430,725  B 139,464  C 52,196  D 716  E 53,785  F 577 (section 12a, same machine: A 435,763, D 686, F 568).
+
+15. Version 0.5: byte and character conversion (run 2026-10-13, Linux container, gcc, Tcl 9.1 from trunk)
+   New commands: frombytes data (binary data -> 8-bit array), tobytes array (8-bit array -> binary data), fromchars string
+   ?-width 8|16|32? (code points -> array, default width 8), tochars array (width 8, 16 or 32 -> string).  Errors: a character
+   above 255 in frombytes; a character that does not fit the width in fromchars (the message names it); any width but 8 in tobytes;
+   width 1 or 64, surrogate codes and values above 0x10FFFF in tochars.  "from" (removed in 0.3) is now an ambiguous prefix
+   of frombytes and fromchars, so it still gives an error, with a different message (test width-1.13 updated).
+   Tests: 222 (184 + 38 new, conv-1.* to conv-5.2).  All pass natively and with -DBA_NO_BUILTINS, -DBA_FORCE_32BIT_LIMITS and both;
+   gcc -Wall -Wextra gives no warnings; zig cc -target x86_64-windows-gnu and x86-windows-gnu compile it without warnings
+   (compile only).  valgrind --leak-check=full, definite and indirect leaks counted as errors, whole suite: exit 0, no invalid
+   reads or writes, no uninitialised values (the "possibly lost" records are Tcl's own allocator, as in sections 9 and 14).
+   Mutation testing: 123 mutants (the 110 of section 14 plus Q01-Q13 for the new commands), 109 caught, 14 missed, the same 14
+   as before (output extras/mutation_round7.txt).  One new mutant (Q07, fromchars losing the characters 0 and 1) was missed at first;
+   I added test conv-3.11 and re-ran the whole set.  54 of the 222 tests failed on none of the 123 mutants.
+   Speed on a 1,040,000-byte file (this container, one run each): frombytes 543 us against 42,326 us for binary scan cu* followed by
+   newfrom -width 8; tobytes 542 us against 44,699 us for binary format cu* (which also used 58 MB of memory, tobytes about 1 MB).
+   fromchars 12,915 us, tochars 7,380 us (tochars builds a 4-byte-per-character buffer, 8 MB here).  split followed by scan %c
+   took 648,298 us and 171 MB for the same file (measured earlier in this session).
+   Sieve (run_sieves.sh, this container, microseconds per pass at limit 1,000,000): A 697,298  B 223,653  C 74,292  D 1,284
+   E 71,001  F 914.  PASS at every limit; the sieve does not use the new commands.
+   Windows (run by the repository owner on 2026-10-13, the slower machine again, which I judge from the times matching section 14;
+   Visual Studio 2022, Tcl 9.1.1 x64 from A:\aaa\tcltk-merged-release, build.bat / run_tests.bat / run_sieves.bat): build without
+   warnings; Total 222, Passed 221, Skipped 1 (procfs), Failed 0; sieve PASS at every limit.  Microseconds per pass: A 670,911
+   B 213,681  C 85,758  D 1,204  E 86,718  F 1,222 (section 14, same machine: A 669,564, D 1,203, F 1,230).
+   The faster machine (i7-12700K) with the same setup, run later the same evening: build without warnings; Total 222, Passed 221,
+   Skipped 1 (procfs), Failed 0; sieve PASS at every limit.  Two sieve runs; the first while the Windows search indexer and
+   the same security-camera recorder program were running (it uses much less CPU on this machine): A 436,245  B 139,524  C 51,818
+   D 721  E 53,379  F 570; the second with the indexer finished and the recorder suspended: A 423,724  B 136,552  C 50,688
+   D 688  E 51,312  F 544 (section 14, same machine: A 430,725, D 716, F 577).
 
 1. Test suite
    tests/bitarray.test: Total 66, Passed 66, Failed 0 (also with -DBA_NO_BUILTINS, the portable bit-count code).  Includes 2 randomized differential tests:

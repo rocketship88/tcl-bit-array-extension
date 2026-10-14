@@ -7,7 +7,7 @@
 #   --tclsh FILE    the Tcl 9.1 shell to test with (use the one you built against)
 #   --lib FILE      the extension to load (default: libbitarray.so next to this script)
 #   -h, --help
-# Expected last line:   bitarray.test:	Total	184	Passed	184	Skipped	0	Failed	0
+# Expected last line:   bitarray.test:	Total	222	Passed	222	Skipped	0	Failed	0
 # If the shell cannot find libtcl9.1.so, put its directory in LD_LIBRARY_PATH; the scripts pass the environment through.
 HERE=$(cd "$(dirname "$0")" && pwd)
 usage() { sed -n '2,/^# If the shell cannot/p' "$0" | sed 's/^# \{0,1\}//'; }

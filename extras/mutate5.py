@@ -11,7 +11,7 @@ Environment:
     BITARRAY_TCLSH     the tclsh to run the tests with
     CC                 compiler (default cc)
     LD_LIBRARY_PATH / TCL_LIBRARY are passed through if your tclsh needs them.
-With names given it runs only those mutants.  Takes about 10-30 minutes for all 110 (each runs the whole suite).
+With names given it runs only those mutants.  Takes about 10-30 minutes for all 123 (each runs the whole suite).
 """
 import subprocess, os, shutil, sys, re, tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -138,6 +138,19 @@ MUT = [
  ('P13 count: a value is never used', 'hasVal = (valObj != NULL);', 'hasVal = 0;'),
  ("P14 next: 'with' not recognised", 'if (kn < objc && IsWord(objv[kn], "with")) {', 'if (0) {'),
  ('P15 next: extra arguments accepted', 'if (kn != objc) goto nextUsage;', ';'),
+ ('Q01 frombytes copies one byte short', 'if (nb > 0) memcpy(n->words, bytes, (size_t)nb);', 'if (nb > 0) memcpy(n->words, bytes, (size_t)nb - 1);'),
+ ('Q02 tobytes accepts any width', 'if (b->width != 8) {\n\t    Tcl_SetObjResult(interp, Tcl_ObjPrintf(\n\t\t    "tobytes', 'if (0) {\n\t    Tcl_SetObjResult(interp, Tcl_ObjPrintf(\n\t\t    "tobytes'),
+ ('Q03 tobytes drops the last byte', '(const unsigned char *)b->words, b->len));', '(const unsigned char *)b->words, b->len > 0 ? b->len - 1 : 0));'),
+ ('Q04 fromchars default width 16', 'width = 8;\n\tif (objc == 5) {', 'width = 16;\n\tif (objc == 5) {'),
+ ('Q05 fromchars range check off by one', '(uint64_t)ch > maxv', '(uint64_t)ch >= maxv'),
+ ('Q06 fromchars accepts width 64', 'if (width != 8 && width != 16 && width != 32) {\n\t    Tcl_SetObjResult(interp, Tcl_NewStringObj(\n\t\t    "fromchars', 'if (width != 8 && width != 16 && width != 32 && width != 64) {\n\t    Tcl_SetObjResult(interp, Tcl_NewStringObj(\n\t\t    "fromchars'),
+ ('Q07 fromchars loses characters 0 and 1', 'if (ch) PutElem(n, i, (uint64_t)ch);', 'if (ch > 1) PutElem(n, i, (uint64_t)ch);'),
+ ('Q08 tochars accepts surrogates', '(v >= 0xD800 && v <= 0xDFFF)', '0'),
+ ('Q09 tochars limit 0x10FFFF -> 0x110000', 'v > 0x10FFFF', 'v > 0x110000'),
+ ('Q10 tochars accepts width 64', 'b->width != 8 && b->width != 16 && b->width != 32) {\n\t    Tcl_SetObjResult(interp, Tcl_ObjPrintf(\n\t\t    "tochars', 'b->width != 8 && b->width != 16 && b->width != 32 && b->width != 64) {\n\t    Tcl_SetObjResult(interp, Tcl_ObjPrintf(\n\t\t    "tochars'),
+ ('Q11 tochars drops the last character', 'Tcl_NewUnicodeObj(buf, b->len)', 'Tcl_NewUnicodeObj(buf, b->len > 0 ? b->len - 1 : 0)'),
+ ('Q12 tochars skips element 0', 'for (i = 0; i < b->len; i++) buf[i] = (Tcl_UniChar)GetElem(b, i);', 'for (i = 1; i < b->len; i++) buf[i] = (Tcl_UniChar)GetElem(b, i);'),
+ ('Q13 fromchars error names the wrong index', 'ch, i, width));', 'ch, i + 1, width));'),
 ]
 only = sys.argv[1:]
 out=[]
