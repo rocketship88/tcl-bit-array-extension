@@ -6,8 +6,13 @@ digging into one variant.
 `frank_sieve.tcl` is Frank van Bakel's Tcl sieve (variant A), included **unchanged** — byte for byte the file
 `PrimeTcl/solution_1/primes.tcl` in <https://github.com/PlummersSoftwareLLC/Primes> (branch `drag-race`, head
 commit `c4e42f00ba91` when I cloned it on 2026-10-12). It is his work (author and date are in its header). That repository has no LICENSE file; its
-CONTRIBUTING.md asks contributors to license their code under BSD-3 or a more permissive licence. Check that yourself before
-reusing the file; `run_sieves.sh --sieve FILE` lets you use your own copy instead.
+CONTRIBUTING.md asks contributors to license their code under BSD-3 or a more permissive licence.
+
+**Permission.** The repository owner asked Frank van Bakel in a GitHub issue
+(<https://github.com/fvbakel/PrimeTools/issues/1>), and on 2026-10-14 (GitHub's date) he answered: "Yes, you can include the
+mentioned file in your project. It is ok to use the MIT licence for that." The file is therefore included with his permission,
+and he said the MIT licence is fine for it. The file itself is unchanged and carries no licence notice, so that reply is the record.
+`run_sieves.sh --sieve FILE` lets you use your own copy instead.
 
 Variants (`variants.tcl`):
 

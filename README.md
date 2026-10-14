@@ -115,7 +115,7 @@ to run, set it in your shell first; the scripts pass the environment through.
 `run_sieves.sh` (on Windows `run_sieves.bat`, same options) checks and times six prime-sieve programs against one another: Frank van Bakel's Tcl entry in Dave Plummer's
 "Primes" drag race (variant A), the same code with a helper proc inlined (B), and four versions that use `bitarray` (C–F).
 Frank's file is his work; it is included unchanged as `sieve/frank_sieve.tcl` (see `sieve/README.md` for where it comes from
-and its licensing situation).
+and for his permission to include it).
 
 ```sh
 sh ./run_sieves.sh --tclsh /path/to/tcl9.1/bin/tclsh9.1        # Linux
@@ -353,5 +353,6 @@ behaviour, and afterwards cross-checked against `doc/ObjectType.3`; I did not co
 
 ## Licence
 
-MIT; see `LICENSE`. That covers everything here except `sieve/frank_sieve.tcl`, which is Frank van Bakel's work from
-Dave's Garage "Primes" (see `sieve/README.md`).
+MIT; see `LICENSE`. That covers everything here. `sieve/frank_sieve.tcl` is Frank van Bakel's work from Dave's Garage
+"Primes"; he gave permission to include it and said it is OK to use the MIT licence for it (see `sieve/README.md`). The file is
+unchanged and carries no licence notice of its own.

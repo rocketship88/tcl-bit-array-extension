@@ -15,7 +15,7 @@ Since 0.4, `fill`, `count` and `next` take optional `lseq`-style helper words (`
 
 Authorship: the code, tests and documentation were written by Claude (Anthropic) with Eric Taylor directing and reviewing.
 The design follows Brian Griffin's `lseq`/arithseries code. `sieve/frank_sieve.tcl` is Frank van Bakel's entry for Dave's
-Garage "Primes" drag race, included unchanged. Say so plainly when asked who wrote what.
+Garage "Primes" drag race, included unchanged. Say so plainly when asked who wrote what. Frank gave permission to include it and said MIT is OK for it (his reply to the GitHub issue linked in `sieve/README.md`, 2026-10-14).
 
 ## Where to look
 
