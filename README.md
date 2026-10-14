@@ -60,6 +60,7 @@ they look for a Tcl 9 `tclsh` on your `PATH`. They stop with a message if what t
 cd bitarray            # the unpacked directory (GitHub names it after the repository and branch)
 sh ./build.sh     --tclsh /path/to/tcl9.1/bin/tclsh9.1   # makes libbitarray.so next to build.sh
 sh ./run_tests.sh --tclsh /path/to/tcl9.1/bin/tclsh9.1
+sh ./run_sieves.sh --tclsh /path/to/tcl9.1/bin/tclsh9.1   # optional: the prime-sieve benchmark, see below
 ```
 
 Expected last line of the tests: `bitarray.test:	Total	222	Passed	222	Skipped	0	Failed	0`
@@ -71,12 +72,13 @@ Expected last line of the tests: `bitarray.test:	Total	222	Passed	222	Skipped	0	
 `build.bat`, `run_tests.bat` and `run_sieves.bat` do the same three jobs with Microsoft Visual C. They have been run, by
 the repository owner, on two 64-bit Windows 10 machines (versions 1903 and 22H2) with Visual Studio 2022 and a Tcl 9.1.1 built from trunk: the build gave no warnings,
 the tests passed (version 0.3: 133 passed, 1 skipped; version 0.4, on both: 183 passed, 1 skipped; version 0.5, which adds the byte and character conversions: 221 passed, 1 skipped, on both) and the sieve passed. A 32-bit build and other Visual Studio versions are untried.
-Unpack the ZIP anywhere and, from a Command Prompt in that folder:
+Unpack the ZIP anywhere and, from a Command Prompt, go into the unpacked folder and run the three scripts:
 
 ```bat
-build.bat     --tclsh C:\path\to\tcl9.1\bin\tclsh91.exe     rem makes bitarray.dll next to build.bat
-run_tests.bat --tclsh C:\path\to\tcl9.1\bin\tclsh91.exe
-run_sieves.bat --tclsh C:\path\to\tcl9.1\bin\tclsh91.exe
+cd bitarray            rem the unpacked folder (GitHub names it after the repository and branch)
+build.bat      --tclsh C:\path\to\tcl9.1\bin\tclsh91.exe     rem makes bitarray.dll next to build.bat
+run_tests.bat  --tclsh C:\path\to\tcl9.1\bin\tclsh91.exe
+run_sieves.bat --tclsh C:\path\to\tcl9.1\bin\tclsh91.exe     rem optional: the prime-sieve benchmark, see below
 ```
 
 `build.bat` finds the headers and the stubs library (`include\tcl.h`, `lib\tclstub.lib`) from the shell you name, or from
@@ -110,16 +112,20 @@ to run, set it in your shell first; the scripts pass the environment through.
 
 ### The sieve benchmark (optional)
 
-`run_sieves.sh` checks and times six prime-sieve programs against one another: Frank van Bakel's Tcl entry in Dave Plummer's
+`run_sieves.sh` (on Windows `run_sieves.bat`, same options) checks and times six prime-sieve programs against one another: Frank van Bakel's Tcl entry in Dave Plummer's
 "Primes" drag race (variant A), the same code with a helper proc inlined (B), and four versions that use `bitarray` (C–F).
 Frank's file is his work; it is included unchanged as `sieve/frank_sieve.tcl` (see `sieve/README.md` for where it comes from
 and its licensing situation).
 
 ```sh
-sh ./run_sieves.sh --tclsh /path/to/tcl9.1/bin/tclsh9.1
+sh ./run_sieves.sh --tclsh /path/to/tcl9.1/bin/tclsh9.1        # Linux
 ```
 
-(`--sieve FILE` tests another copy of his file instead.)
+```bat
+run_sieves.bat --tclsh C:\path\to\tcl9.1\bin\tclsh91.exe       rem Windows
+```
+
+Build first (`build.sh` or `build.bat`); the sieve loads the library that build made. (`--sieve FILE` tests another copy of his file instead.)
 
 It first checks that every variant finds the right number of primes (and the identical list of primes) at limits 11 up to
 1,000,000, then times one full pass at 1,000,000 (best of three, 1.5 s each). It takes about a minute, writes only a

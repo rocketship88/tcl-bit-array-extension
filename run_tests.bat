@@ -1,6 +1,6 @@
 @echo off
 rem run_tests.bat -- run the bitarray test suite.  Run build.bat first.
-rem Written by Claude (an AI model made by Anthropic) for Eric Taylor.  Run once on 64-bit Windows with Visual Studio 2022: see README.md.
+rem Written by Claude (an AI model made by Anthropic) for Eric Taylor.  Run on two 64-bit Windows 10 machines with Visual Studio 2022: see README.md.
 rem
 rem   run_tests.bat --tclsh C:\path\to\bin\tclsh91.exe
 rem Options:

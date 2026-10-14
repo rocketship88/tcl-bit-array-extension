@@ -1,6 +1,6 @@
 @echo off
 rem build.bat -- build bitarray.dll with Microsoft Visual C (Visual Studio 2022).
-rem Written by Claude (an AI model made by Anthropic) for Eric Taylor.  Run once on 64-bit Windows with Visual Studio 2022: see README.md.
+rem Written by Claude (an AI model made by Anthropic) for Eric Taylor.  Run on two 64-bit Windows 10 machines with Visual Studio 2022: see README.md.
 rem
 rem   build.bat --tclsh C:\path\to\bin\tclsh91.exe
 rem   build.bat --tcl-prefix C:\path\to\tcl-install-directory
