@@ -139,6 +139,155 @@ test fill-1.14 {step larger than 2^32} -body {
 test fill-1.13 {array element variable} -body {
     set arr(1) [bitarray new 4]; bitarray fill arr(1) 1 2 1; set arr(1)
 } -result {0 1 1 0}
+# fill with the optional helper words: varName first ?to? last ?with? value ?by? ?step?  ("to" may be written "..")
+test fill-w.1 {to} -body {
+    set a [bitarray new 10 1]; bitarray fill a 2 to 5 0; set a
+} -result {1 1 0 0 0 0 1 1 1 1}
+test fill-w.2 {.. for to} -body {
+    set a [bitarray new 10 1]; bitarray fill a 2 .. 5 0; set a
+} -result {1 1 0 0 0 0 1 1 1 1}
+test fill-w.3 {with} -body {
+    set a [bitarray new 10 1]; bitarray fill a 2 5 with 0; set a
+} -result {1 1 0 0 0 0 1 1 1 1}
+test fill-w.4 {by} -body {
+    set a [bitarray new 10 1]; bitarray fill a 0 end 0 by 3; set a
+} -result {0 1 1 0 1 1 0 1 1 0}
+test fill-w.5 {all helper words} -body {
+    set a [bitarray new 10 1]; bitarray fill a 0 to end with 0 by 2; set a
+} -result {0 1 0 1 0 1 0 1 0 1}
+test fill-w.6 {all helper words, ..} -body {
+    set a [bitarray new 10 1]; bitarray fill a 1 .. end-1 with 0 by 2; set a
+} -result {1 0 1 0 1 0 1 0 1 1}
+test fill-w.7 {the old form, with a bare step, is unchanged} -body {
+    set a [bitarray new 10 1]; bitarray fill a 0 end 0 2; set a
+} -result {0 1 0 1 0 1 0 1 0 1}
+test fill-w.8 {mixed: to and a bare step} -body {
+    set a [bitarray new 10 1]; bitarray fill a 0 to end 0 2; set a
+} -result {0 1 0 1 0 1 0 1 0 1}
+test fill-w.9 {mixed: with and by, no to} -body {
+    set a [bitarray new 10 1]; bitarray fill a 0 end with 0 by 2; set a
+} -result {0 1 0 1 0 1 0 1 0 1}
+test fill-w.10 {helper words on a wide array} -body {
+    set a [bitarray new 10 5 -width 8]; bitarray fill a 2 to 5 with 0; set a
+} -result {5 5 0 0 0 0 5 5 5 5}
+test fill-w.11 {helper words on a 64-bit array, negative value} -body {
+    set a [bitarray new 6 7 -width 64]; bitarray fill a 1 .. 4 with -3 by 2; set a
+} -result {7 -3 7 -3 7 7}
+test fill-w.12 {by without a step} -returnCodes error -body {
+    set a [bitarray new 4]; bitarray fill a 0 end 1 by
+} -result {wrong # args: should be "bitarray fill varName first ?to? last ?with? value ?by? ?step?"}
+test fill-w.13 {to without a last} -returnCodes error -body {
+    set a [bitarray new 4]; bitarray fill a 0 to
+} -result {wrong # args: should be "bitarray fill varName first ?to? last ?with? value ?by? ?step?"}
+test fill-w.14 {with without a value} -returnCodes error -body {
+    set a [bitarray new 4]; bitarray fill a 0 end with
+} -result {wrong # args: should be "bitarray fill varName first ?to? last ?with? value ?by? ?step?"}
+test fill-w.15 {too many arguments} -returnCodes error -body {
+    set a [bitarray new 4]; bitarray fill a 0 to end 1 2 3
+} -result {wrong # args: should be "bitarray fill varName first ?to? last ?with? value ?by? ?step?"}
+test fill-w.16 {extra argument after by step} -returnCodes error -body {
+    set a [bitarray new 4]; bitarray fill a 0 end 1 by 2 3
+} -result {wrong # args: should be "bitarray fill varName first ?to? last ?with? value ?by? ?step?"}
+test fill-w.17 {by 0} -returnCodes error -body {
+    set a [bitarray new 4]; bitarray fill a 0 to end with 1 by 0
+} -result {step must be >= 1}
+test fill-w.18 {a helper word is not an index} -returnCodes error -body {
+    set a [bitarray new 4]; bitarray fill a to to 3 1
+} -match glob -result {bad index "to"*}
+test fill-w.19 {range error names the index the caller wrote} -returnCodes error -body {
+    set a [bitarray new 4]; bitarray fill a 0 to 9 with 1
+} -result {index "9" out of range}
+test fill-w.20 {negative first error names the index} -returnCodes error -body {
+    set a [bitarray new 4]; bitarray fill a end-9 to 2 with 1
+} -result {index "end-9" out of range}
+test fill-w.21 {helper words with a variable holding a plain list} -returnCodes error -body {
+    set a {0 0 0}; bitarray fill a 0 to 1 with 1
+} -result {not a bitarray: "0 0 0"}
+test fill-w.22 {helper words, array element variable} -body {
+    set arr(1) [bitarray new 4]; bitarray fill arr(1) 1 to 2 with 1; set arr(1)
+} -result {0 1 1 0}
+test fill-w.23 {a "with" that is really the value is not a word: value is read from its place} -returnCodes error -body {
+    set a [bitarray new 4]; bitarray fill a 0 3 with
+} -result {wrong # args: should be "bitarray fill varName first ?to? last ?with? value ?by? ?step?"}
+test fill-w.24 {copy on write is kept with helper words} -body {
+    set a [bitarray new 6 1]; set b $a; bitarray fill b 0 to 2 with 0; list $a $b
+} -result {{1 1 1 1 1 1} {0 0 0 1 1 1}}
+test fill-w.25 {an empty range with helper words does nothing} -body {
+    set a [bitarray new 4 1]; bitarray fill a 3 to 1 with 0; set a
+} -result {1 1 1 1}
+test count-w.1 {to} -body {
+    set a [bitarray newfrom {1 0 1 1 0 1 1 1}]; bitarray count $a 0 to 3
+} -result {3}
+test count-w.2 {.. for to} -body {
+    set a [bitarray newfrom {1 0 1 1 0 1 1 1}]; bitarray count $a 4 .. end
+} -result {3}
+test count-w.3 {with} -body {
+    set a [bitarray newfrom {1 0 1 1 0 1 1 1}]; bitarray count $a 0 3 with 1
+} -result {3}
+test count-w.4 {to and with} -body {
+    set a [bitarray newfrom {1 0 1 1 0 1 1 1}]; bitarray count $a 4 to end with 0
+} -result {1}
+test count-w.5 {old form unchanged} -body {
+    set a [bitarray newfrom {1 0 1 1 0 1 1 1}]; bitarray count $a 2 end-1 1
+} -result {4}
+test count-w.6 {end-N with helper words} -body {
+    set a [bitarray newfrom {1 0 1 1 0 1 1 1}]; bitarray count $a 2 to end-1 with 1
+} -result {4}
+test count-w.7 {wide array, no value} -body {
+    set w [bitarray newfrom {0 7 0 9} -width 8]; bitarray count $w 0 to end
+} -result {2}
+test count-w.8 {wide array, with value} -body {
+    set w [bitarray newfrom {0 7 0 9} -width 8]; bitarray count $w 0 .. end with 9
+} -result {1}
+test count-w.9 {value 0 with helper words} -body {
+    set a [bitarray newfrom {1 0 1 1 0 1 1 1}]; bitarray count $a 0 to end with 0
+} -result {2}
+test next-w.1 {with} -body {
+    set a [bitarray newfrom {1 0 1 1 0 1 1 1}]; bitarray next $a 2 with 0
+} -result {4}
+test next-w.2 {old form unchanged} -body {
+    set a [bitarray newfrom {1 0 1 1 0 1 1 1}]; bitarray next $a 2 0
+} -result {4}
+test next-w.3 {with, none found} -body {
+    set a [bitarray newfrom {1 0 1 1 0 1 1 1}]; bitarray next $a 5 with 0
+} -result {-1}
+test next-w.4 {wide array, with value 0} -body {
+    set w [bitarray newfrom {0 7 0 9} -width 8]; bitarray next $w 0 with 0
+} -result {0}
+test next-w.8 {wide array, no value} -body {
+    set w [bitarray newfrom {0 7 0 9} -width 8]; bitarray next $w 0
+} -result {1}
+test count-w.10 {to without last} -returnCodes error -body {
+    set a [bitarray newfrom {1 0 1 1 0 1 1 1}]; bitarray count $a 0 to
+} -result {wrong # args: should be "bitarray count array ?first ?to? last ?with? ?value??"}
+test count-w.11 {with without value} -returnCodes error -body {
+    set a [bitarray newfrom {1 0 1 1 0 1 1 1}]; bitarray count $a 0 3 with
+} -result {wrong # args: should be "bitarray count array ?first ?to? last ?with? ?value??"}
+test count-w.12 {first without last} -returnCodes error -body {
+    set a [bitarray newfrom {1 0 1 1 0 1 1 1}]; bitarray count $a 0
+} -result {wrong # args: should be "bitarray count array ?first ?to? last ?with? ?value??"}
+test count-w.13 {too many arguments} -returnCodes error -body {
+    set a [bitarray newfrom {1 0 1 1 0 1 1 1}]; bitarray count $a 0 3 1 1
+} -result {wrong # args: should be "bitarray count array ?first ?to? last ?with? ?value??"}
+test next-w.5 {with without value} -returnCodes error -body {
+    set a [bitarray newfrom {1 0 1 1 0 1 1 1}]; bitarray next $a 2 with
+} -result {wrong # args: should be "bitarray next array start ?with? ?value?"}
+test next-w.6 {too many arguments} -returnCodes error -body {
+    set a [bitarray newfrom {1 0 1 1 0 1 1 1}]; bitarray next $a 2 0 0
+} -result {wrong # args: should be "bitarray next array start ?with? ?value?"}
+test next-w.7 {no start} -returnCodes error -body {
+    set a [bitarray newfrom {1 0 1 1 0 1 1 1}]; bitarray next $a
+} -result {wrong # args: should be "bitarray next array start ?with? ?value?"}
+test fill-w.26 {a prefix of a helper word is not a helper word} -returnCodes error -body {
+    set a [bitarray new 10 1]; bitarray fill a 0 t 5 0
+} -match glob -result {bad index "t"*}
+test count-w.14 {a prefix of a helper word is not a helper word} -returnCodes error -body {
+    set a [bitarray new 10 1]; bitarray count $a 0 t 3
+} -match glob -result {bad index "t"*}
+test next-w.9 {a prefix of a helper word is not a helper word} -returnCodes error -body {
+    set a [bitarray new 10 1]; bitarray next $a 2 w
+} -result {expected 0 or 1 but got "w"}
+test misc-0.1 {width usage names the argument array} -returnCodes error -body {bitarray width} -result {wrong # args: should be "bitarray width array"}
 test misc-1.1 {unknown subcommand} -returnCodes error -body {bitarray frob} -match glob -result {bad subcommand "frob"*}
 test misc-1.2 {value is a plain list after string round trip} -body {
     set a [bitarray newfrom {1 0}]; set s [string reverse [string reverse $a]]; list [bitarray is $s] [lindex $s 0]
@@ -389,7 +538,7 @@ test bulk-1.10 {count with a bad value} -returnCodes error -body {
 } -result {expected 0 or 1 but got "2"}
 test bulk-1.11 {count usage} -returnCodes error -body {
     bitarray count [bitarray new 3] 0
-} -result {wrong # args: should be "bitarray count bitarray ?first last ?value??"}
+} -result {wrong # args: should be "bitarray count array ?first ?to? last ?with? ?value??"}
 
 test diff-4.1 {random widths 8/16/32/64 vs plain list, seeds 401..403, 60 iterations each} -body {
     set total 0

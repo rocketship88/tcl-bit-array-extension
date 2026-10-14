@@ -853,6 +853,20 @@ BAInOper(Tcl_Interp *interp, Tcl_Obj *valueObj, Tcl_Obj *listObj, int *resPtr)
 
 /* --------------------------- commands ----------------------------- */
 
+/*
+ * IsWord --
+ *	True if the string form of OBJ is exactly the word W (used for the
+ *	optional helper words "to", "..", "with" and "by").
+ */
+static int
+IsWord(Tcl_Obj *obj, const char *w)
+{
+    Tcl_Size n;
+    const char *s = Tcl_GetStringFromObj(obj, &n);
+
+    return (size_t)n == strlen(w) && memcmp(s, w, (size_t)n) == 0;
+}
+
 static int
 NeedBA(Tcl_Interp *interp, Tcl_Obj *obj, BitArr **bPtr)
 {
@@ -999,7 +1013,7 @@ BitarrayCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     }
     case S_WIDTH:
 	if (objc != 3) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "bitarray");
+	    Tcl_WrongNumArgs(interp, 2, objv, "array");
 	    return TCL_ERROR;
 	}
 	if (NeedBA(interp, objv[2], &b) != TCL_OK) return TCL_ERROR;
@@ -1016,15 +1030,26 @@ BitarrayCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	int anyNZ = 1;
 	Tcl_WideInt cnt;
 
-	if (objc != 3 && objc != 5 && objc != 6) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "bitarray ?first last ?value??");
-	    return TCL_ERROR;
-	}
+	int kc = 4, hasVal = 0;
+	Tcl_Obj *valObj = NULL;
+
+	if (objc < 3 || objc == 4) goto countUsage;
 	if (NeedBA(interp, objv[2], &b) != TCL_OK) return TCL_ERROR;
 	first = 0; last = b->len - 1;
 	if (objc >= 5) {
+	    Tcl_Obj *lastObj;
+	    if (IsWord(objv[kc], "to") || IsWord(objv[kc], "..")) kc++;
+	    if (kc >= objc) goto countUsage;
+	    lastObj = objv[kc++];
+	    if (kc < objc && IsWord(objv[kc], "with")) {
+		kc++;
+		if (kc >= objc) goto countUsage;
+	    }
+	    if (kc < objc) valObj = objv[kc++];
+	    if (kc != objc) goto countUsage;
+	    hasVal = (valObj != NULL);
 	    if (Tcl_GetIntForIndex(interp, objv[3], b->len - 1, &first) != TCL_OK
-		    || Tcl_GetIntForIndex(interp, objv[4], b->len - 1, &last)
+		    || Tcl_GetIntForIndex(interp, lastObj, b->len - 1, &last)
 		    != TCL_OK) {
 		return TCL_ERROR;
 	    }
@@ -1032,8 +1057,8 @@ BitarrayCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	    if (last >= b->len) last = b->len - 1;
 	}
 	val = 1;
-	if (objc == 6) {
-	    if (ParseValue(interp, objv[5], b->width, &val) != TCL_OK) {
+	if (hasVal) {
+	    if (ParseValue(interp, valObj, b->width, &val) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    anyNZ = 0;
@@ -1048,21 +1073,30 @@ BitarrayCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	}
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(cnt));
 	return TCL_OK;
+    countUsage:
+	Tcl_WrongNumArgs(interp, 2, objv, "array ?first ?to? last ?with? ?value??");
+	return TCL_ERROR;
     }
     case S_NEXT: {
 	int anyNZ = 1;
 
-	if (objc != 4 && objc != 5) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "bitarray start ?value?");
-	    return TCL_ERROR;
-	}
+	int kn = 4;
+	Tcl_Obj *valObjN = NULL;
+
+	if (objc < 4) goto nextUsage;
 	if (NeedBA(interp, objv[2], &b) != TCL_OK) return TCL_ERROR;
+	if (kn < objc && IsWord(objv[kn], "with")) {
+	    kn++;
+	    if (kn >= objc) goto nextUsage;
+	}
+	if (kn < objc) valObjN = objv[kn++];
+	if (kn != objc) goto nextUsage;
 	if (Tcl_GetIntForIndex(interp, objv[3], b->len - 1, &first) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	val = 1;
-	if (objc == 5) {
-	    if (ParseValue(interp, objv[4], b->width, &val) != TCL_OK) {
+	if (valObjN != NULL) {
+	    if (ParseValue(interp, valObjN, b->width, &val) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    anyNZ = 0;
@@ -1075,26 +1109,47 @@ BitarrayCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		    NextWide(b, first, anyNZ, val)));
 	}
 	return TCL_OK;
+    nextUsage:
+	Tcl_WrongNumArgs(interp, 2, objv, "array start ?with? ?value?");
+	return TCL_ERROR;
     }
     case S_FILL: {
 	Tcl_Obj *obj, *work;
 	Tcl_WideInt step = 1;
+	Tcl_Obj *firstObj, *lastObj, *valueObj;
+	Tcl_Size k;
 
-	if (objc != 6 && objc != 7) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "varName first last value ?step?");
-	    return TCL_ERROR;
+	/*
+	 * bitarray fill varName first ?to? last ?with? value ?by? ?step?
+	 * The helper words "to" (or "..") "with" and "by" are optional; the step
+	 * may also follow the value with no "by".
+	 */
+	if (objc < 6) goto fillUsage;
+	k = 3;
+	firstObj = objv[k++];
+	if (IsWord(objv[k], "to") || IsWord(objv[k], "..")) k++;
+	if (k >= objc) goto fillUsage;
+	lastObj = objv[k++];
+	if (k < objc && IsWord(objv[k], "with")) k++;
+	if (k >= objc) goto fillUsage;
+	valueObj = objv[k++];
+	if (k < objc && IsWord(objv[k], "by")) {
+	    k++;
+	    if (k != objc - 1) goto fillUsage;
+	} else if (k < objc - 1) {
+	    goto fillUsage;
 	}
 	obj = Tcl_ObjGetVar2(interp, objv[2], NULL, TCL_LEAVE_ERR_MSG);
 	if (obj == NULL) return TCL_ERROR;
 	if (NeedBA(interp, obj, &b) != TCL_OK) return TCL_ERROR;
-	if (Tcl_GetIntForIndex(interp, objv[3], b->len - 1, &first) != TCL_OK
-		|| Tcl_GetIntForIndex(interp, objv[4], b->len - 1, &last)
+	if (Tcl_GetIntForIndex(interp, firstObj, b->len - 1, &first) != TCL_OK
+		|| Tcl_GetIntForIndex(interp, lastObj, b->len - 1, &last)
 		!= TCL_OK
-		|| ParseValue(interp, objv[5], b->width, &val) != TCL_OK) {
+		|| ParseValue(interp, valueObj, b->width, &val) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (objc == 7) {
-	    if (Tcl_GetWideIntFromObj(interp, objv[6], &step) != TCL_OK) {
+	if (k < objc) {
+	    if (Tcl_GetWideIntFromObj(interp, objv[k], &step) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    if (step < 1) {
@@ -1106,7 +1161,7 @@ BitarrayCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	}
 	if (first > last) return TCL_OK;
 	if (first < 0 || last >= b->len) {
-	    IndexError(interp, first < 0 ? objv[3] : objv[4]);
+	    IndexError(interp, first < 0 ? firstObj : lastObj);
 	    return TCL_ERROR;
 	}
 	if (step > (Tcl_WideInt)last - first + 1) {
@@ -1146,6 +1201,11 @@ BitarrayCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	obj = Tcl_ObjSetVar2(interp, objv[2], NULL, work, TCL_LEAVE_ERR_MSG);
 	Tcl_DecrRefCount(work);
 	return obj ? TCL_OK : TCL_ERROR;
+
+      fillUsage:
+	Tcl_WrongNumArgs(interp, 2, objv,
+		"varName first ?to? last ?with? value ?by? ?step?");
+	return TCL_ERROR;
     }
     }
     return TCL_ERROR;
@@ -1156,5 +1216,5 @@ Bitarray_Init(Tcl_Interp *interp)
 {
     if (Tcl_InitStubs(interp, "9.1", 0) == NULL) return TCL_ERROR;
     Tcl_CreateObjCommand2(interp, "bitarray", BitarrayCmd, NULL, NULL);
-    return Tcl_PkgProvide(interp, "bitarray", "0.3");
+    return Tcl_PkgProvide(interp, "bitarray", "0.4");
 }

@@ -11,7 +11,7 @@ Environment:
     BITARRAY_TCLSH     the tclsh to run the tests with
     CC                 compiler (default cc)
     LD_LIBRARY_PATH / TCL_LIBRARY are passed through if your tclsh needs them.
-With names given it runs only those mutants.  Takes about 10-30 minutes for all 95 (each runs the whole suite).
+With names given it runs only those mutants.  Takes about 10-30 minutes for all 110 (each runs the whole suite).
 """
 import subprocess, os, shutil, sys, re, tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -114,8 +114,8 @@ MUT = [
  ("W42 new 8-bit init one short", "memset(n->words, (int)val, (size_t)n->len);", "memset(n->words, (int)val, (size_t)n->len - 1);"),
  ("W43 new generic init one short", "for (i = 0; i < n->len; i++) PutElem(n, i, val);", "for (i = 0; i < n->len - 1; i++) PutElem(n, i, val);"),
  ("W44 count zeros of bits off by one", "(Tcl_WideInt)(last - first + 1) - cnt;", "(Tcl_WideInt)(last - first) - cnt;"),
- ("W45 count ignores a given value", "\t    if (ParseValue(interp, objv[5], b->width, &val) != TCL_OK) {\n\t\treturn TCL_ERROR;\n\t    }\n\t    anyNZ = 0;", "\t    if (ParseValue(interp, objv[5], b->width, &val) != TCL_OK) {\n\t\treturn TCL_ERROR;\n\t    }"),
- ("W46 next ignores a given value", "\t    if (ParseValue(interp, objv[4], b->width, &val) != TCL_OK) {\n\t\treturn TCL_ERROR;\n\t    }\n\t    anyNZ = 0;", "\t    if (ParseValue(interp, objv[4], b->width, &val) != TCL_OK) {\n\t\treturn TCL_ERROR;\n\t    }"),
+ ("W45 count ignores a given value", "\t    if (ParseValue(interp, valObj, b->width, &val) != TCL_OK) {\n\t\treturn TCL_ERROR;\n\t    }\n\t    anyNZ = 0;", "\t    if (ParseValue(interp, valObj, b->width, &val) != TCL_OK) {\n\t\treturn TCL_ERROR;\n\t    }"),
+ ("W46 next ignores a given value", "\t    if (ParseValue(interp, valObjN, b->width, &val) != TCL_OK) {\n\t\treturn TCL_ERROR;\n\t    }\n\t    anyNZ = 0;", "\t    if (ParseValue(interp, valObjN, b->width, &val) != TCL_OK) {\n\t\treturn TCL_ERROR;\n\t    }"),
  ("W47 -width without argument not detected", "\t    if (i + 1 >= objc) goto usageError;\n", ""),
  ("W48 width 16 rejected", "w != 8 && w != 16 && w != 32", "w != 8 && w != 32"),
  ("W49 dup loses width", "BitArr *s = GETREP(srcPtr), *d = NewRep(NULL, s->len, s->width);", "BitArr *s = GETREP(srcPtr), *d = NewRep(NULL, s->len, 1);"),
@@ -123,6 +123,21 @@ MUT = [
  ("W51 replace validates as 1-bit", "if (ParseValue(interp, insertObjs[i], b->width, &val) != TCL_OK) {", "if (ParseValue(interp, insertObjs[i], 1, &val) != TCL_OK) {"),
  ("W52 replace sizes storage for 1-bit", "needWords = WORDS_FOR(newLen, b->width);", "needWords = (newLen + 63) / 64;"),
  ("W53 index out of range for wide returns last", "} else if (b->width == 1) {\n\t*elemPtr = GETBIT(b, index) ? b->one : b->zero;\n    } else {", "} else if (b->width == 1) {\n\t*elemPtr = GETBIT(b, index) ? b->one : b->zero;\n    } else if (index == b->len - 1) {\n\t*elemPtr = b->zero;\n    } else {"),
+ ("P01 fill: 'to' not recognised", 'IsWord(objv[k], "to") ||', '0 ||'),
+ ("P02 fill: '..' not recognised", '|| IsWord(objv[k], ".."))', '|| 0)'),
+ ("P03 fill: 'with' not recognised", 'if (k < objc && IsWord(objv[k], "with")) k++;', ';'),
+ ("P04 fill: 'by' not recognised", 'if (k < objc && IsWord(objv[k], "by")) {', 'if (0) {'),
+ ("P05 fill: extra arguments after 'by step' accepted", 'if (k != objc - 1) goto fillUsage;', ';'),
+ ('P06 fill: extra arguments after a bare step accepted', '} else if (k < objc - 1) {', '} else if (0) {'),
+ ('P07 IsWord matches a prefix', 'return (size_t)n == strlen(w) &&', 'return'),
+ ('P08 fill: range error always names last', 'IndexError(interp, first < 0 ? firstObj : lastObj);', 'IndexError(interp, lastObj);'),
+ ("P09 count: 'to' not recognised", 'IsWord(objv[kc], "to") ||', '0 ||'),
+ ("P10 count: '..' not recognised", '|| IsWord(objv[kc], ".."))', '|| 0)'),
+ ("P11 count: 'with' not recognised", 'if (kc < objc && IsWord(objv[kc], "with")) {', 'if (0) {'),
+ ('P12 count: extra arguments accepted', 'if (kc != objc) goto countUsage;', ';'),
+ ('P13 count: a value is never used', 'hasVal = (valObj != NULL);', 'hasVal = 0;'),
+ ("P14 next: 'with' not recognised", 'if (kn < objc && IsWord(objv[kn], "with")) {', 'if (0) {'),
+ ('P15 next: extra arguments accepted', 'if (kn != objc) goto nextUsage;', ';'),
 ]
 only = sys.argv[1:]
 out=[]

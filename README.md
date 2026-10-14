@@ -62,7 +62,7 @@ sh ./build.sh     --tclsh /path/to/tcl9.1/bin/tclsh9.1   # makes libbitarray.so 
 sh ./run_tests.sh --tclsh /path/to/tcl9.1/bin/tclsh9.1
 ```
 
-Expected last line of the tests: `bitarray.test:	Total	134	Passed	134	Skipped	0	Failed	0`
+Expected last line of the tests: `bitarray.test:	Total	184	Passed	184	Skipped	0	Failed	0`
 
 (`sh ./script` works even if unpacking lost the executable bit, which happens when a ZIP is made or unpacked on Windows.)
 
@@ -70,7 +70,7 @@ Expected last line of the tests: `bitarray.test:	Total	134	Passed	134	Skipped	0	
 
 `build.bat`, `run_tests.bat` and `run_sieves.bat` do the same three jobs with Microsoft Visual C. They have been run, by
 the repository owner, on two 64-bit Windows 10 machines (versions 1903 and 22H2) with Visual Studio 2022 and a Tcl 9.1.1 built from trunk: the build gave no warnings,
-the tests passed (133 passed, 1 skipped) and the sieve passed. A 32-bit build and other Visual Studio versions are untried.
+the tests passed (version 0.3: 133 passed, 1 skipped; version 0.4, on both: 183 passed, 1 skipped) and the sieve passed. A 32-bit build and other Visual Studio versions are untried.
 Unpack the ZIP anywhere and, from a Command Prompt in that folder:
 
 ```bat
@@ -81,7 +81,7 @@ run_sieves.bat --tclsh C:\path\to\tcl9.1\bin\tclsh91.exe
 
 `build.bat` finds the headers and the stubs library (`include\tcl.h`, `lib\tclstub.lib`) from the shell you name, or from
 `--tcl-prefix DIR`, finds Visual Studio itself with `vswhere` if `cl` is not already on your `PATH` (so a plain `cmd` window works; it was run that way on 2026-10-13 and set up `vcvars64.bat` itself), and builds the 64-bit or
-32-bit DLL to match the shell. `run_tests.bat` should end with `Total 134  Passed 133  Skipped 1  Failed 0`: one test, which
+32-bit DLL to match the shell. `run_tests.bat` should end with `Total 184  Passed 183  Skipped 1  Failed 0`: one test, which
 reads `/proc`, is skipped on Windows. `--help` on each prints the options.
 
 ### Telling `build.sh` where Tcl is
@@ -129,15 +129,40 @@ temporary file, and ends with `RESULT: PASS` or `RESULT: FAIL`.
 
 Everything is the one command `bitarray`. Anything else you do to a bitarray is an ordinary list command.
 
-| Command | Meaning |
+The examples below use two arrays, set up once:
+
+```tcl
+set a [bitarray newfrom {1 0 1 1 0 1 1 1}]            ;# a -> {1 0 1 1 0 1 1 1}
+set w [bitarray newfrom {0 7 0 9} -width 8]           ;# w -> {0 7 0 9}  (8-bit elements)
+```
+
+In the synopses and examples below:
+
+* `array` is a bitarray **value**, for example `$a` or the result of `bitarray new 8`, in the way that `list` is a list value in
+  `lindex list index`. It is not a variable name.
+* `varName` is the **name** of a variable that holds a bitarray, written without a `$`, as in the Tcl manual pages for `lset`. Only `fill` takes one, because it
+  changes the array in place; `fill $a ...` is an error (`can't read "1 0 1 ...": no such variable`).
+* `?...?` marks an optional part. `size`, `first`, `last`, `start` and `step` are integers; the index arguments `first`, `last` and
+  `start` also accept `end` and `end-N`.
+* `value` is an integer that fits the width (see the limits below).
+* `to` (or `..`), `with` and `by` are optional helper words, as in `lseq 5 to 50 by 5`. They only make a command easier to read; leaving them out
+  gives the same result, and the plain forms such as `fill b 0 end 0 2` still work.
+* `=>` shows what a command returns. Every example was run.
+* `->` shows what a variable holds: `a` and `w` above, and, for `fill`, which returns nothing, the array in `varName` after
+  completion.
+
+Errors, such as a bad index or a value that does not fit, are ordinary Tcl errors; no command returns a status code. Examples
+that do not mention `$a` or `$w` create their own arrays. With no `value` given, `count` and `next` work on non-zero elements.
+
+| Command | Meaning and examples |
 |---|---|
-| `bitarray new SIZE ?VALUE? ?-width W?` | new array of `SIZE` elements, all `VALUE` (default 0). `-width` may come before or after `VALUE`. |
-| `bitarray newfrom LIST ?-width W?` | pack a list of integers into a new array |
-| `bitarray width BA` | `1`, `8`, `16`, `32` or `64` |
-| `bitarray is VALUE` | `1` if `VALUE` currently has the bitarray representation |
-| `bitarray count BA ?FIRST LAST ?VALUE??` | number of elements equal to `VALUE`, or non-zero if no `VALUE`; whole array or an index range (`end-N` allowed). `VALUE` needs a range. For 1-bit arrays without `VALUE` this is a popcount. |
-| `bitarray next BA START ?VALUE?` | index of the first element at or after `START` equal to `VALUE` (non-zero if omitted), or `-1` |
-| `bitarray fill VAR FIRST LAST VALUE ?STEP?` | set every `STEP`-th element from `FIRST` to `LAST` in the array held in variable `VAR`, in place like `lset` (copied first if the value is shared). Returns the empty string. |
+| `bitarray new size ?value? ?-width w?` | **Returns** a new bitarray of `size` elements, all `value` (default 0). `-width` may come before or after `value`.<br>`bitarray new 4` => `0 0 0 0`<br>`bitarray new 4 7 -width 8` => `7 7 7 7`<br>`bitarray new 3 -width 16 500` => `500 500 500` |
+| `bitarray newfrom list ?-width w?` | **Returns** a new bitarray packed from a list of integers.<br>`bitarray newfrom {200 5 255} -width 8` => `200 5 255` |
+| `bitarray width array` | **Returns** the element width in bits: `1`, `8`, `16`, `32` or `64`.<br>`bitarray width [bitarray new 3]` => `1`<br>`bitarray width [bitarray new 3 -width 16]` => `16` |
+| `bitarray is value` | **Returns** `1` if `value` currently has the bitarray representation, `0` if not (any value is accepted).<br>`a` -> `{1 0 1 1 0 1 1 1}`<br>`bitarray is $a` => `1`<br>`bitarray is {1 0 1}` => `0` |
+| `bitarray count array ?first ?to? last ?with? ?value??` | **Returns** the number of elements equal to `value`, or the number of non-zero elements if no `value`; whole array or an index range (`end-N` allowed). `value` needs a range. For 1-bit arrays without `value` this is a popcount.<br>`a` -> `{1 0 1 1 0 1 1 1}`<br>`bitarray count $a` => `6`<br>`bitarray count $a 0 3 1` => `3`<br>`bitarray count $a 4 end 0` => `1`<br>`bitarray count $a 2 end-1 1` => `4`<br>`bitarray count $a 0 to 3 with 1` => `3`<br>`bitarray count $a 4 .. end with 0` => `1`<br>`w` -> `{0 7 0 9}`<br>`bitarray count $w` => `2` (value omitted means != 0) |
+| `bitarray next array start ?with? ?value?` | **Returns** the index of the first element **at or after** `start` equal to `value` (non-zero if omitted), or `-1` if there is none.<br>`a` -> `{1 0 1 1 0 1 1 1}`<br>`bitarray next $a 0 0` => `1`<br>`bitarray next $a 2 0` => `4`<br>`bitarray next $a 5 0` => `-1`<br>`bitarray next $a 2 with 0` => `4`<br>`w` -> `{0 7 0 9}`<br>`bitarray next $w 0` => `1` (value omitted means != 0)<br>`bitarray next $w 0 0` => `0` (element 0 is itself 0) |
+| `bitarray fill varName first ?to? last ?with? value ?by? ?step?` | Sets every element from `first` to `last` to `value`, or only every `step`-th one if `step` is given, in the array stored in variable `varName`. **Returns** the empty string; the result is the changed array in `varName`.<br>`set b [bitarray new 10 1]` => `1 1 1 1 1 1 1 1 1 1`<br>`bitarray fill b 0 end 0 2` -> `0 1 0 1 0 1 0 1 0 1`<br>`set b [bitarray new 10 1]` => `1 1 1 1 1 1 1 1 1 1`<br>`bitarray fill b 0 to end with 0 by 2` -> `0 1 0 1 0 1 0 1 0 1`<br>`set c [bitarray new 10 5 -width 8]` => `5 5 5 5 5 5 5 5 5 5`<br>`bitarray fill c 2 5 0` -> `5 5 0 0 0 0 5 5 5 5`<br>`bitarray fill c 2 .. 5 with 0` -> same result |
 
 Load it with `load /full/path/libbitarray.so Bitarray`. There is no `package require` wrapper yet.
 
@@ -224,18 +249,18 @@ Whether an extension like this counts as a "faithful" entry in Dave's Garage rul
 
 ## Quality checks
 
-* **134 tests** (`tests/bitarray.test`): option parsing, ranges and error messages at every width, every list command on
+* **184 tests** (`tests/bitarray.test`): option parsing, ranges and error messages at every width, every list command on
   every width, copy-on-write, `fill`/`count`/`next`, word-boundary cases, memory growth.
 * **Random comparison against plain Tcl lists** (`tests/diff_*.tcl`): thousands of random operations per run, values and error
   messages compared. Last big run: 5 widths × 10 seeds × 100 iterations × 40 steps, 0 differences.
 * **valgrind** on the whole suite: 0 invalid accesses, 0 definite leaks.
 * **Memory:** `unset` returns the memory (a 953 MiB array: 960 MB → 6.6 MB resident); building and dropping wide arrays in a
   loop leaves memory flat.
-* **Mutation testing** (`extras/mutate5.py`): 95 deliberate bugs inserted into the C code, 81 caught by the tests; the 14
+* **Mutation testing** (`extras/mutate5.py`): 110 deliberate bugs inserted into the C code, 96 caught by the tests; the 14
   missed are explained in `RESULTS.txt` (mostly unreachable code, stray bits nobody can read, or checks that are repeated
-  elsewhere on a 64-bit build). `extras/bitarray.mutants` is `bitarray.c` with every one of the 95 bugs applied and, beside
+  elsewhere on a 64-bit build). `extras/bitarray.mutants` is `bitarray.c` with every one of the 110 bugs applied and, beside
   each, the tests that caught it, for reading in a side-by-side compare tool (see `extras/README.md`).
-* The same 134 tests also pass with `-DBA_NO_BUILTINS` (portable popcount code) and `-DBA_FORCE_32BIT_LIMITS`.
+* The same 184 tests also pass with `-DBA_NO_BUILTINS` (portable popcount code) and `-DBA_FORCE_32BIT_LIMITS`.
 
 Details and numbers: `RESULTS.txt`.
 

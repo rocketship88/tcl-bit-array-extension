@@ -1,4 +1,4 @@
-RESULTS -- bitarray 0.3 (run 2026-10-13, Linux container, gcc -O2, Tcl trunk 3d77be8951)
+RESULTS -- bitarray 0.4 (sections 8-13a are the 0.3 results; section 14 is 0.4) (run 2026-10-13, Linux container, gcc -O2, Tcl trunk 3d77be8951)
 
 Sections 8-13 are new in 0.3.  Sections 1-7 are the 0.2 results, kept for history; where a number there was for 1-bit
 arrays only it is still true of the 1-bit code, which 0.3 keeps (the 66 old tests pass unchanged apart from "from" ->
@@ -148,6 +148,39 @@ arrays only it is still true of the 1-bit code, which 0.3 keeps (the 66 old test
    is not known.  The text of the report is extras/typeloss_ticket.md.
 
 --- 0.2 results, kept for history (run 2026-10-12) ---
+
+14. Version 0.4: optional helper words (run 2026-10-13, Linux container, gcc, Tcl 9.1 from trunk)
+   Changes: fill, count and next accept the optional words used by lseq:
+     fill varName first ?to? last ?with? value ?by? ?step?       ("to" may be written "..")
+     count array ?first ?to? last ?with? ?value??
+     next array start ?with? ?value?
+   The plain forms work as before.  Every usage message now says "array" (fill says varName).  Package version 0.4.
+   Tests: 184 (the 134 of 0.3, 25 fill-w.*, 21 count-w.*/next-w.*, 1 width usage, 3 "a prefix of a helper word is not a
+   helper word").  All 184 pass natively and with -DBA_NO_BUILTINS, -DBA_FORCE_32BIT_LIMITS and both; gcc -Wall -Wextra gives no
+   warnings; zig cc -target x86_64-windows-gnu and x86-windows-gnu compile it without warnings (compile only, not run).
+   valgrind --leak-check=full (definite and indirect leaks counted as errors) on the whole suite: exit 0, no invalid reads or
+   writes, no uninitialised values.  The "possibly lost" records valgrind also prints come from Tcl's own start-up (a script
+   that does nothing prints 30 of them), as in section 9.
+   Mutation testing (extras/mutate6.py, output extras/mutation_round6.txt): 110 mutants, 96 caught, 14 missed.  The 14 are the
+   same 14 as in section 10.  Two old mutants (W45, W46) were re-written to match the new count/next code.  15 new ones (P01-P15)
+   target the helper-word parsing; the first run missed one (P07, a word check that matched only a prefix), I added 3 tests,
+   and the full set was then re-run (that is the recorded run).  39 of the 184 tests failed on none of the 110 mutants.
+   Sieve (run_sieves.sh, this container, microseconds per pass at limit 1,000,000): A 680,193  B 209,554  C 68,015  D 1,515
+   E 68,160  F 931.  PASS at every limit.  Timings in this container vary from run to run (C was 78,996 on an earlier run);
+   D is unchanged within that noise.
+   Windows (run by the repository owner on 2026-10-13, 64-bit Windows 10 on his slower machine, Visual Studio 2022 Community,
+   build.bat with --tclsh A:\aaa\tcltk-merged-release\bin\tclsh91.exe = Tcl 9.1.1 x64): build without warnings; run_tests.bat
+   Total 184, Passed 183, Skipped 1 (procfs, mem-1.1), Failed 0; run_sieves.bat PASS at every limit.  Microseconds per pass at
+   limit 1,000,000: A 669,564  B 212,314  C 85,834  D 1,203  E 85,317  F 1,230 (a second run, after the owner stopped a
+   background security-camera recorder program that was using the CPU; the first run, with it running, gave A 872,125
+   B 269,013 C 101,923 D 1,262 E 103,250 F 1,277, so a busy machine slows the slow variants far more than D and F).  These
+   match the earlier run on the same machine (section 12a: A 661,985, C 84,709, D 1,181).  The same session also ran
+   build.bat, run_tests.bat and run_sieves.bat against an older Tcl the shell found first (a 9.1a0 build in another
+   folder): same test result, 183 passed, 1 skipped, sieve PASS (D 1,204, F 1,217; background load not recorded).
+   Second Windows machine (the faster one, which I take to be the i7-12700K because the times match its earlier run in section
+   12a), same build.bat/run_tests.bat/run_sieves.bat with Tcl 9.1.1 x64 from A:\aaa\tcltk-merged-release: build without
+   warnings, Total 184, Passed 183, Skipped 1 (procfs), Failed 0, sieve PASS at every limit.  Microseconds per pass:
+   A 430,725  B 139,464  C 52,196  D 716  E 53,785  F 577 (section 12a, same machine: A 435,763, D 686, F 568).
 
 1. Test suite
    tests/bitarray.test: Total 66, Passed 66, Failed 0 (also with -DBA_NO_BUILTINS, the portable bit-count code).  Includes 2 randomized differential tests:
