@@ -1,4 +1,4 @@
-already done: 0, to run: 162
+already done: 0, to run: 164
 M01 CAUGHT 8 tests fail
 M02 CAUGHT 6 tests fail
 M03 CAUGHT 22 tests fail
@@ -8,10 +8,10 @@ M34 MISSED
 M35 MISSED 
 M36 MISSED 
 M37 CAUGHT 4 tests fail
-M39 CAUGHT crash rc=-4
-M40 CAUGHT crash rc=-4
-M41 CAUGHT crash rc=-11
 M38 MISSED 
+M39 CAUGHT crash rc=-4
+M40 CAUGHT crash rc=-11
+M41 CAUGHT crash rc=-11
 M42 MISSED 
 M05 CAUGHT 2 tests fail
 M06 MISSED 
@@ -22,8 +22,8 @@ M10 CAUGHT 9 tests fail
 M11 CAUGHT 5 tests fail
 M12 CAUGHT 2 tests fail
 M13 CAUGHT 5 tests fail
-M15 CAUGHT 12 tests fail
 M14 CAUGHT 1 tests fail
+M15 CAUGHT 12 tests fail
 M16 CAUGHT 3 tests fail
 M17 CAUGHT 21 tests fail
 M18 CAUGHT 15 tests fail
@@ -34,9 +34,9 @@ M22 CAUGHT 3 tests fail
 M23 CAUGHT 4 tests fail
 M24 CAUGHT crash rc=-11
 M25 CAUGHT 1 tests fail
-M26 CAUGHT 55 tests fail
-M28 CAUGHT crash rc=-4
+M26 CAUGHT 56 tests fail
 M27 CAUGHT 9 tests fail
+M28 CAUGHT crash rc=-4
 M29 CAUGHT 1 tests fail
 M30 CAUGHT 5 tests fail
 M31 MISSED 
@@ -44,22 +44,22 @@ M32 CAUGHT 1 tests fail
 W01 CAUGHT 15 tests fail
 W02 CAUGHT 8 tests fail
 W03 CAUGHT 10 tests fail
-W05 CAUGHT crash rc=-11
 W04 CAUGHT 5 tests fail
+W05 CAUGHT crash rc=-11
 W06 CAUGHT 8 tests fail
 W07 CAUGHT 12 tests fail
 W08 MISSED 
 W09 CAUGHT 2 tests fail
 W10 CAUGHT 6 tests fail
-W12 CAUGHT 13 tests fail
 W11 CAUGHT 1 tests fail
+W12 CAUGHT 13 tests fail
 W13 CAUGHT 1 tests fail
 W14 MISSED 
 W15 CAUGHT crash rc=-11
 W16 CAUGHT crash rc=-11
+W17 CAUGHT 1 tests fail
 W18 CAUGHT crash rc=-11
 W19 CAUGHT crash rc=-11
-W17 CAUGHT 1 tests fail
 W20 CAUGHT 1 tests fail
 W21 CAUGHT 2 tests fail
 W22 CAUGHT 4 tests fail
@@ -86,8 +86,8 @@ W42 CAUGHT 5 tests fail
 W43 CAUGHT 5 tests fail
 W44 CAUGHT 4 tests fail
 W45 CAUGHT 8 tests fail
-W47 CAUGHT crash rc=-11
 W46 CAUGHT 5 tests fail
+W47 CAUGHT crash rc=-11
 W48 CAUGHT 24 tests fail
 W49 CAUGHT crash rc=-11
 W50 CAUGHT 10 tests fail
@@ -121,8 +121,8 @@ Q09 CAUGHT 1 tests fail
 Q10 CAUGHT 1 tests fail
 Q11 CAUGHT 5 tests fail
 Q12 CAUGHT 3 tests fail
-S01 CAUGHT 6 tests fail
 Q13 CAUGHT 2 tests fail
+S01 CAUGHT 6 tests fail
 S02 CAUGHT 6 tests fail
 S03 MISSED 
 S04 MISSED 
@@ -133,10 +133,10 @@ S08 CAUGHT 4 tests fail
 S09 CAUGHT 5 tests fail
 S10 MISSED 
 S11 CAUGHT 7 tests fail
-S13 CAUGHT crash rc=-4
 S12 CAUGHT 8 tests fail
-S15 CAUGHT crash rc=-11
+S13 CAUGHT crash rc=-4
 S14 CAUGHT 8 tests fail
+S15 CAUGHT crash rc=-4
 B01 CAUGHT 8 tests fail
 B02 CAUGHT 1 tests fail
 B03 CAUGHT 7 tests fail
@@ -157,9 +157,9 @@ B17 CAUGHT 3 tests fail
 B18 CAUGHT 1 tests fail
 B19 CAUGHT 1 tests fail
 B20 CAUGHT 4 tests fail
-B22 CAUGHT 2 tests fail
 B21 CAUGHT 2 tests fail
-B24 CAUGHT 2 tests fail
+B22 CAUGHT 2 tests fail
 B23 CAUGHT 3 tests fail
-comment column 75 ; mutated lines too wide for it (comment placed on the next line): 14
-wrote /tmp/claude-0/-home-claude/c65d3956-49cc-5b06-b086-4ca354d4bd07/scratchpad/repo/bitarray/extras
+B24 CAUGHT 2 tests fail
+B25 CAUGHT 1 tests fail
+B26 CAUGHT 1 tests fail

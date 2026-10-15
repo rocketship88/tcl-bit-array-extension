@@ -17,7 +17,7 @@
  *
  * Commands (subcommands of the global command "bitarray"; README.md has the full syntax):
  *	new SIZE ?VALUE? ?-width W?        newfrom LIST ?-width W?
- *	width BA      is VALUE      frombytes DATA      tobytes BA
+ *	width BA      is VALUE      version      frombytes DATA      tobytes BA
  *	fromchars STRING ?-width W?      tochars BA
  *	count BA ?FIRST ?to? LAST ?with? ?VALUE??     next BA START ?with? ?VALUE?
  *	fill VAR FIRST ?to? LAST ?with? VALUE ?by? ?STEP?   (in place, like lset)
@@ -30,6 +30,7 @@
  */
 
 #include <tcl.h>
+#define BA_VERSION "0.6.0"	/* the one place the version is set (also in pkgIndex.tcl) */
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -560,6 +561,20 @@ BAIndex(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size index, Tcl_Obj **elemPtr)
     return TCL_OK;
 }
 
+static uint64_t GetBits(const BitArr *b, Tcl_Size p, int n);
+
+/* Reverse the order of the 64 bits of X (bit 0 becomes bit 63). */
+static uint64_t
+Rev64(uint64_t x)
+{
+    x = ((x >> 1) & 0x5555555555555555ULL) | ((x & 0x5555555555555555ULL) << 1);
+    x = ((x >> 2) & 0x3333333333333333ULL) | ((x & 0x3333333333333333ULL) << 2);
+    x = ((x >> 4) & 0x0F0F0F0F0F0F0F0FULL) | ((x & 0x0F0F0F0F0F0F0F0FULL) << 4);
+    x = ((x >> 8) & 0x00FF00FF00FF00FFULL) | ((x & 0x00FF00FF00FF00FFULL) << 8);
+    x = ((x >> 16) & 0x0000FFFF0000FFFFULL) | ((x & 0x0000FFFF0000FFFFULL) << 16);
+    return (x >> 32) | (x << 32);
+}
+
 static int
 BASlice(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size from, Tcl_Size to,
 	Tcl_Obj **newObjPtr)
@@ -585,8 +600,11 @@ BASlice(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size from, Tcl_Size to,
 	    n->words[n->nwords - 1] &= ~(~(uint64_t)0 << (len & 63));
 	}
     } else {
-	for (i = 0; i < len; i++) {
-	    if (GETBIT(b, from + i)) SETBIT(n, i);
+	/* Unaligned start: read 64 bits at a time; GetBits masks the last chunk. */
+	for (i = 0; i < len; i += 64) {
+	    int m = (len - i >= 64) ? 64 : (int)(len - i);
+
+	    n->words[i >> 6] = GetBits(b, from + i, m);
 	}
     }
     *newObjPtr = WrapRep(n);
@@ -601,12 +619,40 @@ BAReverse(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Obj **newObjPtr)
 
     if ((n = NewRep(interp, b->len, b->width)) == NULL) return TCL_ERROR;
     if (b->width == 1) {
+	/*
+	 * Result bits i..i+m-1 are source bits L-i-m..L-i-1 in reverse order:
+	 * read that run, reverse all 64 bits and drop the unused low end.
+	 */
+	for (i = 0; i < b->len; i += 64) {
+	    int m = (b->len - i >= 64) ? 64 : (int)(b->len - i);
+
+	    n->words[i >> 6] = Rev64(GetBits(b, b->len - i - m, m)) >> (64 - m);
+	}
+    } else if (b->width == 8) {
+	const unsigned char *src = BYTES(b);
+	unsigned char *dst = BYTES(n);
+
+	for (i = 0; i < b->len; i++) dst[i] = src[b->len - 1 - i];
+    } else if (b->width == 16) {
 	for (i = 0; i < b->len; i++) {
-	    if (GETBIT(b, b->len - 1 - i)) SETBIT(n, i);
+	    uint16_t v;
+
+	    memcpy(&v, BYTES(b) + 2 * (size_t)(b->len - 1 - i), 2);
+	    memcpy(BYTES(n) + 2 * (size_t)i, &v, 2);
+	}
+    } else if (b->width == 32) {
+	for (i = 0; i < b->len; i++) {
+	    uint32_t v;
+
+	    memcpy(&v, BYTES(b) + 4 * (size_t)(b->len - 1 - i), 4);
+	    memcpy(BYTES(n) + 4 * (size_t)i, &v, 4);
 	}
     } else {
 	for (i = 0; i < b->len; i++) {
-	    PutElem(n, i, GetElem(b, b->len - 1 - i));
+	    uint64_t v;
+
+	    memcpy(&v, BYTES(b) + 8 * (size_t)(b->len - 1 - i), 8);
+	    memcpy(BYTES(n) + 8 * (size_t)i, &v, 8);
 	}
     }
     *newObjPtr = WrapRep(n);
@@ -766,14 +812,29 @@ MoveElems(BitArr *b, Tcl_Size from, Tcl_Size to, Tcl_Size count)
 	return;
     }
     if (to < from) {
-	Tcl_Size done = 0;
+	/*
+	 * Moving left.  A partial first destination word, then whole
+	 * destination words built from two source words (one store each, no
+	 * read of the destination), then the partial last word.  Destination
+	 * words never lie beyond the source words still to be read.
+	 */
+	Tcl_Size d = to, q = from, cnt = count;
 
-	while (done < count) {
-	    int n = (count - done >= 64) ? 64 : (int)(count - done);
+	if (d & 63) {
+	    int h = (cnt >= 64 - (d & 63)) ? (int)(64 - (d & 63)) : (int)cnt;
 
-	    PutBits(b, to + done, GetBits(b, from + done, n), n);
-	    done += n;
+	    PutBits(b, d, GetBits(b, q, h), h);
+	    d += h; q += h; cnt -= h;
 	}
+	while (cnt >= 64) {
+	    Tcl_Size kq = q >> 6;
+	    int sh = (int)(q & 63);
+
+	    b->words[d >> 6] = sh ? ((b->words[kq] >> sh)
+		    | (b->words[kq + 1] << (64 - sh))) : b->words[kq];
+	    d += 64; q += 64; cnt -= 64;
+	}
+	if (cnt > 0) PutBits(b, d, GetBits(b, q, (int)cnt), (int)cnt);
     } else {
 	Tcl_Size left = count;
 
@@ -1060,6 +1121,17 @@ MaskTail(BitArr *b)
     }
 }
 
+/*
+ * IsArrow --
+ *	True if OBJ is the word "<-".  A bitarray value is never the word, and
+ *	asking for its string form would build a long string, so it is skipped.
+ */
+static int
+IsArrow(Tcl_Obj *obj)
+{
+    return !ISBA(obj) && IsWord(obj, "<-");
+}
+
 static int
 BitOpCompat(Tcl_Interp *interp, const char *name, const BitArr *x,
 	const BitArr *y, int zero)
@@ -1120,14 +1192,16 @@ BitOpCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[], int op)
     if (isNot) {
 	if (rest == 1) {
 	    inPlace = 1; dstName = objv[idx];
-	} else if (rest == 3 && IsWord(objv[idx + 1], "<-")) {
+	} else if (rest == 3 && IsArrow(objv[idx + 1])) {
 	    inPlace = 0; dstName = objv[idx]; srcA = objv[idx + 2];
 	} else {
 	    goto usage;
 	}
+    } else if (rest == 2 && IsArrow(objv[idx + 1])) {
+	goto usage;		/* "bitarray and a <-": nothing follows the arrow */
     } else if (rest == 2) {
 	inPlace = 1; dstName = objv[idx]; srcB = objv[idx + 1];
-    } else if ((rest == 3 || rest == 4) && IsWord(objv[idx + 1], "<-")) {
+    } else if ((rest == 3 || rest == 4) && IsArrow(objv[idx + 1])) {
 	dstName = objv[idx];
 	if (rest == 3) {
 	    inPlace = 1; srcB = objv[idx + 2];
@@ -1138,6 +1212,12 @@ BitOpCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[], int op)
 	goto usage;
     }
 
+    if (IsWord(dstName, "<-")) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"bitarray %s: \"<-\" cannot be used as a variable name", name));
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
+	return TCL_ERROR;
+    }
     if (inPlace) {
 	obj = Tcl_ObjGetVar2(interp, dstName, NULL, TCL_LEAVE_ERR_MSG);
 	if (obj == NULL) return TCL_ERROR;
@@ -1179,11 +1259,11 @@ BitarrayCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     static const char *const subs[] = {
 	"new", "newfrom", "width", "is", "count", "next", "fill",
 	"frombytes", "tobytes", "fromchars", "tochars",
-	"and", "or", "xor", "andnot", "not", NULL
+	"and", "or", "xor", "andnot", "not", "version", NULL
     };
     enum { S_NEW, S_NEWFROM, S_WIDTH, S_IS, S_COUNT, S_NEXT, S_FILL,
 	   S_FROMBYTES, S_TOBYTES, S_FROMCHARS, S_TOCHARS,
-	   S_AND, S_OR, S_XOR, S_ANDNOT, S_NOT };
+	   S_AND, S_OR, S_XOR, S_ANDNOT, S_NOT, S_VERSION };
     int sub, bit, width;
     BitArr *b = NULL, *n;
     Tcl_Size i, first, last;
@@ -1206,6 +1286,13 @@ BitarrayCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     case S_XOR:    return BitOpCmd(interp, objc, objv, BO_XOR);
     case S_ANDNOT: return BitOpCmd(interp, objc, objv, BO_ANDNOT);
     case S_NOT:    return BitOpCmd(interp, objc, objv, BO_NOT);
+    case S_VERSION:
+	if (objc != 2) {
+	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(BA_VERSION, -1));
+	return TCL_OK;
     case S_NEW:
 	if (objc < 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "size ?value? ?-width w?");
@@ -1574,5 +1661,5 @@ Bitarray_Init(Tcl_Interp *interp)
 {
     if (Tcl_InitStubs(interp, "9.1", 0) == NULL) return TCL_ERROR;
     Tcl_CreateObjCommand2(interp, "bitarray", BitarrayCmd, NULL, NULL);
-    return Tcl_PkgProvide(interp, "bitarray", "0.6.0");
+    return Tcl_PkgProvide(interp, "bitarray", BA_VERSION);
 }

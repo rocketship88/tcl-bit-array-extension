@@ -6,6 +6,8 @@ package require tcltest
 namespace import ::tcltest::*
 load [expr {[info exists ::env(BITARRAY_LIB)] ? $::env(BITARRAY_LIB) : [file join [pwd] libbitarray.so]}] Bitarray
 set here [file dirname [file normalize [info script]]]
+set libfile [expr {[info exists ::env(BITARRAY_LIB)] ? $::env(BITARRAY_LIB) : [file join [pwd] libbitarray.so]}]
+puts "[string repeat - 30] test: [bitarray version] [clock format [file mtime $libfile] -format {%Y-%m-%d %H:%M:%S}] [string repeat - 15]"
 
 test new-1.1 {size and string form} -body {
     set a [bitarray new 5]
@@ -351,6 +353,100 @@ test bitop-3.8 {a failed arrow form creates no result variable} -body {
     set rc [catch {bitarray and r <- $a [bitarray new 4]} msg]
     list $rc [info exists r]
 } -result {1 0}
+test bitop-3.9 {"<-" cannot be the destination name, even when such a variable exists} -body {
+    set x [bitarray new 3]
+    set r {}
+    lappend r [catch {bitarray and <- $x} m1] $m1
+    lappend r [catch {bitarray not <-} m2] $m2
+    set {<-} [bitarray new 3 1]
+    lappend r [catch {bitarray or <- $x} m3] $m3
+    lappend r [catch {bitarray and <- <- $x} m4] $m4
+    lappend r [list {*}${<-}]
+} -cleanup {
+    unset -nocomplain {<-}
+} -result {1 {bitarray and: "<-" cannot be used as a variable name} 1 {bitarray not: "<-" cannot be used as a variable name} 1 {bitarray or: "<-" cannot be used as a variable name} 1 {bitarray and: "<-" cannot be used as a variable name} {1 1 1}}
+test bitop-3.10 {an arrow with nothing after it is a missing argument} -body {
+    set a [bitarray new 3]
+    set r {}
+    lappend r [catch {bitarray and a <-} m1] $m1
+    lappend r [catch {bitarray xor -length zero a <-} m2] $m2
+    lappend r [catch {bitarray not a <-} m3] $m3
+} -result {1 {wrong # args: should be "bitarray and ?-length strict|zero? varName ?<-? array ?array?"} 1 {wrong # args: should be "bitarray xor ?-length strict|zero? varName ?<-? array ?array?"} 1 {wrong # args: should be "bitarray not varName ?<- array?"}}
+# ---- word-at-a-time lrange, lreverse and delete-shift (added after 0.6.0): same answers as a plain list at every width ----
+proc nz {l} { set c 0; foreach v $l { if {$v != 0} {incr c} }; return $c }
+test range-2.1 {lrange at all widths, unaligned starts and lengths around word boundaries, matches a plain list} -body {
+    set bad {}
+    foreach w {1 8 16 32 64} {
+	foreach len {0 1 63 64 65 127 128 129 200} {
+	    set p [bitgen $len $w $len]
+	    set a [bitarray newfrom $p -width $w]
+	    foreach f {0 1 5 31 63 64 65 100 127 128 130} {
+		foreach t [list $f [expr {$f+1}] [expr {$f+62}] [expr {$f+63}] [expr {$f+64}] [expr {$f+65}] [expr {$f+130}] end] {
+		    set r [lrange $a $f $t]
+		    set e [lrange $p $f $t]
+		    if {[list {*}$r] ne $e} {lappend bad [list $w $len $f $t]; continue}
+		    if {$w == 1 && [llength $e] && [bitarray count $r] != [nz $e]} {lappend bad [list count $w $len $f $t]}
+		    if {[llength $e] && ![bitarray is $r]} {lappend bad [list type $w $len $f $t]}
+		}
+	    }
+	}
+    }
+    set bad
+} -result {}
+test rev-2.1 {lreverse at all widths and all lengths 0 to 200 matches a plain list; unused bits stay zero} -body {
+    set bad {}
+    foreach w {1 8 16 32 64} {
+	for {set len 0} {$len <= 200} {incr len [expr {$len < 140 ? 1 : 7}]} {
+	    set p [bitgen $len $w [expr {$len + 3}]]
+	    set a [bitarray newfrom $p -width $w]
+	    set r [lreverse $a]
+	    if {[list {*}$r] ne [lreverse $p]} {lappend bad [list $w $len]; continue}
+	    if {$len && ![bitarray is $r]} {lappend bad [list type $w $len]}
+	    if {$w == 1 && $len} {
+		set g [lreplace $r end+1 end+1 {*}[lrepeat 70 0]]
+		if {[bitarray count $g] != [nz $p] || [bitarray next $g 0 with 1] != [lsearch [lreverse $p] 1]} {lappend bad [list tail $w $len]}
+	    }
+	}
+    }
+    set bad
+} -result {}
+test shift-2.1 {delete shifts left: every start and count around word boundaries, widths 1 and 8, matches a plain list, vacated bits zero} -body {
+    set bad {}
+    foreach w {1 8} {
+	foreach len {70 130 200} {
+	    set p [bitgen $len $w 9]
+	    set a [bitarray newfrom $p -width $w]
+	    foreach f {0 1 3 5 32 63 64 65} {
+		for {set k 0} {$k <= 72} {incr k} {
+		    set e [expr {$f + $k - 1}]
+		    set r [lreplace $a $f $e]
+		    set m [lreplace $p $f $e]
+		    if {[list {*}$r] ne $m} {lappend bad [list $w $len $f $k]; continue}
+		    if {$w == 1 && [llength $m]} {
+			set g [lreplace $r end+1 end+1 {*}[lrepeat 70 0]]
+			if {[bitarray count $g] != [nz $m]} {lappend bad [list tail $w $len $f $k]}
+		    }
+		}
+	    }
+	}
+    }
+    set bad
+} -result {}
+test shift-2.2 {ledit deleting at the front repeatedly (queue use) matches a plain list} -body {
+    set p [bitgen 300 1 4]
+    set a [bitarray newfrom $p]
+    set bad {}
+    for {set i 0} {$i < 140} {incr i} {
+	ledit a 0 [expr {$i % 3}]
+	ledit p 0 [expr {$i % 3}]
+	if {[list {*}$a] ne $p} {lappend bad $i; break}
+    }
+    list $bad [bitarray count $a] [nz $p]
+} -match glob -result {{} * *}
+test version-1.1 {version is the package version} -body {
+    list [bitarray version] [expr {[bitarray version] eq [package present bitarray]}] [regexp {^\d+\.\d+\.\d+$} [bitarray version]]
+} -match glob -result {* 1 1}
+test version-1.2 {version takes no arguments} -returnCodes error -body {bitarray version x} -result {wrong # args: should be "bitarray version"}
 test in-1.1 {in and ni} -body {
     set a [bitarray newfrom {0 0 0}]
     list [expr {0 in $a}] [expr {1 in $a}] [expr {1 ni $a}] [expr {"01" in $a}] [expr {2 in $a}]

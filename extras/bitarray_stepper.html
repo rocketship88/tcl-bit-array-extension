@@ -1,0 +1,2652 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bitarray Stepper</title>
+<style>
+/* One self-contained file: no libraries, no network. Pick a command, then step through what Tcl and bitarray.c do. */
+:root {
+  --bg: #f3f5f6; --panel: #ffffff; --fg: #1c2528; --muted: #5d6b70; --line: #d3dade;
+  --accent: #0b6e7a; --accent-fg: #ffffff; --hot: #b3261e;
+  --s: #dbe8fb;  --s-b: #3b6cc4;   /* script / bytecode */
+  --c: #fbe9c8;  --c-b: #b9770e;   /* Tcl core */
+  --h: #d6efdc;  --h-b: #2f8a4a;   /* bitarray.c */
+  --r: #eceff1;  --r-b: #aab4b8;   /* result */
+  --on: #fff3c4; --bit1: #cfe9ee; --chg: #ffe0a3;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #12191b; --panel: #1b2427; --fg: #e3eaec; --muted: #94a3a8; --line: #33434a;
+  --accent: #4fc3d0; --accent-fg: #0a1a1d; --hot: #ff8a80;
+  --s: #1d3354; --s-b: #6f9de6; --c: #4a3510; --c-b: #e5a53d; --h: #1b3d27; --h-b: #62c27d;
+  --r: #263135; --r-b: #55666c; --on: #4a4318; --bit1: #1d4650; --chg: #6a4a10; color-scheme: dark; } }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 16px; line-height: 1.5;
+  padding: 20px 16px 40px; }
+main { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+header.top { display: flex; gap: 20px; align-items: flex-start; justify-content: space-between; }
+.topl { flex: 1 1 0; min-width: 0; }
+.keys { flex: 0 1 36%; min-width: 220px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 6px 12px; font-size: .8rem; color: var(--muted); }
+.keys b { color: var(--fg); font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; }
+.keys div { margin-top: 2px; }
+kbd { font-family: var(--mono); font-size: .75rem; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; background: var(--bg); color: var(--fg); }
+@media (max-width: 760px) { header.top { flex-direction: column; } .keys { flex: none; width: 100%; box-sizing: border-box; } }
+h1 { font-size: 1.6rem; line-height: 1.2; margin: 0; }
+h2 { font-size: 1.05rem; margin: 0 0 8px; }
+p { margin: 0; }
+.lede { color: var(--muted); max-width: 72ch; margin-top: 6px; }
+code, .mono { font-family: var(--mono); font-size: .88em; }
+.bar { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+.lbl { font-size: .78rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-right: 4px; }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--panel); }
+.seg button { border: 0; background: transparent; color: var(--fg); font: inherit; font-size: .92rem; padding: 6px 11px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); font-weight: 600; }
+.ctl { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.ctl button { font: inherit; padding: 7px 14px; border: 1px solid var(--line); background: var(--panel); color: var(--fg); border-radius: 6px; cursor: pointer; }
+.speed { font-size: .8rem; color: var(--muted); white-space: nowrap; }
+.speed select { font: inherit; padding: 4px 2px; }
+.ctl button.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 600; }
+.ctl button:disabled { opacity: .4; cursor: default; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.params { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.params label { font-size: .92rem; display: inline-flex; gap: 6px; align-items: center; }
+.params input, .params select { font: inherit; font-family: var(--mono); font-size: .9rem; padding: 3px 6px; width: 5em; background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 4px; }
+.params select { width: auto; }
+.dots { flex: 1 1 0; min-width: 0; }
+.dotrow { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+.dots i { width: 18px; height: 6px; border-radius: 3px; background: var(--line); }
+.dotrow i { position: relative; cursor: pointer; }
+.dotrow i::before { content: ''; position: absolute; inset: -7px -2px; }
+.dotrow i:hover { outline: 2px solid var(--accent); outline-offset: 1px; }
+.tbl tr.pick { cursor: pointer; }
+.tbl tr.pick:hover td { background: var(--on); }
+.dots i.done { background: var(--accent); opacity: .55; } .dots i.cur { background: var(--accent); opacity: 1; }
+.dots span { display: block; margin-top: 3px; color: var(--muted); font-size: .85rem; }
+.controls .ctl { flex: none; }
+@media (max-width: 760px) { .dots { flex-basis: 100%; } .controls .ctl { flex: 1 1 100%; } }
+
+.row2 { display: grid; grid-template-columns: 1.15fr 1fr; gap: 14px; align-items: start; }
+@media (max-width: 760px) { .row2 { grid-template-columns: 1fr; } }
+.pane { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; min-width: 0; }
+.pane h2 small { font-weight: 400; color: var(--muted); font-size: .78rem; margin-left: 6px; }
+.script { font-family: var(--mono); font-size: .88rem; display: flex; flex-direction: column; gap: 2px; margin-bottom: 10px; }
+.script div { padding: 3px 8px; border-radius: 4px; border: 1px solid transparent; overflow-wrap: anywhere; }
+.script .on { background: var(--on); border-color: var(--c-b); font-weight: 600; }
+.stack { display: flex; flex-direction: column; gap: 4px; min-height: 60px; }
+.rec { border: 1.5px solid; border-radius: 5px; padding: 5px 9px; font-family: var(--mono); font-size: .82rem; overflow-wrap: anywhere; }
+.rec small { display: block; font-family: var(--font); font-size: .74rem; opacity: .85; }
+.rec.s { background: var(--s); border-color: var(--s-b); } .rec.c { background: var(--c); border-color: var(--c-b); }
+.rec.h { background: var(--h); border-color: var(--h-b); } .rec.r { background: var(--r); border-color: var(--r-b); border-style: dashed; }
+.rec.fresh { animation: drop .3s ease-out; }
+@keyframes drop { from { transform: translateY(-10px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .rec.fresh { animation: none; } }
+.key { display: flex; gap: 10px; flex-wrap: wrap; font-size: .78rem; color: var(--muted); margin-top: 8px; }
+.key b { display: inline-block; width: 11px; height: 11px; border-radius: 3px; border: 1.5px solid; vertical-align: -1px; margin-right: 4px; }
+.key .s b { background: var(--s); border-color: var(--s-b); } .key .c b { background: var(--c); border-color: var(--c-b); }
+.key .h b { background: var(--h); border-color: var(--h-b); } .key .r b { background: var(--r); border-color: var(--r-b); }
+table { border-collapse: collapse; width: 100%; font-size: .85rem; }
+th, td { text-align: left; padding: 4px 7px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; font-size: .74rem; text-transform: uppercase; letter-spacing: .05em; }
+td.m { font-family: var(--mono); font-size: .8rem; overflow-wrap: anywhere; }
+tr.nul td.m { color: var(--muted); }
+tr.lit td { background: var(--on); }
+tr.lit td:first-child { box-shadow: inset 4px 0 0 var(--accent); font-weight: 600; }
+tr.none.lit td { background: var(--on); color: var(--hot); }
+.tbl { overflow-x: auto; }
+
+.vars { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; min-height: 28px; align-items: center; }
+.var { border: 1px solid var(--line); border-radius: 14px; padding: 2px 10px; font-family: var(--mono); font-size: .84rem; background: var(--bg); }
+.var.ch { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.heap { display: flex; flex-direction: column; gap: 10px; }
+.obj { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; background: var(--bg); }
+.obj.raw { border-style: dashed; }
+.obj.fresh { animation: drop .3s ease-out; }
+.oh { font-size: .84rem; margin-bottom: 6px; color: var(--muted); }
+.oh b { color: var(--fg); font-family: var(--mono); }
+.cells { display: flex; flex-wrap: wrap; gap: 3px; }
+.cell { min-width: 34px; text-align: center; border: 1px solid var(--line); border-radius: 4px; font-family: var(--mono); font-size: .9rem; padding: 0 4px 2px; background: var(--panel); }
+.cell small { display: block; font-size: .62rem; color: var(--muted); line-height: 1.3; }
+.cell.b1 { background: var(--bit1); }
+.cell.hl { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); background: var(--on); font-weight: 700; }
+.cell.chg { background: var(--chg); border-color: var(--c-b); font-weight: 700; }
+.cell.gone { opacity: .35; text-decoration: line-through; }
+.words { margin-top: 6px; font-family: var(--mono); font-size: .78rem; color: var(--muted); display: flex; flex-direction: column; gap: 1px; overflow-x: auto; }
+.words b { color: var(--fg); font-weight: 600; }
+.cell.unused { width: auto; min-width: 0; padding: 0 6px; background: transparent; border-style: dashed; color: var(--muted); font-size: .7rem; white-space: nowrap; }
+.flag { color: var(--hot); font-weight: 600; }
+.res { overflow-wrap: anywhere; margin-top: 0; border: 1px dashed var(--line); border-radius: 4px; padding: 4px 10px; font-family: var(--mono); font-size: .86rem; min-height: 1.4em; }
+.res.got { border: 1px solid var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.res small { font-family: var(--font); color: var(--muted); margin-right: 8px; }
+
+.caption { background: var(--panel); border: 1px solid var(--line); border-left: 5px solid var(--accent); border-radius: 6px; padding: 12px 16px; }
+.caption h2 { margin-bottom: 4px; } .caption p { max-width: 80ch; }
+.caption .src { margin-top: 8px; font-size: .84rem; color: var(--muted); }
+.about { border-top: 1px solid var(--line); padding-top: 14px; display: flex; flex-direction: column; gap: 8px; color: var(--muted); font-size: .9rem; max-width: 86ch; }
+.about h2 { color: var(--fg); margin: 0; }
+ul { margin: 4px 0 0; padding-left: 1.2em; } li { margin-bottom: 3px; }
+
+.codehead { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.codehead h2 { margin: 0; }
+.codehead { align-items: flex-start; }
+.cbtns { display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
+.cmsg { font-size: .78rem; color: var(--muted); min-height: 0; }
+.cmsg:not(:empty) { margin-bottom: 6px; }
+.ctabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.ctabs button { font: inherit; font-family: var(--mono); font-size: .8rem; padding: 3px 9px; border: 1px solid var(--line); background: var(--panel); color: var(--fg); border-radius: 12px; cursor: pointer; }
+.ctabs button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+pre.code { position: relative; margin: 0; padding: 10px 0; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; font-family: var(--mono); font-size: .8rem; line-height: 1.45; overflow: auto; max-height: 70vh; tab-size: 8; }
+pre.code .ln { display: block; padding: 0 12px 0 0; white-space: pre; }
+pre.code .ln i { display: inline-block; width: 4.2em; text-align: right; color: var(--muted); font-style: normal; margin-right: 12px; user-select: none; }
+pre.code mark.clicked { background: #ffd54a; color: #000; border-radius: 2px; padding: 0 1px; }
+pre.code .ln.hit { background: var(--on); }
+pre.code .ln.com { color: var(--muted); }
+.cnote { color: var(--muted); font-size: .85rem; margin-top: 8px; }
+.cnote label { cursor: pointer; text-decoration: underline; }
+
+.hist { display: flex; flex-direction: column; gap: 4px; }
+.hrow { display: grid; grid-template-columns: 2em 1fr; gap: 8px; align-items: start; opacity: .62; }
+.hrow.cur { opacity: 1; }
+.hrow .hn { font-family: var(--mono); font-size: .82rem; color: var(--muted); text-align: right; padding-top: 6px; }
+.hrow.cur .hn { color: var(--fg); font-weight: 700; }
+.hrow.cur .rec { box-shadow: 0 0 0 2px var(--accent); }
+.controls { position: sticky; bottom: 0; z-index: 5; background: var(--bg); padding: 8px 0; border-top: 1px solid var(--line); }
+#memorypane { scroll-margin-top: 8px; }
+
+.alloc { border: 1.5px dashed var(--muted); border-radius: 6px; padding: 6px 8px 8px; }
+.atag { font-size: .72rem; color: var(--muted); margin-bottom: 6px; }
+.ablock { display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap; }
+.bhdr { flex: none; width: 176px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); font-family: var(--mono); font-size: .74rem; }
+.bhdr > div { display: flex; justify-content: space-between; gap: 8px; padding: 1px 8px; border-bottom: 1px solid var(--line); }
+.bhdr > div:last-child { border-bottom: 0; }
+.bhdr .bh { background: var(--r); color: var(--muted); font-family: var(--font); font-size: .68rem; justify-content: center; text-transform: uppercase; letter-spacing: .05em; }
+.bdata { flex: 1 1 360px; min-width: 0; }
+.cell { min-width: 26px; font-size: .8rem; padding: 0 2px 2px; }
+.cells { gap: 2px; }
+
+.resrow { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; align-items: stretch; }
+@media (max-width: 560px) { .resrow { grid-template-columns: 1fr; } }
+.stmt { border: 1px solid var(--s-b); background: var(--s); border-radius: 4px; padding: 4px 10px; font-family: var(--mono); font-size: .86rem; min-height: 1.4em; overflow-wrap: anywhere; }
+.stmt small { display: block; font-family: var(--font); font-size: .72rem; color: var(--muted); }
+.showstruct { font: inherit; font-size: .74rem; margin-left: 8px; padding: 0 8px; border: 1px solid var(--accent); background: transparent; color: var(--accent); border-radius: 10px; cursor: pointer; }
+.showstruct:hover { background: var(--accent); color: var(--accent-fg); }
+</style>
+</head>
+<body>
+<main>
+  <header class="top">
+    <div class="topl">
+    <h1>Bitarray Stepper</h1>
+    <p class="lede">Pick a command, then step through what Tcl and <code>bitarray.c</code> do with it: which core function reaches
+    which hook, and how the bits and 64-bit words change. Change the width, the index or the value and the steps are recomputed.</p>
+    </div>
+    <div class="keys" aria-label="keyboard and mouse shortcuts"><b>Shortcuts</b>
+      <div><kbd>→</kbd> next step <kbd>←</kbd> back</div>
+      <div><kbd>Space</kbd> start / pause auto-play</div>
+      <div><kbd>Esc</kbd> close the code view</div>
+      <div>code view: double-click a name to jump, <kbd>⌫</kbd> back (then resume)</div>
+      <div>click a marker: go to that step</div>
+      <div>Back on the first step: previous command</div>
+    </div>
+  </header>
+
+  <div class="bar" id="scenebar"><span class="lbl">Command</span><span class="seg" id="scenes"></span></div>
+  <div class="bar">
+    <span class="lbl">Element width</span>
+    <span class="seg" id="widths"><button data-w="1" aria-pressed="true">1 bit</button><button data-w="8" aria-pressed="false">8 bits</button></span>
+    <span class="lbl" id="shlbl">Is the array shared?</span>
+    <span class="seg" id="shared"><button data-s="0" aria-pressed="true">No: only <code>a</code> holds it</button><button data-s="1" aria-pressed="false">Yes: <code>set b $a</code> was done</button></span>
+  </div>
+  <div class="params" id="params"></div>
+
+  <section class="pane" id="memorypane">
+    <h2>Memory <small>a simplified drawing of the real data; each 64-bit word is shown in hex</small></h2>
+    <div class="vars" id="vars"></div>
+    <div class="heap" id="heap"></div>
+    <div class="resrow"><div class="res" id="res"></div><div class="stmt" id="stmt"></div></div>
+  </section>
+
+  <section class="caption"><h2 id="cap-h"></h2><p id="cap-p"></p><p class="src" id="cap-s"></p></section>
+
+  <div class="bar controls" style="justify-content:space-between">
+    <div class="dots" id="dots"></div>
+    <div class="ctl"><button id="b-reset">Reset</button><button id="b-prev">Back</button><button id="b-next" class="primary">Next step</button><label class="speed" title="seconds per step in Auto-play"><select id="speed" aria-label="seconds per step"><option>0.5</option><option>1</option><option>1.5</option><option selected>2</option><option>3</option><option>5</option></select> s/step</label><button id="b-play">Auto-play</button><button id="b-code">Show code</button></div>
+  </div>
+
+  <section class="pane" id="codeview" hidden>
+    <div class="codehead"><h2 id="code-h">Code for this step</h2><div class="cbtns"><button class="ctlbtn" id="b-resume" style="font:inherit;padding:7px 14px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-fg);border-radius:6px;cursor:pointer;font-weight:600">Resume</button><button class="ctlbtn" id="b-back" style="font:inherit;padding:7px 14px;border:1px solid var(--accent);background:transparent;color:var(--accent);border-radius:6px;cursor:pointer">← Back</button></div></div>
+    <div class="ctabs" id="ctabs"></div><div id="cmsg" class="cmsg"></div>
+    <pre class="code" id="codepre" tabindex="0"></pre>
+    <p class="cnote" id="cnote"></p>
+  </section>
+
+  <div id="sim" style="display:flex;flex-direction:column;gap:16px">
+  <div class="row2">
+    <section class="pane">
+      <h2>Call history <small>newest at the top; 0 is always the library load</small></h2>
+      <div class="hist" id="hist"></div>
+      <div class="key"><span class="s"><b></b>script / bytecode</span><span class="c"><b></b>Tcl core</span><span class="h"><b></b>bitarray.c</span><span class="r"><b></b>result</span></div>
+    </section>
+    <section class="pane">
+      <h2>Tcl_ObjType hooks <small>the slots the core can call</small></h2>
+      <div class="tbl"><table id="slots"><thead><tr><th>Slot</th><th>bitarray</th></tr></thead><tbody></tbody></table></div>
+    </section>
+  </div>
+
+
+
+  <section class="pane">
+    <h2>Core map <small>which core function reaches which hook (checked against the Tcl source, see below)</small></h2>
+    <div class="tbl"><table>
+      <thead><tr><th>Command</th><th>Core path</th><th>Hook</th></tr></thead>
+      <tbody>
+      <tr><td><code>llength $a</code></td><td class="m">INST_LIST_LENGTH (tclExecute.c) → TclListObjLength (tclListObj.c)</td><td class="m">lengthProc → BALength</td></tr>
+      <tr><td><code>lindex $a i</code></td><td class="m">INST_LIST_INDEX or INST_LIST_INDEX_IMM (tclExecute.c): TclObjTypeLength, then TclObjTypeIndex</td><td class="m">indexProc → BAIndex</td></tr>
+      <tr><td><code>lset a i v</code></td><td class="m">INST_LSET_FLAT (tclExecute.c) → TclObjTypeSetElement; Tcl_LsetObjCmd → TclLsetList (tclListObj.c) takes the same route</td><td class="m">setElementProc → BASetElement (it copies a shared array itself)</td></tr>
+      <tr><td><code>lrange $a i j</code></td><td class="m">INST_LIST_RANGE_IMM (tclExecute.c) or Tcl_LrangeObjCmd (tclCmdIL.c) → Tcl_ListObjRange (tclListTypes.c) → TclObjTypeSlice</td><td class="m">sliceProc → BASlice</td></tr>
+      <tr><td><code>lreverse $a</code></td><td class="m">Tcl_LreverseObjCmd (tclCmdIL.c) → Tcl_ListObjReverse (tclListTypes.c) → TclObjTypeReverse</td><td class="m">reverseProc → BAReverse</td></tr>
+      <tr><td><code>lreplace $a i j …</code></td><td class="m">INST_LREPLACE (tclExecute.c): Tcl_ListObjLength, Tcl_DuplicateObj if shared, then Tcl_ListObjReplace (tclListObj.c) → TclObjTypeReplace</td><td class="m">replaceProc → BAReplace (copy through dupIntRepProc → BADup)</td></tr>
+      <tr><td><code>foreach e $a</code></td><td class="m">INST_FOREACH_STEP (tclExecute.c): Tcl_ListObjLength once, then Tcl_ListObjIndex per element</td><td class="m">lengthProc, indexProc → BALength, BAIndex</td></tr>
+      <tr><td><code>x in $a</code></td><td class="m">INST_LIST_IN (tclExecute.c) → TclObjTypeInOperator</td><td class="m">inOperProc → BAInOper</td></tr>
+      <tr><td><code>join $a ,</code></td><td class="m">Tcl_JoinObjCmd (tclCmdIL.c) → TclObjTypeGetElements (the same for <code>{*}$a</code> and others that need every element)</td><td class="m">getElementsProc → BAGetElements</td></tr>
+      <tr><td><code>puts $a</code></td><td class="m">Tcl_GetString → the type's updateStringProc</td><td class="m">updateStringProc → BAUpdateString</td></tr>
+      <tr><td><code>lappend a v</code></td><td class="m">Tcl_ListObjAppendElement → TclListObjAppendElements → TclListObjGetRep → SetListFromAny (tclListObj.c)</td><td class="m">no slot; SetListFromAny calls BALength, then BAIndex per element, and the array becomes a plain list</td></tr>
+      <tr><td><code>bitarray and …</code></td><td class="m">none: it is an ordinary command</td><td class="m">BitarrayCmd → BitOpCmd → BitOpWords</td></tr>
+      </tbody></table></div>
+  </section>
+
+  <section class="about">
+    <h2>About this page</h2>
+    <p>The steps were written from the sources: <code>bitarray.c</code> (version 0.6.0) and the Tcl 9.1 source tree (GitHub mirror, commit
+    <code>e36db33</code>; files <code>tclExecute.c</code>, <code>tclListObj.c</code>, <code>tclListTypes.c</code>, <code>tclCmdIL.c</code>,
+    <code>tclArithSeries.c</code>). Function names are stable; line numbers and details can drift in later Tcl versions, so check the source
+    before relying on a name. The values drawn are computed by this page's own small model of the operations. They are not captured from
+    a running Tcl, and the page does not run Tcl or your build. The simplifications are: refcounts count only the variables shown (the real
+    value stack holds extra references for a moment); an array has 16 elements here (real ones are as long as you like); and
+    <code>capWords</code> is modelled only where a step grows the array (doubling, at least 4 words).</p>
+    <p>Timings and when to prefer a plain list are in <code>performance_analysis.md</code>; the full command syntax is in <code>README.md</code>.</p>
+  </section>
+  </div>
+</main>
+<script type="text/plain" id="csrc">
+/*
+ * bitarray.c --
+ *
+ *	A packed array of small integers that looks like a Tcl list
+ *	(llength, lindex, lset, lrange, lreverse, lreplace, foreach, "in",
+ *	string representation), built on the Tcl 9 abstract-list hooks of
+ *	Tcl_ObjType.  Extension only: no core changes.
+ *
+ *	Element width (chosen when the array is created, fixed afterwards):
+ *	    1   bit      values 0 and 1
+ *	    8   bits     unsigned, 0 .. 255
+ *	    16  bits     unsigned, 0 .. 65535
+ *	    32  bits     unsigned, 0 .. 4294967295
+ *	    64  bits     signed,   -2^63 .. 2^63-1
+ *
+ *	Written by Claude (an AI model made by Anthropic) for Eric Taylor.
+ *
+ * Commands (subcommands of the global command "bitarray"; README.md has the full syntax):
+ *	new SIZE ?VALUE? ?-width W?        newfrom LIST ?-width W?
+ *	width BA      is VALUE      version      frombytes DATA      tobytes BA
+ *	fromchars STRING ?-width W?      tochars BA
+ *	count BA ?FIRST ?to? LAST ?with? ?VALUE??     next BA START ?with? ?VALUE?
+ *	fill VAR FIRST ?to? LAST ?with? VALUE ?by? ?STEP?   (in place, like lset)
+ *	and|or|xor|andnot ?-length strict|zero? VAR ?<-? BA ?BA?   (bitwise, 64 bits at a time)
+ *	not VAR ?<- BA?                  (flip every bit)
+ *	VAR is a variable name (that array is changed in place, or, after "<-" with two
+ *	arrays, created); BA, DATA and STRING are values.  The other operations are
+ *	the ordinary list commands, which the abstract-list hooks below implement.
+ *	fill and the bitwise commands return the empty string.
+ */
+
+#include <tcl.h>
+#define BA_VERSION "0.6.0"	/* the one place the version is set (also in pkgIndex.tcl) */
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+
+/*
+ * 32-bit / 64-bit.  Tcl_Size has the width of a pointer, so on a 32-bit build
+ * it is 32 bits.  BA_MAX_BITS is the largest array we allow, counted in TOTAL
+ * BITS of storage (elements times element width); sizes are always checked as
+ * 64-bit values BEFORE they are narrowed to Tcl_Size.
+ *   64-bit: 2^40 bits (128 GiB).
+ *   32-bit: 2^30 - 1 bits (128 MiB), so that 2*len-1 (the string
+ *           representation) and len+63 cannot overflow a signed 32-bit size.
+ */
+#if SIZE_MAX > 0xFFFFFFFFu && !defined(BA_FORCE_32BIT_LIMITS)
+#   define BA_MAX_BITS	((Tcl_WideInt)1 << 40)
+#else
+#   define BA_MAX_BITS	((Tcl_WideInt)0x3FFFFFFF)
+#endif
+
+/*
+ * Population count and count-trailing-zeros on a 64-bit word.  GCC and clang
+ * have builtins; anywhere else (or with -DBA_NO_BUILTINS) use plain C.
+ */
+#if (defined(__GNUC__) || defined(__clang__)) && !defined(BA_NO_BUILTINS)
+#   define BA_POPCOUNT(x)	__builtin_popcountll(x)
+#   define BA_CTZ(x)		__builtin_ctzll(x)
+#else
+static int
+BaPopcount(uint64_t x)
+{
+    x = x - ((x >> 1) & 0x5555555555555555ULL);
+    x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL);
+    x = (x + (x >> 4)) & 0x0F0F0F0F0F0F0F0FULL;
+    return (int)((x * 0x0101010101010101ULL) >> 56);
+}
+static int
+BaCtz(uint64_t x)		/* x must be non-zero */
+{
+    int n = 0;
+
+    if (!(x & 0xFFFFFFFFULL)) { n += 32; x >>= 32; }
+    if (!(x & 0xFFFFULL))     { n += 16; x >>= 16; }
+    if (!(x & 0xFFULL))       { n += 8;  x >>= 8; }
+    if (!(x & 0xFULL))        { n += 4;  x >>= 4; }
+    if (!(x & 0x3ULL))        { n += 2;  x >>= 2; }
+    if (!(x & 0x1ULL))        { n += 1; }
+    return n;
+}
+#   define BA_POPCOUNT(x)	BaPopcount(x)
+#   define BA_CTZ(x)		BaCtz(x)
+#endif
+
+typedef struct BitArr {
+    Tcl_Size len;		/* Number of elements. */
+    Tcl_Size nwords;		/* 64-bit words in use: (len*width + 63) / 64. */
+    Tcl_Size capWords;		/* Words allocated (>= nwords); every bit at or
+				 * beyond the end of the data, up to the
+				 * capacity, is 0. */
+    int width;			/* Bits per element: 1, 8, 16, 32 or 64. */
+    Tcl_Obj *zero, *one;	/* Shared element values handed out by index. */
+    Tcl_Obj **elems;		/* Lazily built element vector, or NULL. */
+    Tcl_Size elemsLen;		/* Number of entries in elems. */
+    uint64_t words[1];		/* Storage (at least one word is always
+				 * present).  Width 1: bit i is bit (i&63) of
+				 * word i>>6.  Wider: elements packed as bytes
+				 * in host order, read and written only through
+				 * GetElem/PutElem. */
+} BitArr;
+
+static Tcl_ObjTypeLengthProc	BALength;
+static Tcl_ObjTypeIndexProc	BAIndex;
+static Tcl_ObjTypeSliceProc	BASlice;
+static Tcl_ObjTypeReverseProc	BAReverse;
+static Tcl_ObjTypeGetElements	BAGetElements;
+static Tcl_ObjTypeSetElement	BASetElement;
+static Tcl_ObjTypeReplaceProc	BAReplace;
+static Tcl_ObjTypeInOperatorProc BAInOper;
+static Tcl_FreeInternalRepProc	BAFree;
+static Tcl_DupInternalRepProc	BADup;
+static Tcl_UpdateStringProc	BAUpdateString;
+
+static const Tcl_ObjType bitarrayType = {
+    "bitarray", BAFree, BADup, BAUpdateString, NULL,
+    TCL_OBJTYPE_V2(BALength, BAIndex, BASlice, BAReverse, BAGetElements,
+	    BASetElement, BAReplace, BAInOper)
+};
+
+#define GETREP(o)	((BitArr *)(o)->internalRep.twoPtrValue.ptr1)
+#define ISBA(o)		((o)->typePtr == &bitarrayType)
+#define GETBIT(b,i)	(((b)->words[(i) >> 6] >> ((i) & 63)) & 1)
+#define SETBIT(b,i)	((b)->words[(i) >> 6] |= (uint64_t)1 << ((i) & 63))
+#define CLRBIT(b,i)	((b)->words[(i) >> 6] &= ~((uint64_t)1 << ((i) & 63)))
+#define BYTES(b)	((unsigned char *)(b)->words)
+#define EBYTES(b)	((size_t)(b)->width / 8)    /* width > 1 only */
+
+/* Words needed for LEN elements of WIDTH bits (caller has range-checked). */
+#define WORDS_FOR(len, width) \
+	((Tcl_Size)(((Tcl_WideInt)(len) * (width) + 63) / 64))
+
+/* ---------------------------------------------------------------- */
+
+/*
+ * Read or write element I.  The value is the raw unsigned bit pattern; for
+ * width 64 the caller reinterprets it as signed.  Multi-byte elements go
+ * through memcpy, which compilers turn into a single load or store and which
+ * avoids strict-aliasing and alignment problems.
+ */
+static uint64_t
+GetElem(const BitArr *b, Tcl_Size i)
+{
+    const unsigned char *p = (const unsigned char *)b->words;
+
+    if (b->width == 1) return GETBIT(b, i);
+    switch (b->width) {
+    case 8:  return p[i];
+    case 16: { uint16_t v; memcpy(&v, p + 2 * (size_t)i, 2); return v; }
+    case 32: { uint32_t v; memcpy(&v, p + 4 * (size_t)i, 4); return v; }
+    case 64: { uint64_t v; memcpy(&v, p + 8 * (size_t)i, 8); return v; }
+    default: return GETBIT(b, i);
+    }
+}
+
+static void
+PutElem(BitArr *b, Tcl_Size i, uint64_t val)
+{
+    unsigned char *p = BYTES(b);
+
+    if (b->width == 1) {
+	if (val) SETBIT(b, i); else CLRBIT(b, i);
+	return;
+    }
+    switch (b->width) {
+    case 8:  p[i] = (unsigned char)val; break;
+    case 16: { uint16_t v = (uint16_t)val; memcpy(p + 2 * (size_t)i, &v, 2); break; }
+    case 32: { uint32_t v = (uint32_t)val; memcpy(p + 4 * (size_t)i, &v, 4); break; }
+    case 64: memcpy(p + 8 * (size_t)i, &val, 8); break;
+    default: if (val) SETBIT(b, i); else CLRBIT(b, i); break;
+    }
+}
+
+static BitArr *
+NewRep(Tcl_Interp *interp, Tcl_Size len, int width)
+{
+    Tcl_Size nwords;
+    size_t bytes;
+    BitArr *b;
+
+    if (len < 0 || (Tcl_WideInt)len * width > BA_MAX_BITS) {
+	if (interp) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "bitarray size out of range", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "SIZE", NULL);
+	}
+	return NULL;
+    }
+    nwords = WORDS_FOR(len, width);
+    bytes = sizeof(BitArr) + (nwords ? nwords - 1 : 0) * sizeof(uint64_t);
+    b = (BitArr *)Tcl_AttemptAlloc(bytes);
+    if (b == NULL) {
+	if (interp) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("out of memory", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	}
+	return NULL;
+    }
+    memset(b, 0, bytes);
+    b->len = len;
+    b->nwords = nwords;
+    b->capWords = nwords;
+    b->width = width;
+    b->zero = Tcl_NewWideIntObj(0);
+    b->one = Tcl_NewWideIntObj(1);
+    Tcl_IncrRefCount(b->zero);
+    Tcl_IncrRefCount(b->one);
+    return b;
+}
+
+static void
+FreeElems(BitArr *b)
+{
+    if (b->elems) {
+	if (b->width != 1) {
+	    Tcl_Size i;
+
+	    /* Entries other than the shared 0/1 objects are owned by us. */
+	    for (i = 0; i < b->elemsLen; i++) {
+		if (b->elems[i] != b->zero && b->elems[i] != b->one) {
+		    Tcl_DecrRefCount(b->elems[i]);
+		}
+	    }
+	}
+	Tcl_Free(b->elems);
+	b->elems = NULL;
+	b->elemsLen = 0;
+    }
+}
+
+static void
+FreeRep(BitArr *b)
+{
+    FreeElems(b);
+    Tcl_DecrRefCount(b->zero);
+    Tcl_DecrRefCount(b->one);
+    Tcl_Free(b);
+}
+
+static Tcl_Obj *
+WrapRep(BitArr *b)
+{
+    Tcl_Obj *obj = Tcl_NewObj();
+    Tcl_ObjInternalRep ir;
+
+    Tcl_InvalidateStringRep(obj);
+    ir.twoPtrValue.ptr1 = b;
+    ir.twoPtrValue.ptr2 = NULL;
+    Tcl_StoreInternalRep(obj, &bitarrayType, &ir);
+    return obj;
+}
+
+static void
+Touch(Tcl_Obj *obj)
+{
+    FreeElems(GETREP(obj));
+    Tcl_InvalidateStringRep(obj);
+}
+
+/* Element VAL as a Tcl value (new object, reference count 0, unless 0 or 1). */
+static Tcl_Obj *
+ElemObj(const BitArr *b, uint64_t val)
+{
+    if (val == 0) return b->zero;
+    if (val == 1) return b->one;
+    return Tcl_NewWideIntObj(b->width == 64 ? (Tcl_WideInt)(int64_t)val
+	    : (Tcl_WideInt)val);
+}
+
+static void
+SetRangeOnes(BitArr *b, Tcl_Size first, Tcl_Size last, int val)
+{
+    Tcl_Size fw = first >> 6, lw = last >> 6, i;
+    uint64_t fm = ~(uint64_t)0 << (first & 63);
+    uint64_t lm = ~(uint64_t)0 >> (63 - (last & 63));
+
+    if (fw == lw) {
+	if (val) b->words[fw] |= (fm & lm); else b->words[fw] &= ~(fm & lm);
+	return;
+    }
+    if (val) b->words[fw] |= fm; else b->words[fw] &= ~fm;
+    for (i = fw + 1; i < lw; i++) {
+	b->words[i] = val ? ~(uint64_t)0 : 0;
+    }
+    if (val) b->words[lw] |= lm; else b->words[lw] &= ~lm;
+}
+
+static Tcl_WideInt
+CountRange(BitArr *b, Tcl_Size first, Tcl_Size last)
+{
+    Tcl_Size fw, lw, i;
+    uint64_t fm, lm;
+    Tcl_WideInt total;
+
+    if (first > last) return 0;
+    fw = first >> 6; lw = last >> 6;
+    fm = ~(uint64_t)0 << (first & 63);
+    lm = ~(uint64_t)0 >> (63 - (last & 63));
+    if (fw == lw) {
+	return BA_POPCOUNT(b->words[fw] & fm & lm);
+    }
+    total = BA_POPCOUNT(b->words[fw] & fm);
+    for (i = fw + 1; i < lw; i++) {
+	total += BA_POPCOUNT(b->words[i]);
+    }
+    return total + BA_POPCOUNT(b->words[lw] & lm);
+}
+
+static Tcl_Size
+NextBit(BitArr *b, Tcl_Size start, int val)
+{
+    Tcl_Size w;
+    uint64_t cur;
+
+    if (start < 0) start = 0;
+    if (start >= b->len) return -1;
+    w = start >> 6;
+    cur = (val ? b->words[w] : ~b->words[w]) & (~(uint64_t)0 << (start & 63));
+    for (;;) {
+	if (cur) {
+	    Tcl_Size idx = (w << 6) + BA_CTZ(cur);
+	    return idx < b->len ? idx : -1;
+	}
+	if (++w >= b->nwords) return -1;
+	cur = val ? b->words[w] : ~b->words[w];
+    }
+}
+
+/*
+ * Counting and searching for widths above 1.  ANYNZ means "any non-zero
+ * element"; otherwise elements equal to VAL (a raw bit pattern).
+ */
+static Tcl_WideInt
+CountWide(const BitArr *b, Tcl_Size first, Tcl_Size last, int anyNZ,
+	uint64_t val)
+{
+    Tcl_WideInt total = 0;
+    Tcl_Size i;
+
+    if (first > last) return 0;
+    if (b->width == 8) {
+	const unsigned char *p = (const unsigned char *)b->words;
+
+	if (anyNZ) {
+	    for (i = first; i <= last; i++) total += (p[i] != 0);
+	} else {
+	    unsigned char c = (unsigned char)val;
+
+	    for (i = first; i <= last; i++) total += (p[i] == c);
+	}
+	return total;
+    }
+    for (i = first; i <= last; i++) {
+	uint64_t e = GetElem(b, i);
+
+	total += anyNZ ? (e != 0) : (e == val);
+    }
+    return total;
+}
+
+static Tcl_Size
+NextWide(const BitArr *b, Tcl_Size start, int anyNZ, uint64_t val)
+{
+    Tcl_Size i;
+
+    if (start < 0) start = 0;
+    if (start >= b->len) return -1;
+    if (b->width == 8) {
+	const unsigned char *p = (const unsigned char *)b->words;
+
+	if (!anyNZ) {
+	    const unsigned char *q = (const unsigned char *)memchr(p + start,
+		    (int)val, (size_t)(b->len - start));
+
+	    return q ? (Tcl_Size)(q - p) : -1;
+	}
+	i = start;
+	for (; i < b->len && (i & 7); i++) {
+	    if (p[i]) return i;
+	}
+	for (; i + 8 <= b->len; i += 8) {
+	    uint64_t w;
+
+	    memcpy(&w, p + i, 8);
+	    if (w) break;
+	}
+	for (; i < b->len; i++) {
+	    if (p[i]) return i;
+	}
+	return -1;
+    }
+    for (i = start; i < b->len; i++) {
+	uint64_t e = GetElem(b, i);
+
+	if (anyNZ ? (e != 0) : (e == val)) return i;
+    }
+    return -1;
+}
+
+static int
+ParseBit(Tcl_Interp *interp, Tcl_Obj *obj, int *bitPtr)
+{
+    Tcl_WideInt v;
+
+    /* Fast path: a literal 0 or 1 that already has a string representation. */
+    if (obj->bytes != NULL && obj->length == 1
+	    && (obj->bytes[0] == '0' || obj->bytes[0] == '1')) {
+	*bitPtr = obj->bytes[0] - '0';
+	return TCL_OK;
+    }
+    if (Tcl_GetWideIntFromObj(NULL, obj, &v) != TCL_OK || (v != 0 && v != 1)) {
+	if (interp) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "expected 0 or 1 but got \"%s\"", Tcl_GetString(obj)));
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
+	}
+	return TCL_ERROR;
+    }
+    *bitPtr = (int)v;
+    return TCL_OK;
+}
+
+/*
+ * Parse an element value for an array of WIDTH bits into its raw bit pattern.
+ * Widths 8, 16 and 32 are unsigned; width 64 is signed.
+ */
+static int
+ParseValue(Tcl_Interp *interp, Tcl_Obj *obj, int width, uint64_t *vp)
+{
+    Tcl_WideInt v;
+
+    if (width == 1) {
+	int bit;
+
+	if (ParseBit(interp, obj, &bit) != TCL_OK) return TCL_ERROR;
+	*vp = (uint64_t)bit;
+	return TCL_OK;
+    }
+    if (obj->bytes != NULL && obj->length == 1
+	    && obj->bytes[0] >= '0' && obj->bytes[0] <= '9') {
+	*vp = (uint64_t)(obj->bytes[0] - '0');
+	return TCL_OK;
+    }
+    if (Tcl_GetWideIntFromObj(NULL, obj, &v) == TCL_OK) {
+	if (width == 64) {
+	    *vp = (uint64_t)v;
+	    return TCL_OK;
+	}
+	if (v >= 0 && v <= (Tcl_WideInt)(((uint64_t)1 << width) - 1)) {
+	    *vp = (uint64_t)v;
+	    return TCL_OK;
+	}
+    }
+    if (interp) {
+	if (width == 64) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "expected integer in range -9223372036854775808..9223372036854775807"
+		    " but got \"%s\"", Tcl_GetString(obj)));
+	} else {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "expected integer in range 0..%lld but got \"%s\"",
+		    (long long)(((uint64_t)1 << width) - 1), Tcl_GetString(obj)));
+	}
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
+    }
+    return TCL_ERROR;
+}
+
+static void
+IndexError(Tcl_Interp *interp, Tcl_Obj *idxObj)
+{
+    if (interp) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("index \"%s\" out of range",
+		Tcl_GetString(idxObj)));
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE", NULL);
+    }
+}
+
+/* ------------------------- type hooks ----------------------------- */
+
+static void
+BAFree(Tcl_Obj *objPtr)
+{
+    FreeRep(GETREP(objPtr));
+    objPtr->typePtr = NULL;
+}
+
+static void
+BADup(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr)
+{
+    BitArr *s = GETREP(srcPtr), *d = NewRep(NULL, s->len, s->width);
+    Tcl_ObjInternalRep ir;
+
+    if (d == NULL) Tcl_Panic("bitarray: out of memory in dup");
+    memcpy(d->words, s->words, (size_t)s->nwords * sizeof(uint64_t));
+    ir.twoPtrValue.ptr1 = d;
+    ir.twoPtrValue.ptr2 = NULL;
+    Tcl_StoreInternalRep(copyPtr, &bitarrayType, &ir);
+}
+
+static void
+BAUpdateString(Tcl_Obj *objPtr)
+{
+    BitArr *b = GETREP(objPtr);
+    char *p;
+    Tcl_Size i;
+
+    if (b->len == 0) {
+	Tcl_InitStringRep(objPtr, NULL, 0);
+	return;
+    }
+    if (b->width == 1) {
+	p = Tcl_InitStringRep(objPtr, NULL, 2 * b->len - 1);
+	if (p == NULL) Tcl_Panic("bitarray: out of memory in string rep");
+	for (i = 0; i < b->len; i++) {
+	    *p++ = (char)('0' + GETBIT(b, i));
+	    if (i + 1 < b->len) *p++ = ' ';
+	}
+    } else {
+	Tcl_DString ds;
+	char buf[32];
+	int n;
+
+	Tcl_DStringInit(&ds);
+	for (i = 0; i < b->len; i++) {
+	    uint64_t v = GetElem(b, i);
+
+	    if (i) Tcl_DStringAppend(&ds, " ", 1);
+	    if (b->width == 64) {
+		n = snprintf(buf, sizeof(buf), "%lld", (long long)(int64_t)v);
+	    } else {
+		n = snprintf(buf, sizeof(buf), "%llu", (unsigned long long)v);
+	    }
+	    Tcl_DStringAppend(&ds, buf, n);
+	}
+	Tcl_InitStringRep(objPtr, Tcl_DStringValue(&ds),
+		(Tcl_Size)Tcl_DStringLength(&ds));
+	Tcl_DStringFree(&ds);
+    }
+}
+
+static Tcl_Size
+BALength(Tcl_Obj *objPtr)
+{
+    return GETREP(objPtr)->len;
+}
+
+static int
+BAIndex(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size index, Tcl_Obj **elemPtr)
+{
+    BitArr *b = GETREP(objPtr);
+
+    (void)interp;
+    if (index < 0 || index >= b->len) {
+	*elemPtr = NULL;
+    } else if (b->width == 1) {
+	*elemPtr = GETBIT(b, index) ? b->one : b->zero;
+    } else {
+	*elemPtr = ElemObj(b, GetElem(b, index));
+    }
+    return TCL_OK;
+}
+
+static uint64_t GetBits(const BitArr *b, Tcl_Size p, int n);
+
+/* Reverse the order of the 64 bits of X (bit 0 becomes bit 63). */
+static uint64_t
+Rev64(uint64_t x)
+{
+    x = ((x >> 1) & 0x5555555555555555ULL) | ((x & 0x5555555555555555ULL) << 1);
+    x = ((x >> 2) & 0x3333333333333333ULL) | ((x & 0x3333333333333333ULL) << 2);
+    x = ((x >> 4) & 0x0F0F0F0F0F0F0F0FULL) | ((x & 0x0F0F0F0F0F0F0F0FULL) << 4);
+    x = ((x >> 8) & 0x00FF00FF00FF00FFULL) | ((x & 0x00FF00FF00FF00FFULL) << 8);
+    x = ((x >> 16) & 0x0000FFFF0000FFFFULL) | ((x & 0x0000FFFF0000FFFFULL) << 16);
+    return (x >> 32) | (x << 32);
+}
+
+static int
+BASlice(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size from, Tcl_Size to,
+	Tcl_Obj **newObjPtr)
+{
+    BitArr *b = GETREP(objPtr), *n;
+    Tcl_Size i, len;
+
+    if (from < 0) from = 0;
+    if (to >= b->len) to = b->len - 1;
+    if (from > to || from >= b->len) {
+	*newObjPtr = Tcl_NewObj();
+	return TCL_OK;
+    }
+    len = to - from + 1;
+    if ((n = NewRep(interp, len, b->width)) == NULL) return TCL_ERROR;
+    if (b->width != 1) {
+	memcpy(BYTES(n), BYTES(b) + (size_t)from * EBYTES(b),
+		(size_t)len * EBYTES(b));
+    } else if ((from & 63) == 0) {
+	memcpy(n->words, &b->words[from >> 6],
+		(size_t)n->nwords * sizeof(uint64_t));
+	if (len & 63) {
+	    n->words[n->nwords - 1] &= ~(~(uint64_t)0 << (len & 63));
+	}
+    } else {
+	/* Unaligned start: read 64 bits at a time; GetBits masks the last chunk. */
+	for (i = 0; i < len; i += 64) {
+	    int m = (len - i >= 64) ? 64 : (int)(len - i);
+
+	    n->words[i >> 6] = GetBits(b, from + i, m);
+	}
+    }
+    *newObjPtr = WrapRep(n);
+    return TCL_OK;
+}
+
+static int
+BAReverse(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Obj **newObjPtr)
+{
+    BitArr *b = GETREP(objPtr), *n;
+    Tcl_Size i;
+
+    if ((n = NewRep(interp, b->len, b->width)) == NULL) return TCL_ERROR;
+    if (b->width == 1) {
+	/*
+	 * Result bits i..i+m-1 are source bits L-i-m..L-i-1 in reverse order:
+	 * read that run, reverse all 64 bits and drop the unused low end.
+	 */
+	for (i = 0; i < b->len; i += 64) {
+	    int m = (b->len - i >= 64) ? 64 : (int)(b->len - i);
+
+	    n->words[i >> 6] = Rev64(GetBits(b, b->len - i - m, m)) >> (64 - m);
+	}
+    } else if (b->width == 8) {
+	const unsigned char *src = BYTES(b);
+	unsigned char *dst = BYTES(n);
+
+	for (i = 0; i < b->len; i++) dst[i] = src[b->len - 1 - i];
+    } else if (b->width == 16) {
+	for (i = 0; i < b->len; i++) {
+	    uint16_t v;
+
+	    memcpy(&v, BYTES(b) + 2 * (size_t)(b->len - 1 - i), 2);
+	    memcpy(BYTES(n) + 2 * (size_t)i, &v, 2);
+	}
+    } else if (b->width == 32) {
+	for (i = 0; i < b->len; i++) {
+	    uint32_t v;
+
+	    memcpy(&v, BYTES(b) + 4 * (size_t)(b->len - 1 - i), 4);
+	    memcpy(BYTES(n) + 4 * (size_t)i, &v, 4);
+	}
+    } else {
+	for (i = 0; i < b->len; i++) {
+	    uint64_t v;
+
+	    memcpy(&v, BYTES(b) + 8 * (size_t)(b->len - 1 - i), 8);
+	    memcpy(BYTES(n) + 8 * (size_t)i, &v, 8);
+	}
+    }
+    *newObjPtr = WrapRep(n);
+    return TCL_OK;
+}
+
+static int
+BAGetElements(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size *objcPtr,
+	Tcl_Obj ***objvPtr)
+{
+    BitArr *b = GETREP(objPtr);
+    Tcl_Size i;
+
+    if (b->elems == NULL) {
+	if ((size_t)b->len > (size_t)-1 / sizeof(Tcl_Obj *) / 2) {
+	    if (interp) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj("out of memory", -1));
+	    }
+	    return TCL_ERROR;
+	}
+	b->elems = (Tcl_Obj **)Tcl_AttemptAlloc(
+		(size_t)(b->len ? b->len : 1) * sizeof(Tcl_Obj *));
+	if (b->elems == NULL) {
+	    if (interp) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj("out of memory", -1));
+	    }
+	    return TCL_ERROR;
+	}
+	if (b->width == 1) {
+	    for (i = 0; i < b->len; i++) {
+		b->elems[i] = GETBIT(b, i) ? b->one : b->zero;
+	    }
+	} else {
+	    for (i = 0; i < b->len; i++) {
+		Tcl_Obj *e = ElemObj(b, GetElem(b, i));
+
+		if (e != b->zero && e != b->one) Tcl_IncrRefCount(e);
+		b->elems[i] = e;
+	    }
+	}
+	b->elemsLen = b->len;
+    }
+    *objcPtr = b->len;
+    *objvPtr = b->elems;
+    return TCL_OK;
+}
+
+static Tcl_Obj *
+BASetElement(Tcl_Interp *interp, Tcl_Obj *listPtr, Tcl_Size indexCount,
+	Tcl_Obj *const indexArray[], Tcl_Obj *valueObj)
+{
+    BitArr *b;
+    Tcl_Size idx;
+    uint64_t val;
+    Tcl_Obj *obj = listPtr;
+
+    if (indexCount != 1) {
+	if (interp) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "bitarray elements are not lists", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
+	}
+	return NULL;
+    }
+    b = GETREP(listPtr);
+    if (Tcl_GetIntForIndex(interp, indexArray[0], b->len - 1, &idx) != TCL_OK) {
+	return NULL;
+    }
+    if (idx == TCL_SIZE_MAX && b->len == 0) {
+	idx = 0;		/* Same special case as the core's TclLsetFlat. */
+    }
+    if (idx < 0 || idx > b->len) {
+	IndexError(interp, indexArray[0]);
+	return NULL;
+    }
+    if (ParseValue(interp, valueObj, b->width, &val) != TCL_OK) return NULL;
+    if (Tcl_IsShared(obj)) {
+	obj = Tcl_DuplicateObj(obj);
+    }
+    if (idx == GETREP(obj)->len) {
+	/* lset on a list with index == length appends. */
+	if (BAReplace(interp, obj, idx, 0, 1, &valueObj) != TCL_OK) {
+	    if (obj != listPtr) Tcl_BounceRefCount(obj);
+	    return NULL;
+	}
+	return obj;
+    }
+    b = GETREP(obj);
+    PutElem(b, idx, val);
+    Touch(obj);
+    return obj;
+}
+
+/*
+ * Read N bits (1..64) starting at bit position P, and return them in the low
+ * end of the result.  Touches only the words that hold those bits, so it
+ * never reads past the end of the data.
+ */
+static uint64_t
+GetBits(const BitArr *b, Tcl_Size p, int n)
+{
+    Tcl_Size k = p >> 6;
+    int s = (int)(p & 63);
+    uint64_t v = b->words[k] >> s;
+
+    if (s + n > 64) v |= b->words[k + 1] << (64 - s);
+    return (n == 64) ? v : (v & (((uint64_t)1 << n) - 1));
+}
+
+/*
+ * Store the low N bits (1..64) of V at bit position P, leaving every other
+ * bit as it was.  Like GetBits, it touches only the words involved.
+ */
+static void
+PutBits(BitArr *b, Tcl_Size p, uint64_t v, int n)
+{
+    Tcl_Size k = p >> 6;
+    int s = (int)(p & 63);
+    uint64_t m = (n == 64) ? ~(uint64_t)0 : (((uint64_t)1 << n) - 1);
+
+    v &= m;
+    b->words[k] = (b->words[k] & ~(m << s)) | (v << s);
+    if (s + n > 64) {
+	uint64_t mh = ((uint64_t)1 << (s + n - 64)) - 1;
+
+	b->words[k + 1] = (b->words[k + 1] & ~mh) | (v >> (64 - s));
+    }
+}
+
+/* Clear COUNT bits starting at bit position FROM (width-1 arrays). */
+static void
+ClearBits(BitArr *b, Tcl_Size from, Tcl_Size count)
+{
+    while (count > 0) {
+	int n = (count >= 64) ? 64 : (int)count;
+
+	PutBits(b, from, 0, n);
+	from += n;
+	count -= n;
+    }
+}
+
+/*
+ * Copy COUNT elements from FROM to TO within one array, as memmove would.
+ * Wider elements use memmove.  Width-1 arrays move up to 64 bits at a time;
+ * as with memmove, the direction depends on the overlap: moving left works
+ * from the front, moving right works from the back, so no bit is overwritten
+ * before it has been copied.
+ */
+static void
+MoveElems(BitArr *b, Tcl_Size from, Tcl_Size to, Tcl_Size count)
+{
+    if (from == to || count <= 0) return;
+    if (b->width != 1) {
+	memmove(BYTES(b) + (size_t)to * EBYTES(b),
+		BYTES(b) + (size_t)from * EBYTES(b), (size_t)count * EBYTES(b));
+	return;
+    }
+    if (to < from) {
+	/*
+	 * Moving left.  A partial first destination word, then whole
+	 * destination words built from two source words (one store each, no
+	 * read of the destination), then the partial last word.  Destination
+	 * words never lie beyond the source words still to be read.
+	 */
+	Tcl_Size d = to, q = from, cnt = count;
+
+	if (d & 63) {
+	    int h = (cnt >= 64 - (d & 63)) ? (int)(64 - (d & 63)) : (int)cnt;
+
+	    PutBits(b, d, GetBits(b, q, h), h);
+	    d += h; q += h; cnt -= h;
+	}
+	while (cnt >= 64) {
+	    Tcl_Size kq = q >> 6;
+	    int sh = (int)(q & 63);
+
+	    b->words[d >> 6] = sh ? ((b->words[kq] >> sh)
+		    | (b->words[kq + 1] << (64 - sh))) : b->words[kq];
+	    d += 64; q += 64; cnt -= 64;
+	}
+	if (cnt > 0) PutBits(b, d, GetBits(b, q, (int)cnt), (int)cnt);
+    } else {
+	Tcl_Size left = count;
+
+	while (left > 0) {
+	    int n = (left >= 64) ? 64 : (int)left;
+
+	    left -= n;
+	    PutBits(b, to + left, GetBits(b, from + left, n), n);
+	}
+    }
+}
+
+/*
+ * lreplace / linsert / lappend.  Edits the array in place.  The array keeps
+ * spare capacity and doubles it when full, so appending one element at a time
+ * costs O(1) on average, as it does for a list.  The caller guarantees the
+ * object is not shared.
+ */
+static int
+BAReplace(Tcl_Interp *interp, Tcl_Obj *listObj, Tcl_Size first,
+	Tcl_Size numToDelete, Tcl_Size numToInsert, Tcl_Obj *const insertObjs[])
+{
+    BitArr *b = GETREP(listObj);
+    Tcl_Size i, newLen, oldLen = b->len, needWords;
+    Tcl_WideInt wideLen;
+    uint64_t val;
+
+    if (first < 0) first = 0;
+    if (first > oldLen) first = oldLen;
+    if (numToDelete < 0) numToDelete = 0;
+    if (numToDelete > oldLen - first) numToDelete = oldLen - first;
+    for (i = 0; i < numToInsert; i++) {
+	if (ParseValue(interp, insertObjs[i], b->width, &val) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+    }
+    wideLen = (Tcl_WideInt)oldLen - numToDelete + numToInsert;
+    if (wideLen > BA_MAX_BITS / b->width) {
+	if (interp) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "bitarray size out of range", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "SIZE", NULL);
+	}
+	return TCL_ERROR;
+    }
+    newLen = (Tcl_Size)wideLen;
+    needWords = WORDS_FOR(newLen, b->width);
+
+    /* Grow the allocation (doubling) if the new length does not fit. */
+    if (needWords > b->capWords) {
+	Tcl_Size maxWords = (Tcl_Size)((BA_MAX_BITS + 63) / 64);
+	Tcl_Size newCap = b->capWords * 2, oldCap = b->capWords;
+	BitArr *nb;
+
+	if (newCap < 4) newCap = 4;
+	if (newCap < needWords) newCap = needWords;
+	if (newCap > maxWords) newCap = maxWords;
+	nb = (BitArr *)Tcl_AttemptRealloc(b,
+		sizeof(BitArr) + (size_t)(newCap - 1) * sizeof(uint64_t));
+	if (nb == NULL && newCap > needWords) {
+	    newCap = needWords;
+	    nb = (BitArr *)Tcl_AttemptRealloc(b,
+		    sizeof(BitArr) + (size_t)(newCap - 1) * sizeof(uint64_t));
+	}
+	if (nb == NULL) {
+	    if (interp) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj("out of memory", -1));
+		Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	    }
+	    return TCL_ERROR;
+	}
+	b = nb;
+	memset(&b->words[oldCap], 0,
+		(size_t)(newCap - oldCap) * sizeof(uint64_t));
+	b->capWords = newCap;
+	listObj->internalRep.twoPtrValue.ptr1 = b;
+    }
+
+    /* The element cache refers to the old contents; drop it first. */
+    FreeElems(b);
+
+    /* Slide the tail, write the inserted values, clear what was vacated. */
+    MoveElems(b, first + numToDelete, first + numToInsert,
+	    oldLen - (first + numToDelete));
+    for (i = 0; i < numToInsert; i++) {
+	ParseValue(NULL, insertObjs[i], b->width, &val);
+	PutElem(b, first + i, val);
+    }
+    if (newLen < oldLen) {
+	if (b->width == 1) {
+	    ClearBits(b, newLen, oldLen - newLen);
+	} else {
+	    memset(BYTES(b) + (size_t)newLen * EBYTES(b), 0,
+		    (size_t)(oldLen - newLen) * EBYTES(b));
+	}
+    }
+    b->len = newLen;
+    b->nwords = needWords;
+    Tcl_InvalidateStringRep(listObj);
+    return TCL_OK;
+}
+
+static int
+BAInOper(Tcl_Interp *interp, Tcl_Obj *valueObj, Tcl_Obj *listObj, int *resPtr)
+{
+    BitArr *b = GETREP(listObj);
+    const char *s = Tcl_GetString(valueObj);
+    Tcl_WideInt ones;
+
+    (void)interp;
+    *resPtr = 0;
+    if (b->width == 1) {
+	if (s[0] && !s[1] && (s[0] == '0' || s[0] == '1')) {
+	    ones = CountRange(b, 0, b->len - 1);
+	    *resPtr = (s[0] == '1') ? (ones > 0) : (ones < b->len);
+	}
+    } else {
+	/*
+	 * "in" compares string forms, so only the canonical decimal spelling
+	 * of an element matches ("007" does not match 7).
+	 */
+	uint64_t val;
+	char buf[32];
+
+	if (ParseValue(NULL, valueObj, b->width, &val) == TCL_OK) {
+	    if (b->width == 64) {
+		snprintf(buf, sizeof(buf), "%lld", (long long)(int64_t)val);
+	    } else {
+		snprintf(buf, sizeof(buf), "%llu", (unsigned long long)val);
+	    }
+	    if (strcmp(buf, s) == 0) {
+		*resPtr = (NextWide(b, 0, 0, val) >= 0);
+	    }
+	}
+    }
+    return TCL_OK;
+}
+
+/* --------------------------- commands ----------------------------- */
+
+/*
+ * IsWord --
+ *	True if the string form of OBJ is exactly the word W (used for the
+ *	optional helper words "to", "..", "with" and "by").
+ */
+static int
+IsWord(Tcl_Obj *obj, const char *w)
+{
+    Tcl_Size n;
+    const char *s = Tcl_GetStringFromObj(obj, &n);
+
+    return (size_t)n == strlen(w) && memcmp(s, w, (size_t)n) == 0;
+}
+
+static int
+NeedBA(Tcl_Interp *interp, Tcl_Obj *obj, BitArr **bPtr)
+{
+    if (!ISBA(obj)) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("not a bitarray: \"%.40s\"",
+		Tcl_GetString(obj)));
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
+	return TCL_ERROR;
+    }
+    *bPtr = GETREP(obj);
+    return TCL_OK;
+}
+
+static int
+ParseWidthArg(Tcl_Interp *interp, Tcl_Obj *obj, int *widthPtr)
+{
+    Tcl_WideInt w;
+
+    if (Tcl_GetWideIntFromObj(NULL, obj, &w) != TCL_OK
+	    || (w != 1 && w != 8 && w != 16 && w != 32 && w != 64)) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"bad width \"%s\": must be 1, 8, 16, 32 or 64",
+		Tcl_GetString(obj)));
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
+	return TCL_ERROR;
+    }
+    *widthPtr = (int)w;
+    return TCL_OK;
+}
+
+/*
+ * Scan the optional arguments of "new" and "newfrom" starting at objv[FROM]:
+ * "-width W" anywhere, and (for "new" only) one bare VALUE.
+ */
+static int
+ParseCreateArgs(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[],
+	Tcl_Size from, int allowValue, int *widthPtr, Tcl_Obj **valuePtr,
+	const char *usage)
+{
+    Tcl_Size i;
+
+    *widthPtr = 1;
+    *valuePtr = NULL;
+    for (i = from; i < objc; i++) {
+	if (strcmp(Tcl_GetString(objv[i]), "-width") == 0) {
+	    if (i + 1 >= objc) goto usageError;
+	    if (ParseWidthArg(interp, objv[++i], widthPtr) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	} else if (allowValue && *valuePtr == NULL) {
+	    *valuePtr = objv[i];
+	} else {
+	    goto usageError;
+	}
+    }
+    return TCL_OK;
+
+  usageError:
+    Tcl_WrongNumArgs(interp, 2, objv, usage);
+    return TCL_ERROR;
+}
+
+/* ------------------- bitwise operations (0.6.0) -------------------- */
+
+enum { BO_AND, BO_OR, BO_XOR, BO_ANDNOT, BO_NOT };
+
+/*
+ * BitOpWords --
+ *	dst = x OP y, a word at a time.  Words of y beyond its end count as 0.
+ *	dst may be the same as x.  Y is NULL for NOT.  Only the first
+ *	dst->nwords words are written; the caller then calls MaskTail.
+ */
+#define BO_LOOP(FROM, TO, YEXPR, EXPR) \
+    for (k = (FROM); k < (TO); k++) { \
+	uint64_t xv = x->words[k], yv = (YEXPR); \
+	dst->words[k] = (EXPR); \
+    }
+
+static void
+BitOpWords(BitArr *dst, const BitArr *x, const BitArr *y, int op)
+{
+    Tcl_Size k, n = dst->nwords, m;
+
+    if (op == BO_NOT) {
+	for (k = 0; k < n; k++) dst->words[k] = ~x->words[k];
+	return;
+    }
+    m = (y->nwords < n) ? y->nwords : n;	/* words where y exists */
+    switch (op) {
+    case BO_AND:
+	BO_LOOP(0, m, y->words[k], xv & yv)
+	BO_LOOP(m, n, 0, xv & yv)
+	break;
+    case BO_OR:
+	BO_LOOP(0, m, y->words[k], xv | yv)
+	BO_LOOP(m, n, 0, xv | yv)
+	break;
+    case BO_XOR:
+	BO_LOOP(0, m, y->words[k], xv ^ yv)
+	BO_LOOP(m, n, 0, xv ^ yv)
+	break;
+    default:	/* BO_ANDNOT */
+	BO_LOOP(0, m, y->words[k], xv & ~yv)
+	BO_LOOP(m, n, 0, xv & ~yv)
+	break;
+    }
+}
+
+/*
+ * MaskTail --
+ *	Zero every bit past the end of the data in the last word, restoring
+ *	the invariant that count, next and equality rely on.  Width 1 uses a
+ *	value mask (bit i is bit i&63 of word i>>6); wider arrays are packed
+ *	bytes, so the unused bytes are cleared by address (host-endian safe).
+ */
+static void
+MaskTail(BitArr *b)
+{
+    Tcl_WideInt bits = (Tcl_WideInt)b->len * b->width;
+
+    if (b->nwords == 0) return;
+    if (b->width == 1) {
+	int r = (int)(bits & 63);
+
+	if (r) b->words[b->nwords - 1] &= (((uint64_t)1 << r) - 1);
+    } else {
+	size_t used = (size_t)(bits / 8), total = (size_t)b->nwords * 8;
+
+	if (total > used) memset(BYTES(b) + used, 0, total - used);
+    }
+}
+
+/*
+ * IsArrow --
+ *	True if OBJ is the word "<-".  A bitarray value is never the word, and
+ *	asking for its string form would build a long string, so it is skipped.
+ */
+static int
+IsArrow(Tcl_Obj *obj)
+{
+    return !ISBA(obj) && IsWord(obj, "<-");
+}
+
+static int
+BitOpCompat(Tcl_Interp *interp, const char *name, const BitArr *x,
+	const BitArr *y, int zero)
+{
+    if (x->width != y->width) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"bitarray %s: arrays differ in width (%d vs %d)",
+		name, x->width, y->width));
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
+	return TCL_ERROR;
+    }
+    if (!zero && x->len != y->len) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"bitarray %s: arrays differ in length (%" TCL_SIZE_MODIFIER
+		"d vs %" TCL_SIZE_MODIFIER "d); use -length zero to allow it",
+		name, x->len, y->len));
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
+	return TCL_ERROR;
+    }
+    return TCL_OK;
+}
+
+/*
+ * BitOpCmd --
+ *	bitarray and|or|xor|andnot ?-length strict|zero? var array
+ *	bitarray and|or|xor|andnot ?-length strict|zero? var <- array
+ *	bitarray and|or|xor|andnot ?-length strict|zero? var <- array1 array2
+ *	bitarray not var
+ *	bitarray not var <- array
+ *
+ *	VAR is a variable name; the arrays are values.  With one array the
+ *	variable is both first input and result (changed in place).  With two
+ *	arrays after the arrow the variable only receives array1 OP array2,
+ *	which are left alone.  The result always has the length of the first
+ *	input.  Width must match; length must match unless -length zero, which
+ *	treats missing bits of the second array as 0 and ignores extra ones.
+ */
+static int
+BitOpCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[], int op)
+{
+    static const char *const modes[] = { "strict", "zero", NULL };
+    const char *name = Tcl_GetString(objv[1]);
+    int zero = 0, mode, inPlace, isNot = (op == BO_NOT);
+    Tcl_Size idx = 2, rest;
+    Tcl_Obj *dstName, *srcA = NULL, *srcB = NULL, *obj, *work;
+    BitArr *x = NULL, *y = NULL, *d;
+
+    if (!isNot && idx < objc && IsWord(objv[idx], "-length")) {
+	if (idx + 1 >= objc) goto usage;
+	if (Tcl_GetIndexFromObj(interp, objv[idx + 1], modes, "length mode",
+		TCL_EXACT, &mode) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	zero = mode;
+	idx += 2;
+    }
+    rest = objc - idx;
+    if (isNot) {
+	if (rest == 1) {
+	    inPlace = 1; dstName = objv[idx];
+	} else if (rest == 3 && IsArrow(objv[idx + 1])) {
+	    inPlace = 0; dstName = objv[idx]; srcA = objv[idx + 2];
+	} else {
+	    goto usage;
+	}
+    } else if (rest == 2 && IsArrow(objv[idx + 1])) {
+	goto usage;		/* "bitarray and a <-": nothing follows the arrow */
+    } else if (rest == 2) {
+	inPlace = 1; dstName = objv[idx]; srcB = objv[idx + 1];
+    } else if ((rest == 3 || rest == 4) && IsArrow(objv[idx + 1])) {
+	dstName = objv[idx];
+	if (rest == 3) {
+	    inPlace = 1; srcB = objv[idx + 2];
+	} else {
+	    inPlace = 0; srcA = objv[idx + 2]; srcB = objv[idx + 3];
+	}
+    } else {
+	goto usage;
+    }
+
+    if (IsWord(dstName, "<-")) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"bitarray %s: \"<-\" cannot be used as a variable name", name));
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
+	return TCL_ERROR;
+    }
+    if (inPlace) {
+	obj = Tcl_ObjGetVar2(interp, dstName, NULL, TCL_LEAVE_ERR_MSG);
+	if (obj == NULL) return TCL_ERROR;
+	if (NeedBA(interp, obj, &x) != TCL_OK) return TCL_ERROR;
+	if (srcB != NULL) {
+	    if (NeedBA(interp, srcB, &y) != TCL_OK) return TCL_ERROR;
+	    if (BitOpCompat(interp, name, x, y, zero) != TCL_OK) return TCL_ERROR;
+	}
+	work = Tcl_IsShared(obj) ? Tcl_DuplicateObj(obj) : obj;
+	d = GETREP(work);
+	BitOpWords(d, d, y, op);
+	MaskTail(d);
+	Touch(work);
+    } else {
+	if (NeedBA(interp, srcA, &x) != TCL_OK) return TCL_ERROR;
+	if (srcB != NULL) {
+	    if (NeedBA(interp, srcB, &y) != TCL_OK) return TCL_ERROR;
+	    if (BitOpCompat(interp, name, x, y, zero) != TCL_OK) return TCL_ERROR;
+	}
+	if ((d = NewRep(interp, x->len, x->width)) == NULL) return TCL_ERROR;
+	BitOpWords(d, x, y, op);
+	MaskTail(d);
+	work = WrapRep(d);
+    }
+    Tcl_IncrRefCount(work);
+    obj = Tcl_ObjSetVar2(interp, dstName, NULL, work, TCL_LEAVE_ERR_MSG);
+    Tcl_DecrRefCount(work);
+    return obj ? TCL_OK : TCL_ERROR;
+
+  usage:
+    Tcl_WrongNumArgs(interp, 2, objv, isNot ? "varName ?<- array?"
+	    : "?-length strict|zero? varName ?<-? array ?array?");
+    return TCL_ERROR;
+}
+
+static int
+BitarrayCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+{
+    static const char *const subs[] = {
+	"new", "newfrom", "width", "is", "count", "next", "fill",
+	"frombytes", "tobytes", "fromchars", "tochars",
+	"and", "or", "xor", "andnot", "not", "version", NULL
+    };
+    enum { S_NEW, S_NEWFROM, S_WIDTH, S_IS, S_COUNT, S_NEXT, S_FILL,
+	   S_FROMBYTES, S_TOBYTES, S_FROMCHARS, S_TOCHARS,
+	   S_AND, S_OR, S_XOR, S_ANDNOT, S_NOT, S_VERSION };
+    int sub, bit, width;
+    BitArr *b = NULL, *n;
+    Tcl_Size i, first, last;
+    Tcl_WideInt w;
+    uint64_t val;
+    Tcl_Obj *valObj;
+
+    (void)cd;
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "subcommand ?arg ...?");
+	return TCL_ERROR;
+    }
+    if (Tcl_GetIndexFromObj(interp, objv[1], subs, "subcommand", 0, &sub)
+	    != TCL_OK) {
+	return TCL_ERROR;
+    }
+    switch (sub) {
+    case S_AND:    return BitOpCmd(interp, objc, objv, BO_AND);
+    case S_OR:     return BitOpCmd(interp, objc, objv, BO_OR);
+    case S_XOR:    return BitOpCmd(interp, objc, objv, BO_XOR);
+    case S_ANDNOT: return BitOpCmd(interp, objc, objv, BO_ANDNOT);
+    case S_NOT:    return BitOpCmd(interp, objc, objv, BO_NOT);
+    case S_VERSION:
+	if (objc != 2) {
+	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(BA_VERSION, -1));
+	return TCL_OK;
+    case S_NEW:
+	if (objc < 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "size ?value? ?-width w?");
+	    return TCL_ERROR;
+	}
+	if (Tcl_GetWideIntFromObj(interp, objv[2], &w) != TCL_OK) return TCL_ERROR;
+	if (ParseCreateArgs(interp, objc, objv, 3, 1, &width, &valObj,
+		"size ?value? ?-width w?") != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	val = 0;
+	if (valObj != NULL && ParseValue(interp, valObj, width, &val) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (w < 0 || w > BA_MAX_BITS / width) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "bitarray size out of range", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "SIZE", NULL);
+	    return TCL_ERROR;
+	}
+	if ((n = NewRep(interp, (Tcl_Size)w, width)) == NULL) return TCL_ERROR;
+	if (val && n->len > 0) {
+	    if (width == 1) {
+		SetRangeOnes(n, 0, n->len - 1, 1);
+	    } else if (width == 8) {
+		memset(n->words, (int)val, (size_t)n->len);
+	    } else {
+		for (i = 0; i < n->len; i++) PutElem(n, i, val);
+	    }
+	}
+	Tcl_SetObjResult(interp, WrapRep(n));
+	return TCL_OK;
+    case S_NEWFROM: {
+	Tcl_Size ec;
+	Tcl_Obj **ev;
+
+	if (objc < 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "list ?-width w?");
+	    return TCL_ERROR;
+	}
+	if (ParseCreateArgs(interp, objc, objv, 3, 0, &width, &valObj,
+		"list ?-width w?") != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (Tcl_ListObjGetElements(interp, objv[2], &ec, &ev) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	for (i = 0; i < ec; i++) {
+	    if (ParseValue(interp, ev[i], width, &val) != TCL_OK) return TCL_ERROR;
+	}
+	if ((n = NewRep(interp, ec, width)) == NULL) return TCL_ERROR;
+	for (i = 0; i < ec; i++) {
+	    ParseValue(NULL, ev[i], width, &val);
+	    if (val) PutElem(n, i, val);
+	}
+	Tcl_SetObjResult(interp, WrapRep(n));
+	return TCL_OK;
+    }
+    case S_WIDTH:
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "array");
+	    return TCL_ERROR;
+	}
+	if (NeedBA(interp, objv[2], &b) != TCL_OK) return TCL_ERROR;
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(b->width));
+	return TCL_OK;
+    case S_IS:
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "value");
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(ISBA(objv[2])));
+	return TCL_OK;
+    case S_COUNT: {
+	int anyNZ = 1;
+	Tcl_WideInt cnt;
+
+	int kc = 4, hasVal = 0;
+	Tcl_Obj *valObj = NULL;
+
+	if (objc < 3 || objc == 4) goto countUsage;
+	if (NeedBA(interp, objv[2], &b) != TCL_OK) return TCL_ERROR;
+	first = 0; last = b->len - 1;
+	if (objc >= 5) {
+	    Tcl_Obj *lastObj;
+	    if (IsWord(objv[kc], "to") || IsWord(objv[kc], "..")) kc++;
+	    if (kc >= objc) goto countUsage;
+	    lastObj = objv[kc++];
+	    if (kc < objc && IsWord(objv[kc], "with")) {
+		kc++;
+		if (kc >= objc) goto countUsage;
+	    }
+	    if (kc < objc) valObj = objv[kc++];
+	    if (kc != objc) goto countUsage;
+	    hasVal = (valObj != NULL);
+	    if (Tcl_GetIntForIndex(interp, objv[3], b->len - 1, &first) != TCL_OK
+		    || Tcl_GetIntForIndex(interp, lastObj, b->len - 1, &last)
+		    != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (first < 0) first = 0;
+	    if (last >= b->len) last = b->len - 1;
+	}
+	val = 1;
+	if (hasVal) {
+	    if (ParseValue(interp, valObj, b->width, &val) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    anyNZ = 0;
+	}
+	if (b->width == 1) {
+	    cnt = CountRange(b, first, last);
+	    if (!anyNZ && val == 0) {
+		cnt = (first > last) ? 0 : (Tcl_WideInt)(last - first + 1) - cnt;
+	    }
+	} else {
+	    cnt = CountWide(b, first, last, anyNZ, val);
+	}
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(cnt));
+	return TCL_OK;
+    countUsage:
+	Tcl_WrongNumArgs(interp, 2, objv, "array ?first ?to? last ?with? ?value??");
+	return TCL_ERROR;
+    }
+    case S_NEXT: {
+	int anyNZ = 1;
+
+	int kn = 4;
+	Tcl_Obj *valObjN = NULL;
+
+	if (objc < 4) goto nextUsage;
+	if (NeedBA(interp, objv[2], &b) != TCL_OK) return TCL_ERROR;
+	if (kn < objc && IsWord(objv[kn], "with")) {
+	    kn++;
+	    if (kn >= objc) goto nextUsage;
+	}
+	if (kn < objc) valObjN = objv[kn++];
+	if (kn != objc) goto nextUsage;
+	if (Tcl_GetIntForIndex(interp, objv[3], b->len - 1, &first) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	val = 1;
+	if (valObjN != NULL) {
+	    if (ParseValue(interp, valObjN, b->width, &val) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    anyNZ = 0;
+	}
+	if (b->width == 1) {
+	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
+		    NextBit(b, first, (int)val)));
+	} else {
+	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
+		    NextWide(b, first, anyNZ, val)));
+	}
+	return TCL_OK;
+    nextUsage:
+	Tcl_WrongNumArgs(interp, 2, objv, "array start ?with? ?value?");
+	return TCL_ERROR;
+    }
+    case S_FROMBYTES: {
+	const unsigned char *bytes;
+	Tcl_Size nb;
+
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "data");
+	    return TCL_ERROR;
+	}
+	bytes = Tcl_GetBytesFromObj(interp, objv[2], &nb);
+	if (bytes == NULL) return TCL_ERROR;
+	if ((n = NewRep(interp, nb, 8)) == NULL) return TCL_ERROR;
+	if (nb > 0) memcpy(n->words, bytes, (size_t)nb);
+	Tcl_SetObjResult(interp, WrapRep(n));
+	return TCL_OK;
+    }
+    case S_TOBYTES:
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "array");
+	    return TCL_ERROR;
+	}
+	if (NeedBA(interp, objv[2], &b) != TCL_OK) return TCL_ERROR;
+	if (b->width != 8) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "tobytes: array has width %d; only width 8 can be written as bytes",
+		    b->width));
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(
+		(const unsigned char *)b->words, b->len));
+	return TCL_OK;
+    case S_FROMCHARS: {
+	Tcl_Size nc;
+	int ch;
+	uint64_t maxv;
+
+	if (objc != 3 && objc != 5) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "string ?-width w?");
+	    return TCL_ERROR;
+	}
+	width = 8;
+	if (objc == 5) {
+	    if (strcmp(Tcl_GetString(objv[3]), "-width") != 0) {
+		Tcl_WrongNumArgs(interp, 2, objv, "string ?-width w?");
+		return TCL_ERROR;
+	    }
+	    if (ParseWidthArg(interp, objv[4], &width) != TCL_OK) return TCL_ERROR;
+	}
+	if (width != 8 && width != 16 && width != 32) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "fromchars: -width must be 8, 16 or 32", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
+	    return TCL_ERROR;
+	}
+	maxv = ((uint64_t)1 << width) - 1;
+	nc = Tcl_GetCharLength(objv[2]);
+	for (i = 0; i < nc; i++) {
+	    ch = Tcl_GetUniChar(objv[2], i);
+	    if (ch < 0 || (uint64_t)ch > maxv) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"character U+%04X at index %" TCL_SIZE_MODIFIER "d does not fit in width %d",
+			ch, i, width));
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
+		return TCL_ERROR;
+	    }
+	}
+	if ((n = NewRep(interp, nc, width)) == NULL) return TCL_ERROR;
+	for (i = 0; i < nc; i++) {
+	    ch = Tcl_GetUniChar(objv[2], i);
+	    if (ch) PutElem(n, i, (uint64_t)ch);
+	}
+	Tcl_SetObjResult(interp, WrapRep(n));
+	return TCL_OK;
+    }
+    case S_TOCHARS: {
+	Tcl_UniChar *buf;
+	uint64_t v;
+
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "array");
+	    return TCL_ERROR;
+	}
+	if (NeedBA(interp, objv[2], &b) != TCL_OK) return TCL_ERROR;
+	if (b->width != 8 && b->width != 16 && b->width != 32) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "tochars: array has width %d; need width 8, 16 or 32", b->width));
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
+	    return TCL_ERROR;
+	}
+	for (i = 0; i < b->len; i++) {
+	    v = GetElem(b, i);
+	    if (v > 0x10FFFF || (v >= 0xD800 && v <= 0xDFFF)) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"element %" TCL_SIZE_MODIFIER "d (%" TCL_LL_MODIFIER "u) is not a valid character code",
+			i, (unsigned long long)v));
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
+		return TCL_ERROR;
+	    }
+	}
+	buf = (Tcl_UniChar *)Tcl_Alloc((size_t)(b->len > 0 ? b->len : 1) * sizeof(Tcl_UniChar));
+	for (i = 0; i < b->len; i++) buf[i] = (Tcl_UniChar)GetElem(b, i);
+	Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(buf, b->len));
+	Tcl_Free(buf);
+	return TCL_OK;
+    }
+    case S_FILL: {
+	Tcl_Obj *obj, *work;
+	Tcl_WideInt step = 1;
+	Tcl_Obj *firstObj, *lastObj, *valueObj;
+	Tcl_Size k;
+
+	/*
+	 * bitarray fill varName first ?to? last ?with? value ?by? ?step?
+	 * The helper words "to" (or "..") "with" and "by" are optional; the step
+	 * may also follow the value with no "by".
+	 */
+	if (objc < 6) goto fillUsage;
+	k = 3;
+	firstObj = objv[k++];
+	if (IsWord(objv[k], "to") || IsWord(objv[k], "..")) k++;
+	if (k >= objc) goto fillUsage;
+	lastObj = objv[k++];
+	if (k < objc && IsWord(objv[k], "with")) k++;
+	if (k >= objc) goto fillUsage;
+	valueObj = objv[k++];
+	if (k < objc && IsWord(objv[k], "by")) {
+	    k++;
+	    if (k != objc - 1) goto fillUsage;
+	} else if (k < objc - 1) {
+	    goto fillUsage;
+	}
+	obj = Tcl_ObjGetVar2(interp, objv[2], NULL, TCL_LEAVE_ERR_MSG);
+	if (obj == NULL) return TCL_ERROR;
+	if (NeedBA(interp, obj, &b) != TCL_OK) return TCL_ERROR;
+	if (Tcl_GetIntForIndex(interp, firstObj, b->len - 1, &first) != TCL_OK
+		|| Tcl_GetIntForIndex(interp, lastObj, b->len - 1, &last)
+		!= TCL_OK
+		|| ParseValue(interp, valueObj, b->width, &val) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (k < objc) {
+	    if (Tcl_GetWideIntFromObj(interp, objv[k], &step) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (step < 1) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"step must be >= 1", -1));
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
+		return TCL_ERROR;
+	    }
+	}
+	if (first > last) return TCL_OK;
+	if (first < 0 || last >= b->len) {
+	    IndexError(interp, first < 0 ? firstObj : lastObj);
+	    return TCL_ERROR;
+	}
+	if (step > (Tcl_WideInt)last - first + 1) {
+	    step = (Tcl_WideInt)last - first + 1;	/* same result, and it fits Tcl_Size */
+	}
+	work = Tcl_IsShared(obj) ? Tcl_DuplicateObj(obj) : obj;
+	b = GETREP(work);
+	bit = (int)val;
+	if (b->width == 1) {
+	    if (step == 1) {
+		SetRangeOnes(b, first, last, bit);
+	    } else {
+		for (i = first; ; i += (Tcl_Size)step) {
+		    if (bit) SETBIT(b, i); else CLRBIT(b, i);
+		    if (last - i < step) break;
+		}
+	    }
+	} else if (b->width == 8) {
+	    unsigned char *p = BYTES(b), c = (unsigned char)val;
+
+	    if (step == 1) {
+		memset(p + first, c, (size_t)(last - first + 1));
+	    } else {
+		for (i = first; ; i += (Tcl_Size)step) {
+		    p[i] = c;
+		    if (last - i < step) break;
+		}
+	    }
+	} else {
+	    for (i = first; ; i += (Tcl_Size)step) {
+		PutElem(b, i, val);
+		if (last - i < step) break;
+	    }
+	}
+	Touch(work);
+	Tcl_IncrRefCount(work);
+	obj = Tcl_ObjSetVar2(interp, objv[2], NULL, work, TCL_LEAVE_ERR_MSG);
+	Tcl_DecrRefCount(work);
+	return obj ? TCL_OK : TCL_ERROR;
+
+      fillUsage:
+	Tcl_WrongNumArgs(interp, 2, objv,
+		"varName first ?to? last ?with? value ?by? ?step?");
+	return TCL_ERROR;
+    }
+    }
+    return TCL_ERROR;
+}
+
+DLLEXPORT int
+Bitarray_Init(Tcl_Interp *interp)
+{
+    if (Tcl_InitStubs(interp, "9.1", 0) == NULL) return TCL_ERROR;
+    Tcl_CreateObjCommand2(interp, "bitarray", BitarrayCmd, NULL, NULL);
+    return Tcl_PkgProvide(interp, "bitarray", BA_VERSION);
+}
+</script>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const BASE = { 1: [1,0,1,1,0,0,1,0,1,1,1,0,0,1,0,1], 8: [12,200,3,99,0,255,17,64,5,128,77,1,42,250,9,31] };
+const MASK = { 1: [0,1,1,0,1,0,1,1,0,0,1,1,1,0,1,0], 8: [255,15,255,240,170,85,255,0,128,127,1,255,3,60,255,9] };
+
+/* ---- the Tcl_ObjType slots: [key, C field, bitarray, arithseries] ---- */
+const SLOTS = [
+  ['typePtr','typePtr','&bitarrayType','&arithSeriesType'],
+  ['free','freeIntRepProc','BAFree','FreeArithSeriesInternalRep'],
+  ['dup','dupIntRepProc','BADup','DupArithSeriesInternalRep'],
+  ['updateString','updateStringProc','BAUpdateString','UpdateStringOfArithSeries'],
+  ['setFromAny','setFromAnyProc','NULL','NULL'],
+  ['lengthProc','lengthProc','BALength','ArithSeriesObjLength'],
+  ['indexProc','indexProc','BAIndex','TclArithSeriesObjIndex'],
+  ['sliceProc','sliceProc','BASlice','TclArithSeriesObjRange'],
+  ['reverseProc','reverseProc','BAReverse','TclArithSeriesObjReverse'],
+  ['getElementsProc','getElementsProc','BAGetElements','TclArithSeriesGetElements'],
+  ['setElementProc','setElementProc','BASetElement','NULL'],
+  ['replaceProc','replaceProc','BAReplace','NULL'],
+  ['inOperProc','inOperProc','BAInOper','ArithSeriesInOperation'],
+  ['none','(there is no append slot)','','']
+];
+
+/* ---- helpers for building steps ---- */
+const F = (k, t, s) => ({ k, t, s: s || '' });
+const O = (id, vals, o) => Object.assign({ id, vals: vals.slice(), rc: 1, str: null, cache: false, hl: [], chg: [], gone: [], raw: false,
+  type: 'bitarray', who: '', words: null }, o || {});
+const ST = o => Object.assign({ frames: [], slot: null, heap: [], vars: [], res: null, resLbl: 'result', cmd: 0, h: '', p: '', src: '' }, o);
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
+function wordsOf(vals, W) {                       /* the 64-bit words, packed little-endian like the C code */
+  const n = Math.max(1, Math.ceil(vals.length * W / 64)), out = [];
+  for (let k = 0; k < n; k++) {
+    let x = 0n;
+    if (W === 1) { for (let i = 0; i < 64; i++) { const j = k * 64 + i; if (j < vals.length && vals[j]) x |= 1n << BigInt(i); } }
+    else { for (let i = 0; i < 8; i++) { const j = k * 8 + i; if (j < vals.length) x |= BigInt(vals[j]) << BigInt(8 * i); } }
+    out.push(x);
+  }
+  return out;
+}
+const hex = x => '0x' + x.toString(16).padStart(16, '0');
+function valsOfWords(ws, len, W) {
+  const v = [];
+  for (let i = 0; i < len; i++) {
+    if (W === 1) v.push(Number((ws[i >> 6] >> BigInt(i & 63)) & 1n));
+    else v.push(Number((ws[i >> 3] >> BigInt(8 * (i & 7))) & 255n));
+  }
+  return v;
+}
+const fmtStr = (vals) => vals.join(' ');
+const nwOf = (len, w) => Math.max(1, Math.ceil(len * w / 64));
+const growCap = (cap, need) => { if (need <= cap) return cap; let c = cap * 2; if (c < 4) c = 4; if (c < need) c = need; return c; };   /* BAReplace doubles, at least 4 words */
+const maxIdx = (W) => 15;
+
+/* ---- scenes ---- */
+const SCENES = [];
+function scene(id, label, tcl, params, build) { SCENES.push({ id, label, tcl, params, build }); }
+const noP = () => [];
+const valP = (W, def) => ({ k: 'v', label: 'value', min: 0, max: W === 1 ? 1 : 255, def: def });
+const SH = true;   /* marks scenes where the "shared" switch matters */
+
+/* 1. create */
+scene('new', 'new', W => [`set a [bitarray new 16 1${W === 8 ? ' -width 8' : ''}]`], noP, (W, P, S) => {
+  const w8 = W === 8 ? ' -width 8' : '';
+  const zeros = Array(16).fill(0), ones = Array(16).fill(1);
+  const nw = W === 1 ? 1 : 2;
+  const base = [F('s', `bitarray new 16 1${w8}`, 'compiled: push the words, call the command'), F('h', 'BitarrayCmd', 'the one command that Bitarray_Init created')];
+  const f2 = [...base, F('h', 'Tcl_GetIndexFromObj → S_NEW', 'subcommand table, then a switch')];
+  const f3 = [...f2, F('h', 'ParseCreateArgs, ParseValue', `size 16, value 1, width ${W}`)];
+  const f4 = [...f3, F('h', 'NewRep(16, ' + W + ')', `one allocation: header + ${nw} word${nw > 1 ? 's' : ''}, zeroed`)];
+  const f5 = [...f4, F('h', W === 1 ? 'SetRangeOnes(0, 15)' : 'memset(words, 1, 16)', W === 1 ? 'sets 16 bits with word masks' : 'every byte becomes 1')];
+  const f6 = [...f5, F('h', 'WrapRep', 'Tcl_NewObj + Tcl_StoreInternalRep(&bitarrayType)')];
+  const f7 = [...f6, F('r', 'result is the new array')];
+  return [
+    ST({ h: 'One command: bitarray', p: '<code>load</code> runs Bitarray_Init, which creates a single Tcl command, <code>bitarray</code>. Every other thing you do to an array uses ordinary list commands. Scripts call it like any command.', src: 'bitarray.c: Bitarray_Init, BitarrayCmd', frames: base }),
+    ST({ h: 'Find the subcommand', p: 'BitarrayCmd looks the first word up in a table with <code>Tcl_GetIndexFromObj</code> and switches on the result.', src: 'bitarray.c: BitarrayCmd', frames: f2 }),
+    ST({ h: 'Read the arguments', p: `The size is 16, the value is 1 and the width is ${W}. The value is range-checked for the width now, so a bad value fails before anything is allocated.`, src: 'bitarray.c: ParseCreateArgs, ParseValue', frames: f3 }),
+    ST({ h: 'Allocate the storage', p: `NewRep makes one block: a small header (length, words in use, width, cached 0 and 1 objects) followed by ${nw} 64-bit word${nw > 1 ? 's' : ''}. ${W === 1 ? 'Sixteen 1-bit elements fit in a single word.' : 'Sixteen bytes need two words.'} At this point it is only a C struct, not yet a Tcl value.`, src: 'bitarray.c: NewRep', frames: f4, heap: [O('C', zeros, { raw: true, rc: 0 })] }),
+    ST({ h: 'Fill it', p: W === 1 ? 'The value 1 sets bits 0 to 15 by masks, a word at a time (SetRangeOnes). A longer array would fill whole words with all ones.' : 'For width 8 the fill is a memset: each byte of the storage becomes 1.', src: 'bitarray.c: SetRangeOnes / S_NEW', frames: f5, heap: [O('C', ones, { raw: true, rc: 0, hl: ones.map((_, i) => i) })] }),
+    ST({ h: 'Make it a Tcl value', p: 'WrapRep creates an ordinary <code>Tcl_Obj</code>, stores the pointer to the struct in its internal representation and sets its type pointer to <code>bitarrayType</code>. That type pointer is what makes the core call our hooks later. There is no string representation yet.', src: 'bitarray.c: WrapRep, bitarrayType', slot: 'typePtr', frames: f6, heap: [O('1', ones, { rc: 0, fresh: true })] }),
+    ST({ h: 'Store it in a variable', p: 'The result object is stored in <code>a</code>. The array has never been turned into a string or a list of separate objects: it is the packed words and nothing else.', src: 'Tcl core: set', frames: f7, heap: [O('1', ones, { who: 'a', rc: 1 })], vars: [{ n: 'a', id: '1', ch: true }], res: 'a → #1', resLbl: 'now' })
+  ];
+});
+
+/* 2. length and index */
+scene('llength', 'llength', () => ['llength $a'], noP, (W, P, S) => {
+  const A = BASE[W], a = () => [O('1', A, { who: 'a' })];
+  const vr = [{ n: 'a', id: '1' }];
+  const f1 = [F('s', 'llength $a', 'compiled: INST_LIST_LENGTH'), F('c', 'TclListObjLength', 'tclListObj.c: the object has a lengthProc, so ask it')];
+  const f2 = [...f1, F('h', 'BALength', 'returns the len field')];
+  return [
+    ST({ cmd: 0, h: 'llength asks the object', p: 'The value in <code>a</code> is not a Tcl list internally, but its type has a <code>lengthProc</code>, so the core calls it instead of converting the value to a list.', src: 'tclExecute.c: INST_LIST_LENGTH → tclListObj.c', frames: f1, slot: 'lengthProc', heap: a(), vars: vr }),
+    ST({ cmd: 0, h: 'BALength', p: 'The hook returns the stored length. No elements are looked at and no string is built, so the cost does not depend on the length.', src: 'bitarray.c: BALength', frames: f2, slot: 'lengthProc', heap: a(), vars: vr, res: '16', resLbl: 'llength' }),
+    ST({ cmd: 0, h: 'Nothing changed', p: 'The array is exactly as it was: same object, same refcount, still no string representation. Asking for the length does not convert or copy anything.', src: '', frames: [...f2, F('r', '16')], slot: null, heap: a(), vars: vr, res: '16', resLbl: 'llength' })
+  ];
+});
+
+/* 2b. lindex */
+scene('lindex', 'lindex', (W, P) => [`lindex $a ${P.i}`], W => [{ k: 'i', label: 'index', min: 0, max: 15, def: 5 }], (W, P, S) => {
+  const A = BASE[W], i = P.i, v = A[i], a = (hl) => [O('1', A, { who: 'a', hl: hl || [] })];
+  const vr = [{ n: 'a', id: '1' }];
+  const f3 = [F('s', `lindex $a ${i}`, 'compiled: INST_LIST_INDEX_IMM (literal index)'), F('c', 'TclObjTypeLength', 'to resolve end-relative indexes'), F('c', 'TclGetIntForIndexM', `index ${i}`)];
+  const f4 = [...f3, F('c', 'TclObjTypeIndex', 'tclExecute.c: the object has an indexProc'), F('h', `BAIndex(obj, ${i})`)];
+  return [
+    ST({ cmd: 0, h: `lindex $a ${i}: ask for one element`, p: 'The compiled lindex sees that the object has an <code>indexProc</code>. It asks for the length (to resolve <code>end</code>) and turns the index word into a number.', src: 'tclExecute.c: INST_LIST_INDEX_IMM', frames: f3, slot: 'indexProc', heap: a(), vars: vr }),
+    ST({ cmd: 0, h: 'BAIndex reads one element', p: W === 1 ? `Bit ${i} is bit ${i & 63} of word ${i >> 6}. The hook returns one of the two shared objects <code>0</code> and <code>1</code> that the array keeps, so nothing is allocated.` : `The element is a single byte. The hook reads it with GetElem and returns a shared 0 or 1 object, or makes a new integer object for any other value.`, src: 'bitarray.c: BAIndex, GetElem, ElemObj', frames: f4, slot: 'indexProc', heap: a([i]), vars: vr, res: String(v), resLbl: 'lindex' }),
+    ST({ cmd: 0, h: 'Nothing changed', p: 'The array is exactly as it was: same object, same refcount, still no string representation. Reading an element does not convert or copy anything.', src: '', frames: [...f4, F('r', `${v}`)], slot: null, heap: a([i]), vars: vr, res: String(v), resLbl: 'lindex' })
+  ];
+});
+
+/* 3. lset */
+scene('lset', 'lset', (W, P) => [`lset a ${P.i} ${P.v}`], W => [{ k: 'i', label: 'index', min: 0, max: 16, def: 4 }, valP(W, W === 1 ? 1 : 99)], (W, P, S) => {
+  const A = BASE[W], i = P.i, v = P.v, app = i === 16;
+  const B = A.slice(); if (app) B.push(v); else B[i] = v;
+  const gcap = app ? growCap(nwOf(16, W), nwOf(17, W)) : undefined;
+  const w0 = S ? 'a, b' : 'a', rc0 = S ? 2 : 1;
+  const vr0 = S ? [{ n: 'a', id: '1' }, { n: 'b', id: '1' }] : [{ n: 'a', id: '1' }];
+  const f1 = [F('s', `lset a ${i} ${v}`, 'compiled: INST_LSET_FLAT'), F('c', 'TclObjTypeSetElement', 'tclExecute.c: the object has a setElementProc')];
+  const f2 = [...f1, F('h', 'BASetElement(obj, {' + i + '}, ' + v + ')')];
+  const f3 = S ? [...f2, F('c', 'Tcl_IsShared(obj) is true'), F('h', 'Tcl_DuplicateObj → BADup', 'a copy of the words')] : [...f2, F('h', 'Tcl_IsShared(obj) is false', 'edit in place')];
+  const f4 = [...f3, F('h', app ? 'BAReplace(len, 0, 1, v)' : 'PutElem + Touch', app ? 'index = length means append' : 'drop the caches')];
+  const orig = (o) => O('1', A, Object.assign({ who: w0, rc: rc0 }, o || {}));
+  const cp = (o) => O('2', A, Object.assign({ rc: 0, fresh: true, who: '(the copy)' }, o || {}));
+  const f5 = [...f4, F('r', 'the changed array')];
+  const done = S ? [O('1', A, { who: 'b', rc: 1 }), O('2', B, { who: 'a', rc: 1, chg: app ? [16] : [i], hl: [], cap: gcap })] : [O('1', B, { who: 'a', rc: 1, chg: app ? [16] : [i], cap: gcap })];
+  const doneV = S ? [{ n: 'a', id: '2', ch: true }, { n: 'b', id: '1' }] : [{ n: 'a', id: '1' }];
+  const steps = [
+    ST({ h: 'lset hands the whole job to the object', p: 'For a type with a <code>setElementProc</code> the core does not edit anything itself: it passes the index list and the new value to the hook and uses whatever object comes back.', src: 'tclExecute.c: INST_LSET_FLAT (Tcl_LsetObjCmd → TclLsetList takes the same route)', frames: f1, slot: 'setElementProc', heap: [orig()], vars: vr0 }),
+    ST({ h: 'BASetElement checks its input', p: `It accepts exactly one index (nested lists make no sense for plain numbers), turns it into a number (<code>end</code> and <code>end-1</code> work) and range-checks the value for width ${W}. An index of ${i === 16 ? '16 (the length)' : 'the length'} appends, like <code>lset</code> on a list. Nothing is changed until all of that passes.`, src: 'bitarray.c: BASetElement, ParseValue', frames: f2, slot: 'setElementProc', heap: [orig()], vars: vr0 })
+  ];
+  if (S) steps.push(ST({ h: 'The array is shared, so copy it', p: 'Two variables hold the same object (refcount 2), so changing it in place would change <code>b</code> too. The hook duplicates the object first. <code>Tcl_DuplicateObj</code> calls the type\'s <code>dupIntRepProc</code> (BADup), which copies the words.', src: 'bitarray.c: BASetElement, BADup', frames: f3, slot: 'dup', heap: [orig(), cp()], vars: vr0 }));
+  else steps.push(ST({ h: 'Not shared: edit in place', p: 'Only <code>a</code> holds the object (refcount 1), so the hook changes it where it is. No copy is made. This is why repeated <code>lset</code> in a loop is fast.', src: 'bitarray.c: BASetElement', frames: f3, slot: null, heap: [orig()], vars: vr0 }));
+  steps.push(ST({ h: app ? 'Append: BAReplace grows the array' : 'Write the element, drop the caches', p: app ? 'Appending goes through the same code as <code>lreplace</code>: the length becomes 17, the new element is written and the old string representation is invalidated.' : `PutElem writes ${W === 1 ? 'one bit into its word' : 'one byte'}. <code>Touch</code> then frees the element cache (if any was built) and invalidates the string representation, so the next <code>puts</code> shows the new value.`, src: 'bitarray.c: PutElem, Touch', frames: f4, slot: 'updateString', heap: S ? [orig(), cp({ vals: B, chg: app ? [16] : [i], cap: gcap })] : [orig({ vals: B, chg: app ? [16] : [i], cap: gcap })], vars: vr0 }));
+  steps.push(ST({ h: 'The core stores the returned object', p: S ? 'The hook returned the copy, so <code>a</code> now points to it. The original is unchanged and still held by <code>b</code>.' : 'The hook returned the same object, so <code>a</code> still points to it, now with the new element.', src: '', frames: f5, heap: done, vars: doneV, res: 'a = ' + fmtStr(B), resLbl: 'now' }));
+  return steps;
+}, SH);
+
+/* 4. lrange */
+scene('lrange', 'lrange', (W, P) => [`set r [lrange $a ${P.f} ${P.t}]`], W => [{ k: 'f', label: 'from', min: 0, max: 15, def: 3 }, { k: 't', label: 'to', min: 0, max: 15, def: 9 }], (W, P, S) => {
+  const A = BASE[W], f = P.f, t = P.t, empty = f > t, R = empty ? [] : A.slice(f, t + 1), idx = [];
+  for (let i = f; i <= t; i++) idx.push(i);
+  const vr = [{ n: 'a', id: '1' }];
+  const a = (hl) => O('1', A, { who: 'a', hl: hl || [] });
+  const f0 = [F('s', `lrange $a ${f} ${t}`, 'compiled: INST_LIST_RANGE_IMM'), F('c', 'Tcl_ListObjRange', 'tclListTypes.c'), F('c', 'TclListObjLength', '→ BALength: 16'), F('c', 'TclNormalizeRangeLimits', `${f}..${t} against length 16`)];
+  if (empty) {
+    return [
+      ST({ h: 'The core normalises the range', p: 'Tcl_ListObjRange asks the hook for the length (BALength) and clamps the range itself. This range is empty (first is after last), so the core answers it by itself with an empty value and the slice hook is never called.', src: 'tclListTypes.c: Tcl_ListObjRange', frames: f0, slot: 'lengthProc', heap: [a()], vars: vr }),
+      ST({ h: 'An empty result', p: 'The result is an empty plain value. The array is untouched.', src: '', frames: [...f0, F('r', 'empty')], slot: null, heap: [a()], vars: vr, res: 'r = {}', resLbl: 'now' })
+    ];
+  }
+  const f1 = [...f0, F('c', 'TclObjTypeSlice', 'the object has a sliceProc'), F('h', `BASlice(obj, ${f}, ${t})`)];
+  const f3 = [...f1, F('h', 'NewRep(' + R.length + ')', 'a new array of ' + R.length)];
+  const f4 = [...f3, F('h', W === 1 ? ((f & 63) === 0 ? 'memcpy of the words' : 'GetBits(b, ' + f + ', ' + R.length + ')') : 'memcpy of ' + R.length + ' bytes', W === 1 ? 'one 64-bit read per output word' : 'a straight byte copy')];
+  const f5 = [...f4, F('h', 'WrapRep'), F('r', 'a new array (the old one is untouched)')];
+  return [
+    ST({ h: 'The core normalises the range, then asks the object', p: 'Tcl_ListObjRange gets the length from the hook (BALength) and clamps the range itself. Because the object has a <code>sliceProc</code>, the request then goes to the hook, which returns a new object.', src: 'tclExecute.c: INST_LIST_RANGE_IMM; tclListTypes.c: Tcl_ListObjRange', frames: f0, slot: 'lengthProc', heap: [a()], vars: vr }),
+    ST({ h: 'BASlice', p: `The hook is called with the first and last index (${f} and ${t}), a range of ${R.length} element${R.length === 1 ? '' : 's'}. (It clamps them again, to be safe on its own.)`, src: 'bitarray.c: BASlice', frames: f1, slot: 'sliceProc', heap: [a(idx)], vars: vr }),
+    ST({ h: 'Allocate the result', p: 'A fresh array of the right size is allocated, zeroed. The source is only read.', src: 'bitarray.c: NewRep', frames: f3, slot: 'sliceProc', heap: [a(idx), O('2', R.map(() => 0), { raw: true, rc: 0 })], vars: vr }),
+    ST({ h: 'Copy the bits or bytes', p: W === 1 ? ((f & 63) === 0 ? 'The range starts on a word boundary, so whole words are copied and the unused bits in the last word are masked off.' : 'The range does not start on a word boundary, so each output word is assembled from a 64-bit read at the right bit offset (GetBits). That is one step per 64 elements, not one per element.') : 'Elements are whole bytes, so the range is one block copy.', src: 'bitarray.c: BASlice, GetBits', frames: f4, slot: 'sliceProc', heap: [a(idx), O('2', R, { raw: true, rc: 0, chg: R.map((_, i) => i) })], vars: vr }),
+    ST({ h: 'A new, independent array', p: 'WrapRep turns the result into a Tcl value. It does not share any storage with the source, so changing one never affects the other. (A plain Tcl list from <code>lrange</code> shares its pointers instead, which is why front deletes on lists are cheap.)', src: 'bitarray.c: WrapRep', frames: f5, slot: null, heap: [a(), O('2', R, { who: 'r', rc: 1, fresh: true })], vars: [{ n: 'a', id: '1' }, { n: 'r', id: '2', ch: true }], res: 'r = ' + fmtStr(R), resLbl: 'now' })
+  ];
+});
+
+/* 5. lreverse */
+scene('lreverse', 'lreverse', () => ['set r [lreverse $a]'], noP, (W, P, S) => {
+  const A = BASE[W], R = A.slice().reverse(), vr = [{ n: 'a', id: '1' }];
+  const a = (o) => O('1', A, Object.assign({ who: 'a' }, o || {}));
+  const f1 = [F('s', 'lreverse $a', 'Tcl_LreverseObjCmd'), F('c', 'Tcl_ListObjReverse', 'tclListTypes.c')];
+  const f2 = [...f1, F('c', 'TclObjTypeReverse', 'the object has a reverseProc'), F('h', 'BAReverse(obj)')];
+  const f3 = [...f2, F('h', 'NewRep(16, ' + W + ')')];
+  const f4 = [...f3, F('h', W === 1 ? 'Rev64(GetBits(...))' : 'dst[i] = src[len-1-i]', W === 1 ? 'reverse a whole word at once' : 'a byte copy in reverse order')];
+  const f5 = [...f4, F('h', 'WrapRep'), F('r', 'a new, reversed array'), F('c', 'TclMakeResultObj', 'the core wraps the result')];
+  return [
+    ST({ h: 'lreverse asks the object first', p: 'The core checks for a <code>reverseProc</code> before doing its own generic reversal. If the hook is there, it is used.', src: 'tclCmdIL.c: Tcl_LreverseObjCmd, tclListTypes.c: Tcl_ListObjReverse', frames: f1, slot: 'reverseProc', heap: [a()], vars: vr }),
+    ST({ h: 'BAReverse allocates a result', p: 'The hook makes a new array of the same length and width, so the source stays as it is.', src: 'bitarray.c: BAReverse, NewRep', frames: f3, slot: 'reverseProc', heap: [a(), O('2', A.map(() => 0), { raw: true, rc: 0 })], vars: vr }),
+    ST({ h: W === 1 ? 'Reverse 64 bits at a time' : 'Copy the elements in reverse', p: W === 1 ? 'Result bits are the source bits in the opposite order. For each output word the hook reads the matching run of source bits (GetBits), reverses all 64 bits of it with a few shift-and-mask rounds (<code>Rev64</code>), and shifts the unused low end away. For 16 bits that is one pass. This is why a long 1-bit reverse is cheap.' : 'For bytes the hook simply copies element <code>len-1-i</code> to element <code>i</code> with a loop. (Wider widths use memcpy per element in the same way.)', src: 'bitarray.c: BAReverse, Rev64', frames: f4, slot: 'reverseProc', heap: [a({ hl: A.map((_, i) => i) }), O('2', R, { raw: true, rc: 0, chg: R.map((_, i) => i) })], vars: vr }),
+    ST({ h: 'The reversed array is a new value', p: 'WrapRep makes it a Tcl value and the core wraps it as the command result. The original is untouched.', src: 'bitarray.c: WrapRep', frames: f5, heap: [a(), O('2', R, { who: 'r', rc: 1, fresh: true })], vars: [{ n: 'a', id: '1' }, { n: 'r', id: '2', ch: true }], res: 'r = ' + fmtStr(R), resLbl: 'now' })
+  ];
+});
+
+/* 6. lreplace */
+scene('lreplace', 'lreplace', (W, P) => [`set r [lreplace $a ${P.f} ${P.l} ${P.v} ${P.v} ${P.v}]`], W => [{ k: 'f', label: 'first', min: 0, max: 15, def: 3 }, { k: 'l', label: 'last', min: 0, max: 15, def: 4 }, valP(W, W === 1 ? 0 : 7)], (W, P, S) => {
+  const A = BASE[W], f = P.f, l = P.l, v = P.v, del = Math.max(0, l - f + 1), ins = [v, v, v];
+  const R = A.slice(0, f).concat(ins, A.slice(f + del));
+  const delIdx = []; for (let i = f; i < f + del; i++) delIdx.push(i);
+  const insIdx = [f, f + 1, f + 2];
+  const tail = A.slice(f + del);
+  const vr = S ? [{ n: 'a', id: '1' }, { n: 'b', id: '1' }] : [{ n: 'a', id: '1' }];
+  const mk = (id, vals, o) => O(id, vals, o);
+  const f1 = [F('s', `lreplace $a ${f} ${l} …`, 'compiled: INST_LREPLACE'), F('c', 'Tcl_ListObjLength', '→ BALength')];
+  const f2 = [...f1, F('c', 'Tcl_IsShared(obj) is true here', 'the variable and the stack both hold it'), F('h', 'Tcl_DuplicateObj → BADup', 'a copy of the words')];
+  const f3 = [...f2, F('c', 'Tcl_ListObjReplace', 'tclListObj.c'), F('c', 'TclObjTypeReplace', 'the object has a replaceProc'), F('h', `BAReplace(copy, ${f}, delete ${del}, insert 3)`)];
+  const f4 = [...f3, F('h', 'ParseValue ×3', 'every new value is checked before anything changes')];
+  const f5 = [...f4, F('h', 'MoveElems(tail)', `slide ${tail.length} element${tail.length === 1 ? '' : 's'} ${ins.length > del ? 'right' : ins.length < del ? 'left' : 'not at all'}`)];
+  const f6 = [...f5, F('h', 'PutElem ×3, clear the vacated end, set len'), F('r', 'the changed copy')];
+  const orig = (o) => mk('1', A, Object.assign({ who: S ? 'a, b' : 'a', rc: S ? 2 : 1 }, o || {}));
+  const cp = (vals, o) => mk('2', vals, Object.assign({ rc: 0, who: '(the copy)', fresh: true }, o || {}));
+  const gap = A.slice(0, f).concat(Array(ins.length).fill(0), tail);
+  const capR = growCap(nwOf(16, W), nwOf(R.length, W));
+  return [
+    ST({ h: 'lreplace works on a copy', p: 'The variable <code>a</code> and the evaluation stack both hold the array, so it counts as shared and the compiled instruction duplicates it before changing anything. For a bitarray the copy is the words, copied by <code>BADup</code> (a plain list copies pointers instead).', src: 'tclExecute.c: INST_LREPLACE; bitarray.c: BADup', frames: f2, slot: 'dup', heap: [orig(), cp(A)], vars: vr }),
+    ST({ h: 'BAReplace: delete some, insert some', p: `The core asks the replace hook to delete ${del} element${del === 1 ? '' : 's'} at ${f} and insert 3 values. One hook handles <code>lreplace</code>, <code>linsert</code> (except at the end) and <code>lremove</code>; this extension\'s own <code>lset</code> at the end calls it too.`, src: 'tclListObj.c: Tcl_ListObjReplace; bitarray.c: BAReplace', frames: f3, slot: 'replaceProc', heap: [orig(), cp(A, { hl: delIdx })], vars: vr }),
+    ST({ h: 'Check the values first', p: `All three new values are parsed and range-checked for width ${W} before any change. A bad value leaves the array exactly as it was. The new length is also checked against the size limit, and the storage grows (doubling) if it no longer fits.`, src: 'bitarray.c: BAReplace, ParseValue', frames: f4, slot: 'replaceProc', heap: [orig(), cp(A, { hl: delIdx })], vars: vr }),
+    ST({ h: 'Slide the tail', p: `The elements after the deleted range move to their new position. For 1-bit arrays <code>MoveElems</code> does this a whole word at a time (each output word is built from two input words with a shift). The new length is ${R.length}, so the tail moves ${ins.length > del ? 'right' : ins.length < del ? 'left' : 'by zero'}.`, src: 'bitarray.c: MoveElems', frames: f5, slot: 'replaceProc', heap: [orig(), cp(gap, { chg: tail.map((_, i) => f + ins.length + i), cap: capR })], vars: vr }),
+    ST({ h: 'Write the new values, fix the length', p: 'The inserted values are written, anything vacated at the end is cleared (the unused bits must stay zero, because <code>count</code> and equality rely on that), the length is updated and the string representation is invalidated.', src: 'bitarray.c: BAReplace, ClearBits', frames: f6, slot: 'updateString', heap: [orig(), cp(R, { chg: insIdx, cap: capR })], vars: vr }),
+    ST({ h: 'The command result', p: 'The copy is the result. The original array is unchanged, so <code>a</code> still has its old contents; assign the result back (<code>set a [lreplace …]</code>) to keep it.', src: '', frames: f6, heap: [orig(), mk('2', R, { who: 'r', rc: 1, cap: capR })], vars: [...vr, { n: 'r', id: '2', ch: true }], res: 'r = ' + fmtStr(R), resLbl: 'now' })
+  ];
+}, SH);
+
+/* 7. foreach */
+scene('foreach', 'foreach', () => ['foreach e $a { … }'], noP, (W, P, S) => {
+  const A = BASE[W], a = (hl, o) => O('1', A, Object.assign({ who: 'a', hl: hl || [] }, o || {})), vr = [{ n: 'a', id: '1' }];
+  const f1 = [F('s', 'foreach e $a {…}', 'compiled: INST_FOREACH_START'), F('c', 'Tcl_ListObjLength', 'once, when the loop starts'), F('h', 'BALength')];
+  const it = (i) => [F('s', 'INST_FOREACH_STEP', 'iteration ' + i), F('c', 'Tcl_ListObjIndex', 'no element array was made'), F('h', `BAIndex(obj, ${i})`)];
+  const ch = (i) => [{ n: 'a', id: '1' }, { n: 'e', id: '1', txt: 'e = ' + A[i], ch: true }];
+  return [
+    ST({ h: 'The loop does not expand the list', p: 'When the list has an <code>indexProc</code> the compiled <code>foreach</code> asks for the length once and does not ask for all elements. It remembers there is no element array and fetches elements one at a time.', src: 'tclExecute.c: INST_FOREACH_START / STEP', frames: f1, slot: 'lengthProc', heap: [a()], vars: vr }),
+    ST({ h: 'Iteration 0', p: 'One call to BAIndex gives the first element (a shared 0 or 1 object for bits). The loop variable <code>e</code> is set to it.', src: 'bitarray.c: BAIndex', frames: it(0), slot: 'indexProc', heap: [a([0])], vars: ch(0), res: 'e = ' + A[0], resLbl: 'body sees' }),
+    ST({ h: 'Iteration 1', p: 'The next call asks for index 1. Each iteration is one hook call, and no per-element memory is kept.', src: '', frames: it(1), slot: 'indexProc', heap: [a([1])], vars: ch(1), res: 'e = ' + A[1], resLbl: 'body sees' }),
+    ST({ h: 'Iteration 2, and so on', p: 'This continues up to index 15. Compare <code>join</code> in the next menu entry, which does build an element array.', src: '', frames: it(2), slot: 'indexProc', heap: [a([2])], vars: ch(2), res: 'e = ' + A[2], resLbl: 'body sees' }),
+    ST({ h: 'After the loop', p: 'The array is untouched: no element cache, no string, same refcount. A loop over a bitarray therefore costs one cheap hook call per element.', src: '', frames: [F('r', 'loop finished after 16 hook calls')], slot: null, heap: [a()], vars: vr })
+  ];
+});
+
+/* 8. in */
+scene('in', 'in', (W, P) => [`expr {${P.v} in $a}`], W => [valP(W, W === 1 ? 1 : 255)], (W, P, S) => {
+  const A = BASE[W], v = P.v, hit = A.indexOf(v), found = hit >= 0, vr = [{ n: 'a', id: '1' }];
+  const a = (hl) => O('1', A, { who: 'a', hl: hl || [] });
+  const f1 = [F('s', `${v} in $a`, 'compiled: INST_LIST_IN'), F('c', 'TclGetStringFromObj(value)', 'only the value\'s string, not the array\'s')];
+  const f2 = [...f1, F('c', 'TclObjTypeInOperator', 'the object has an inOperProc'), F('h', 'BAInOper')];
+  const f3 = [...f2, F('h', W === 1 ? 'CountRange(0, len-1)' : 'NextWide(b, 0, 0, value)', W === 1 ? 'count the set bits a word at a time' : 'scan the bytes for the value')];
+  const res = found ? '1 (true)' : '0 (false)';
+  return [
+    ST({ h: 'in checks for the hook first', p: 'A normal list would be searched by converting it to a string or elements. The core checks for an <code>inOperProc</code>; this type has one.', src: 'tclExecute.c: INST_LIST_IN', frames: f1, slot: 'inOperProc', heap: [a()], vars: vr }),
+    ST({ h: 'BAInOper', p: W === 1 ? `For 1-bit arrays the answer needs no scan of elements: is ${v} present? A 1 is present if the population count of the words is above 0; a 0 is present if the count is below the length. The value must be exactly the text <code>0</code> or <code>1</code>.` : 'The value is parsed for the width and written back in its canonical decimal spelling; it matches only if that spelling equals the text you gave (so <code>007</code> does not match 7, as with a list).', src: 'bitarray.c: BAInOper', frames: f2, slot: 'inOperProc', heap: [a()], vars: vr }),
+    ST({ h: W === 1 ? 'Count the bits' : 'Scan for the value', p: W === 1 ? `The words are counted with a popcount (CountRange): ${A.filter(x => x === 1).length} of 16 bits are 1.` : (found ? `NextWide scans for ${v} and finds it at index ${hit}.` : `NextWide scans all 16 bytes and does not find ${v}.`), src: 'bitarray.c: CountRange / NextWide', frames: f3, slot: 'inOperProc', heap: [a(W === 1 ? A.map((x, i) => i) : (found ? [hit] : []))], vars: vr }),
+    ST({ h: 'Result', p: 'The hook stores 0 or 1 in the result. The array was not changed and no string was made.', src: '', frames: [...f3, F('r', res)], slot: null, heap: [a(found && W !== 1 ? [hit] : [])], vars: vr, res: res, resLbl: `${v} in $a` })
+  ];
+});
+
+/* 9. join (getElements) */
+scene('join', 'join', () => ['join $a ,'], noP, (W, P, S) => {
+  const A = BASE[W], vr = [{ n: 'a', id: '1' }];
+  const a = (o) => O('1', A, Object.assign({ who: 'a' }, o || {}));
+  const f1 = [F('s', 'join $a ,', 'Tcl_JoinObjCmd'), F('c', 'TclObjTypeGetElements', 'tclCmdIL.c: the object has a getElementsProc'), F('h', 'BAGetElements')];
+  const f2 = [...f1, F('h', 'Tcl_AttemptAlloc(16 pointers)', 'the element cache')];
+  const f3 = [...f2, F('h', W === 1 ? 'GETBIT(b, i) ? b->one : b->zero' : 'ElemObj(b, GetElem(b, i))', W === 1 ? 'every entry is the shared 0 or 1 object: no allocation per element' : 'a new integer object for each value other than 0 and 1')];
+  const f4 = [...f3, F('r', 'objc = 16, objv = the cache'), F('c', 'join builds its result string')];
+  return [
+    ST({ h: 'Some commands need every element at once', p: '<code>join</code>, <code>lsort</code>, <code>{*}$a</code>, a command call with the list expanded and a few others want a C array of all the element objects. Those use the <code>getElementsProc</code>.', src: 'tclCmdIL.c: Tcl_JoinObjCmd; tclListObj.c: Tcl_ListObjGetElements', frames: f1, slot: 'getElementsProc', heap: [a()], vars: vr }),
+    ST({ h: 'Build the element array once', p: 'The hook allocates an array of 16 object pointers, which it keeps inside the array value as a cache. This costs memory proportional to the length (8 bytes per element, plus the objects).', src: 'bitarray.c: BAGetElements', frames: f2, slot: 'getElementsProc', heap: [a({ cache: true })], vars: vr }),
+    ST({ h: 'Fill it', p: W === 1 ? 'For bits every pointer is one of the two shared objects, so nothing is allocated per element.' : 'For wider elements each value other than 0 and 1 becomes its own integer object, held by the cache.', src: 'bitarray.c: BAGetElements, ElemObj', frames: f3, slot: 'getElementsProc', heap: [a({ cache: true, hl: A.map((_, i) => i) })], vars: vr }),
+    ST({ h: 'The cache stays until the array changes', p: 'A second <code>join</code> reuses the cache. Any change (<code>lset</code>, <code>fill</code>, a bitwise operation) calls Touch, which frees the cache and invalidates the string.', src: 'bitarray.c: Touch, FreeElems', frames: f4, slot: null, heap: [a({ cache: true })], vars: vr, res: fmtStr(A).split(' ').join(','), resLbl: 'join' })
+  ];
+});
+
+/* 10. string rep */
+scene('puts', 'puts (string)', () => ['puts $a', 'lset a 4 …'], noP, (W, P, S) => {
+  const A = BASE[W], str = fmtStr(A), vr = [{ n: 'a', id: '1' }];
+  const B = A.slice(); B[4] = W === 1 ? 1 : 99;
+  const a = (o) => O('1', A, Object.assign({ who: 'a' }, o || {}));
+  const f1 = [F('s', 'puts $a', 'needs a string'), F('c', 'Tcl_GetString', 'there is no string yet')];
+  const f2 = [...f1, F('c', 'type->updateStringProc'), F('h', 'BAUpdateString')];
+  const f3 = [...f2, F('r', `"${str.slice(0, 22)}…"`)];
+  return [
+    ST({ cmd: 0, h: 'A string is built only when someone asks', p: 'The array has no string representation. When a command needs text, the core calls the type\'s <code>updateStringProc</code>. The array stays a bitarray: this is a cache, not a conversion.', src: 'tclObj.c: Tcl_GetString', frames: f1, slot: 'updateString', heap: [a()], vars: vr }),
+    ST({ cmd: 0, h: 'BAUpdateString', p: W === 1 ? 'For bits the text is built directly: a 0 or 1 and a space per element, 2 × length − 1 bytes.' : 'For wider elements each value is formatted as decimal and joined with spaces.', src: 'bitarray.c: BAUpdateString', frames: f2, slot: 'updateString', heap: [a({ hl: A.map((_, i) => i) })], vars: vr }),
+    ST({ cmd: 0, h: 'The string is cached', p: 'The text is stored on the object. A second <code>puts</code> costs nothing. Note that a long array makes a long string (about 2 bytes per bit-element), which is one reason to avoid asking for it needlessly.', src: '', frames: f3, slot: null, heap: [a({ str })], vars: vr, res: str, resLbl: 'puts' }),
+    ST({ cmd: 1, h: 'A change throws the string away', p: '<code>lset</code> calls Touch, which invalidates the string (and the element cache). The next <code>puts</code> builds the string again from the changed words.', src: 'bitarray.c: BASetElement, Touch', frames: [F('s', 'lset a 4 …'), F('h', 'BASetElement → Touch', 'Tcl_InvalidateStringRep')], slot: 'updateString', heap: [a({ vals: B, chg: [4], str: null })], vars: vr })
+  ];
+});
+
+/* 11. lappend */
+scene('lappend', 'lappend', () => ['lappend a 1'], noP, (W, P, S) => {
+  const A = BASE[W], vr = [{ n: 'a', id: '1' }];
+  const a = (o) => O('1', A, Object.assign({ who: 'a' }, o || {}));
+  const f1 = [F('s', 'lappend a 1', 'compiled: INST_LAPPEND_SCALAR'), F('c', 'variable store with TCL_LIST_ELEMENT', 'tclVar.c'), F('c', 'Tcl_ListObjAppendElement'), F('c', 'TclListObjAppendElements', 'tclListObj.c')];
+  const f2 = [...f1, F('c', 'TclListObjGetRep', 'must have a real list rep'), F('c', 'SetListFromAny', 'convert it')];
+  const f3 = [...f2, F('c', 'TclObjTypeLength', '→ BALength'), F('h', 'BAIndex ×16', 'one call per element')];
+  const f4 = [...f3, F('c', 'old internal rep freed', 'BAFree: the packed words are gone')];
+  const L = A.concat([1]);
+  return [
+    ST({ h: 'There is no append hook', p: 'The type table has no slot for appending. <code>lappend</code> and <code>linsert</code> at the end go to core code that only knows plain lists, so it first needs the value in list form. This is a known property of the core, not something the extension can change (see <code>extras/typeloss_ticket.md</code>).', src: 'tclListObj.c: TclListObjAppendElements', frames: f1, slot: 'none', heap: [a()], vars: vr }),
+    ST({ h: 'SetListFromAny converts the array', p: 'The core asks for the length and then builds a real list element by element, calling <code>BAIndex</code> for each one. (It does not use the get-elements hook here.)', src: 'tclListObj.c: SetListFromAny', frames: f3, slot: 'indexProc', heap: [a({ hl: A.map((_, i) => i) })], vars: vr }),
+    ST({ h: 'The bitarray type is gone', p: 'The value is now an ordinary list that points to 16 element objects. The packed words are freed. Memory is about 8 bytes per element or more, instead of 1 bit.', src: 'bitarray.c: BAFree', frames: f4, slot: 'free', heap: [a({ type: 'list', vals: A, rc: 1, hl: [] })], vars: vr }),
+    ST({ h: 'The element is appended to the list', p: 'The new element goes onto the plain list. From now on <code>a</code> is not a bitarray: <code>bitarray count $a</code> would fail. Keep appends to <code>lset a end+1 v</code>, which stays a bitarray, or build with <code>bitarray new</code> and fill.', src: '', frames: [...f4, F('r', 'a list with 17 elements, no longer a bitarray')], slot: null, heap: [a({ type: 'list', vals: L, rc: 1, chg: [16] })], vars: vr, res: 'a is now a plain list', resLbl: 'now' })
+  ];
+});
+
+/* 12. bitwise */
+scene('bitop', 'bitarray and …', (W, P) => P.op === 'not' ? ['bitarray not r <- $a'] : [`bitarray ${P.op} r <- $a $b`], W => [{ k: 'op', label: 'operation', type: 'select', opts: ['and', 'or', 'xor', 'andnot', 'not'], def: 'and' }], (W, P, S) => {
+  const op = P.op, A = BASE[W], B = MASK[W], isNot = op === 'not';
+  const wa = wordsOf(A, W), wb = wordsOf(B, W), n = wa.length;
+  const all = (1n << 64n) - 1n;
+  const fn = { and: (x, y) => x & y, or: (x, y) => x | y, xor: (x, y) => x ^ y, andnot: (x, y) => x & ~y & all, not: (x) => ~x & all }[op];
+  const raw = wa.map((x, k) => fn(x, wb[k]));
+  const mask = raw.slice();
+  const bits = 16 * W;
+  if (bits % 64 && W === 1) mask[n - 1] &= (1n << BigInt(bits % 64)) - 1n;
+  const R = valsOfWords(mask, 16, W);
+  const sym = { and: 'x & y', or: 'x | y', xor: 'x ^ y', andnot: 'x & ~y', not: '~x' }[op];
+  const hw = (ws) => ws.map((x, k) => 'word ' + k + ' = ' + hex(x));
+  const cmd = isNot ? 'bitarray not r <- $a' : `bitarray ${op} r <- $a $b`;
+  const vr = isNot ? [{ n: 'a', id: '1' }] : [{ n: 'a', id: '1' }, { n: 'b', id: '2' }];
+  const base = (extra) => { const h = [O('1', A, { who: 'a' })]; if (!isNot) h.push(O('2', B, { who: 'b' })); return h.concat(extra || []); };
+  const f1 = [F('s', cmd, 'an ordinary command'), F('h', 'BitarrayCmd'), F('h', 'BitOpCmd', 'op ' + op)];
+  const f2 = [...f1, F('h', 'IsArrow, NeedBA' + (isNot ? '' : ' ×2'), 'syntax and types')];
+  const f3 = isNot ? f2 : [...f2, F('h', 'BitOpCompat', 'same width, same length (or -length zero)')];
+  const f4 = [...f3, F('h', 'NewRep(16, ' + W + ')', 'the result gets the length of the first array')];
+  const f5 = [...f4, F('h', 'BitOpWords', `${n} word${n > 1 ? 's' : ''}: ${sym}`)];
+  const f6 = [...f5, F('h', 'MaskTail', 'zero the unused bits')];
+  const f7 = [...f6, F('h', 'WrapRep, Tcl_ObjSetVar2(r)')];
+  const wd = (vals, ws, o) => O('3', vals, Object.assign({ raw: true, rc: 0, words: ws }, o || {}));
+  return [
+    ST({ h: 'Not a core hook: a normal command', p: 'The bitwise operations do not use the Tcl_ObjType hooks at all. They are subcommands of <code>bitarray</code>, so the path is BitarrayCmd → BitOpCmd. The form <code>r &lt;- a b</code> leaves the inputs alone and stores the answer in <code>r</code>.', src: 'bitarray.c: BitarrayCmd, BitOpCmd', frames: f1, slot: null, heap: base(), vars: vr }),
+    ST({ h: 'Check the syntax and the arrays', p: 'The word <code>&lt;-</code> is recognised only as a plain string, never by converting an array to text. Both inputs must be bitarrays' + (isNot ? '.' : ' of the same width, and the same length unless you pass <code>-length zero</code>.'), src: 'bitarray.c: IsArrow, NeedBA, BitOpCompat', frames: f3, slot: null, heap: base(), vars: vr }),
+    ST({ h: 'Allocate the result', p: 'A new array with the first input\'s length and width is made (zeroed). When there is no arrow (<code>bitarray and a b</code>) the first array is changed in place instead (copied first if it is shared).', src: 'bitarray.c: NewRep', frames: f4, slot: null, heap: base([wd(A.map(() => 0), null)]), vars: vr }),
+    ST({ h: 'Combine a whole word at a time', p: `BitOpWords loops over the words, not the elements: ${n} step${n > 1 ? 's' : ''} for 16 elements of ${W} bit${W > 1 ? 's' : ''}. In each word, result = ${sym}. A 64-bit machine does 64 bit-elements (or 8 bytes) per operation.`, src: 'bitarray.c: BitOpWords', frames: f5, slot: null, heap: base([wd(valsOfWords(raw, 16, W), raw, { chg: A.map((_, i) => i) })]), vars: vr }),
+    ST({ h: 'Mask the unused tail', p: isNot && W === 1 ? '<code>not</code> turned the 48 unused bits of the last word into ones. MaskTail clears them again. The rule is that bits past the end are always 0, because <code>count</code>, <code>next</code> and equality rely on it.' : 'Bits past the end of the array in the last word must be 0. Here the result already satisfies that (' + (W === 1 ? 'both inputs had zeros there' : '16 bytes fill two words exactly') + '), but MaskTail always runs.', src: 'bitarray.c: MaskTail', frames: f6, slot: null, heap: base([wd(R, mask, { chg: [] })]), vars: vr }),
+    ST({ h: 'Store the result', p: 'The new array is wrapped and stored in <code>r</code> with <code>Tcl_ObjSetVar2</code>. The command returns an empty string.', src: 'bitarray.c: BitOpCmd', frames: f7, slot: null, heap: base([O('3', R, { who: 'r', rc: 1, fresh: true, raw: false, chg: R.map((_, i) => i) })]), vars: [...vr, { n: 'r', id: '3', ch: true }], res: 'r = ' + fmtStr(R), resLbl: 'now' })
+  ];
+});
+
+/* 13. queue */
+scene('queue', 'a queue of bits', (W, P) => [`lset q end+1 ${P.v}`, 'lindex $q 0', 'set q [lrange $q 1 end]'], W => [valP(W, W === 1 ? 1 : 77)], (W, P, S) => {
+  const Q0 = (W === 1 ? [1,0,1,1,0,1] : [12,200,3,99,0,255]), v = P.v, Q1 = Q0.concat([v]), Q2 = Q1.slice(1);
+  const vr = [{ n: 'q', id: '1' }];
+  const q = (vals, o) => O('1', vals, Object.assign({ who: 'q' }, o || {}));
+  const f1 = [F('s', `lset q end+1 ${v}`, 'enqueue at the back'), F('c', 'TclObjTypeSetElement'), F('h', 'BASetElement', 'index end+1 = the length')];
+  const f2 = [...f1, F('h', 'Tcl_IsShared: no', 'edit in place'), F('h', 'BAReplace(len, 0, 1, v)', 'append')];
+  const f3 = [F('s', 'lindex $q 0', 'peek at the front'), F('c', 'TclObjTypeIndex'), F('h', 'BAIndex(obj, 0)')];
+  const f4 = [F('s', 'set q [lrange $q 1 end]', 'dequeue from the front'), F('c', 'Tcl_ListObjRange'), F('h', 'BASlice(obj, 1, end)')];
+  const f5 = [...f4, F('h', 'NewRep(' + Q2.length + ')'), F('h', W === 1 ? 'GetBits(b, 1 + i, 64) per word' : 'memcpy of ' + Q2.length + ' bytes', 'every remaining element is copied')];
+  const f6 = [...f5, F('h', 'WrapRep'), F('c', 'q = the new array; the old one is freed', 'BAFree')];
+  return [
+    ST({ cmd: 0, h: 'Enqueue: lset q end+1', p: `A queue of ${W === 1 ? 'bits' : 'small numbers'} adds at the back and removes at the front. Adding with <code>lset q end+1 ${v}</code> is an <code>lset</code> whose index equals the length, which the set-element hook treats as an append.`, src: 'bitarray.c: BASetElement', frames: f1, slot: 'setElementProc', heap: [q(Q0)], vars: vr }),
+    ST({ cmd: 0, h: 'The append is done in place', p: 'The array is not shared, so BAReplace appends to the same storage: the new element is written after the last one. It grows the allocation (doubling) only when the words are full, so over many appends the cost per enqueue is small and constant. A 64-element bit queue needs one word.', src: 'bitarray.c: BAReplace', frames: f2, slot: 'replaceProc', heap: [q(Q1, { chg: [Q1.length - 1] })], vars: vr }),
+    ST({ cmd: 1, h: 'Peek at the front', p: 'Reading the first element is one BAIndex call, as in the earlier entries. It does not remove anything.', src: 'bitarray.c: BAIndex', frames: f3, slot: 'indexProc', heap: [q(Q1, { hl: [0] })], vars: vr, res: String(Q1[0]), resLbl: 'front' }),
+    ST({ cmd: 2, h: 'Dequeue: lrange q 1 end', p: 'Removing the front element is done by slicing from index 1. For a bitarray that is a new array, so the hook allocates one and copies everything after the first element.', src: 'tclExecute.c: INST_LIST_RANGE_IMM; bitarray.c: BASlice', frames: f4, slot: 'sliceProc', heap: [q(Q1, { hl: Q1.map((_, i) => i).slice(1), gone: [0] })], vars: vr }),
+    ST({ cmd: 2, h: 'Every remaining element is copied', p: W === 1 ? `The slice starts at bit 1, which is not on a word boundary, so each result word is built from a 64-bit read at that offset. It is one step per 64 elements, but it is still proportional to the queue length.` : 'The slice is one block copy of the remaining bytes. It is proportional to the queue length.', src: 'bitarray.c: BASlice, GetBits', frames: f5, slot: 'sliceProc', heap: [q(Q1, { gone: [0] }), O('2', Q2, { raw: true, rc: 0, chg: Q2.map((_, i) => i) })], vars: vr }),
+    ST({ cmd: 2, h: 'The new array replaces the old one', p: 'q now points to the new array and the old object\'s refcount drops to 0, so the core frees it (BAFree). A plain Tcl list does the same dequeue by moving a start pointer, without copying, which is why a plain list is faster for a long queue (see <code>performance_analysis.md</code>, section 6). The bitarray is 64 times smaller for bits and its enqueue stays fast, so it wins where memory matters or the queue stays short.', src: 'bitarray.c: BAFree', frames: f6, slot: 'free', heap: [q(Q2, { chg: [] })], vars: [{ n: 'q', id: '1', ch: true }], res: 'q = ' + fmtStr(Q2), resLbl: 'now' })
+  ];
+});
+
+/* ---- state and rendering ---- */
+let W = 1, S = 0, sc = 0, step = 0, timer = null;
+const PV = {};
+function params() {
+  const s = SCENES[sc], defs = s.params(W), P = {};
+  PV[s.id] = PV[s.id] || {};
+  defs.forEach(d => {
+    let v = PV[s.id][d.k];
+    if (v === undefined) v = d.def;
+    if (d.type === 'select') { if (!d.opts.includes(v)) v = d.def; }
+    else v = clamp(parseInt(v, 10) || 0, d.min, d.max);
+    P[d.k] = v; PV[s.id][d.k] = v;
+  });
+  return { P, defs };
+}
+function current() {
+  const s = SCENES[sc], { P } = params(), built = s.build(W, P, !!S), tcl = s.tcl(W, P), f = built[0];
+  const has = f.heap.length > 0;
+  const start = ST({ start: true, cmd: -1, heap: f.heap, vars: f.vars, h: 'Ready',
+    p: 'Entry 0 is the library load: <code>load ./libbitarray.so Bitarray</code> ran Bitarray_Init, which created the command <code>bitarray</code>. Nothing else has happened yet.' +
+       (has ? ' The variable <code>a</code> already holds the array drawn above, made earlier.' : '') +
+       '<br><br><b>To run:</b> ' + tcl.map(l => '<code>' + esc(l) + '</code>').join(', then ') + '<br><br>Press <b>Next step</b> (or the right arrow key): the first step shows the script line to run (entry 1), the next compiles it, and every step after that adds one entry at the top of the call history.',
+    src: 'bitarray.c: Bitarray_Init' });
+  /* One history entry per step: a step that adds several entries is split, so the step number
+     follows the entry numbers. The in-between steps show the state from before the call. */
+  const kindText = { s: 'The script calls it.', c: 'Tcl core code runs.', h: 'bitarray.c code runs.', r: 'The result comes back.' };
+  const out = [start];
+  let prevState = start, prevFrames = [], lastCmd = start.cmd;
+  built.forEach(t => {
+    const hold = o => ST(Object.assign({ cmd: t.cmd, heap: prevState.heap, vars: prevState.vars, res: prevState.res, resLbl: prevState.resLbl, lead: true }, o));
+    if (t.cmd !== lastCmd) {
+      out.push(hold(lastCmd === -1 ? { cmd: t.cmd, frames: [], h: 'The script line', p: 'This is the line to run: <code>' + esc(tcl[t.cmd]) + '</code>. The next step compiles it to bytecode.' }
+        : { frames: [], h: 'Next script line', p: 'The script moves on to the next line: <code>' + esc(tcl[t.cmd]) + '</code>. It is added to the call history.' }));
+      prevFrames = []; lastCmd = t.cmd;
+    }
+    let p = 0;
+    while (p < prevFrames.length && p < t.frames.length && sameFrame(prevFrames[p], t.frames[p])) p++;
+    for (let j = p; j < t.frames.length - 1; j++) {
+      const fr = t.frames[j];
+      out.push(hold({ frames: t.frames.slice(0, j + 1), h: fr.t, p: kindText[fr.k] + (fr.s ? ' ' + esc(fr.s) + '.' : '') }));
+    }
+    out.push(t);
+    prevState = t; prevFrames = t.frames;
+  });
+  return { s, P, steps: out, tcl };
+}
+const sameFrame = (a, b) => a.k === b.k && a.t === b.t && a.s === b.s;
+function history(steps, upto, tcl) {
+  const ent = [{ n: 0, k: 'h', t: 'load ./libbitarray.so Bitarray', s: 'Bitarray_Init created the command "bitarray"', i: -1 }];
+  let prev = [], lastCmd = -1, n = 1;
+  for (let i = 0; i <= upto; i++) {
+    const t = steps[i];
+    if (!t.start && t.cmd !== lastCmd) { ent.push({ n: n++, k: 's', t: tcl[t.cmd], s: 'the script line', i }); lastCmd = t.cmd; prev = []; }
+    let p = 0;
+    while (p < prev.length && p < t.frames.length && sameFrame(prev[p], t.frames[p])) p++;
+    for (let j = p; j < t.frames.length; j++) ent.push(Object.assign({ n: n++, i }, t.frames[j]));
+    prev = t.frames;
+  }
+  return ent;
+}
+
+function renderHeap(o) {
+  const hasStr = o.str !== null;
+  const isBA = o.type === 'bitarray' || o.raw;
+  const who = o.raw ? (o.id === 'C' ? 'the BitArr block (a C struct, not yet a Tcl value)' : 'a new BitArr block, not yet wrapped') : 'object #' + o.id + (o.who ? ' · held by ' + o.who : '');
+  const meta = o.raw ? '' : ` · type <b>${o.type}</b> · refcount <b>${o.rc}</b> · string rep: <b>${hasStr ? 'yes' : 'none'}</b>${isBA ? ' · internalRep.ptr1 → the block below' : ''}`;
+  const cellArr = [];
+  o.vals.forEach((x, i) => {
+    const c = ['cell'];
+    if (isBA && W === 1 && x === 1) c.push('b1');
+    if (o.hl.includes(i)) c.push('hl');
+    if (o.chg.includes(i)) c.push('chg');
+    if (o.gone.includes(i)) c.push('gone');
+    cellArr.push(`<div class="${c.join(' ')}"><small>${i}</small>${x}</div>`);
+  });
+  let cells = cellArr.join('');
+  if (o.type === 'bitarray' || o.raw) if (W === 1) {
+    cells = '';
+    for (let k = 0; k * 64 < cellArr.length; k++) {
+      const ch = cellArr.slice(k * 64, k * 64 + 64).reverse().join('');
+      const n = Math.min(64, cellArr.length - 64 * k);
+      cells += `<div class="cells">${n < 64 ? `<div class="cell unused"><small>bits 63..${n}</small>all 0's (unused)</div>` : ''}${ch}</div>`;
+    }
+  }
+  const strLine = hasStr ? `<div class="words"><span>string rep = <b>"${o.str}"</b></span></div>` : '';
+  let body;
+  if (isBA) {
+    const ws = o.words || wordsOf(o.vals, W), len = o.vals.length, cap = Math.max(o.cap || ws.length, ws.length);
+    const row = (k, v) => `<div><span>${k}</span><b>${v}</b></div>`;
+    const hdr = '<div class="bhdr"><div class="bh">header, 64 bytes</div>' + row('len', len) + row('nwords', ws.length) + row('capWords', cap) + row('width', W) +
+      row('zero', '→ shared 0') + row('one', '→ shared 1') + row('elems', o.cache ? '→ ' + len + ' ptrs' : 'NULL') + row('elemsLen', o.cache ? len : 0) + '</div>';
+    let words = ws.map((x, k) => `<span>word ${k} = <b>${hex(x)}</b></span>`).join('');
+    for (let k = ws.length; k < cap; k++) words += `<span>word ${k} = <b>${hex(0n)}</b> <span>(spare capacity, always 0)</span></span>`;
+    body = `<div class="alloc">` +
+      `<div class="ablock">${hdr}<div class="bdata"><div class="atag">one block from one allocation: the header, then the words, side by side (no separate pointer to the data). Element i is bit (i mod 64), counted from the least significant bit, of word (i / 64). The hex is the word as a number, so it reads the same on big- and little-endian machines; only the byte order in memory differs, and the code never depends on it.</div>${W === 1 ? cells : `<div class="cells">${cells}</div>`}<div class="words">${words}</div></div></div></div>`;
+  } else {
+    body = `<div class="cells">${cells}</div><div class="words"><span>a plain list: ${o.vals.length} separate element objects, 8 bytes each in the list plus the objects themselves</span></div>`;
+  }
+  return `<div class="obj${o.raw ? ' raw' : ''}${o.fresh ? ' fresh' : ''}"><div class="oh"><b>${who}</b>${meta}${isBA ? ' <button class="showstruct" title="show the BitArr struct and the code that allocates it">show code</button>' : ''}</div>${body}${strLine}</div>`;
+}
+
+function render() {
+  const { s, steps, tcl } = current();
+  step = clamp(step, 0, steps.length - 1);
+  const t = steps[step];
+  /* scene buttons */
+  $('scenes').innerHTML = SCENES.map((x, i) => `<button data-i="${i}" aria-pressed="${i === sc}">${x.label}</button>`).join('');
+    const sh = !!s.shared;
+  $('shlbl').style.display = sh ? '' : 'none'; $('shared').style.display = sh ? '' : 'none';
+  document.querySelectorAll('#widths button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.w === W)));
+  document.querySelectorAll('#shared button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.s === S)));
+  /* params */
+  const { P, defs } = params();
+  $('params').innerHTML = defs.map(d => d.type === 'select'
+    ? `<label>${d.label} <select data-k="${d.k}">${d.opts.map(o => `<option${o === P[d.k] ? ' selected' : ''}>${o}</option>`).join('')}</select></label>`
+    : `<label>${d.label} <input type="number" data-k="${d.k}" min="${d.min}" max="${d.max}" value="${P[d.k]}"></label>`).join('');
+  /* dots */
+  $('dots').innerHTML = '<div class="dotrow">' + steps.map((_, i) => `<i data-i="${i}" title="${i === 0 ? 'ready' : 'step ' + i}: ${esc(steps[i].h)}" class="${i < step ? 'done' : i === step ? 'cur' : ''}"></i>`).join('') + `</div><span>${step === 0 ? 'ready' : 'step ' + step + ' of ' + (steps.length - 1)}</span>`;
+  /* call history, newest at the top */
+  $('hist').innerHTML = history(steps, step, tcl).reverse().map(e => `<div class="hrow${e.i === step ? ' cur' : ''}"><span class="hn">${e.n}</span><div class="rec ${e.k}${e.i === step ? ' fresh' : ''}">${esc(e.t)}${e.s ? `<small>${esc(e.s)}</small>` : ''}</div></div>`).join('');
+  /* slots */
+  const hasNoneRow = t.slot === 'none';
+  $('slots').querySelector('tbody').innerHTML = SLOTS.filter(r => r[0] !== 'none' || hasNoneRow || s.id === 'lappend').map(r => {
+    const nul = r[2] === 'NULL' || r[3] === 'NULL';
+    const fn = r[2].replace(/^&/, ''), can = fn && fn !== 'NULL' && FUNCS[fn];
+    return `<tr class="${r[0] === t.slot ? 'lit' : ''}${r[0] === 'none' ? ' none' : ''}${r[2] === 'NULL' ? ' nul' : ''}${can ? ' pick' : ''}"${can ? ` data-fn="${fn}" data-slot="${r[1]}" title="click to show the code of ${fn}"` : ''}><td><code>${r[1]}</code></td><td class="m">${r[2]}</td></tr>`;
+  }).join('');
+  /* memory */
+  $('vars').innerHTML = t.vars.length ? t.vars.map(v => `<span class="var${v.ch ? ' ch' : ''}">${v.txt ? esc(v.txt) : v.n + ' → #' + v.id}</span>`).join('') : '<span class="var" style="opacity:.6">no variables yet</span>';
+  $('heap').innerHTML = t.heap.length ? t.heap.map(renderHeap).join('') : '<div class="oh">nothing allocated yet</div>';
+  const stmt = t.cmd >= 0 ? tcl[t.cmd] : tcl[0];
+  $('stmt').innerHTML = `<small>${t.cmd >= 0 ? 'statement being run' : 'statement to run'}</small>${esc(stmt)}`;
+  $('res').className = 'res' + (t.res ? ' got' : '');
+  $('res').innerHTML = t.res ? `<small>${esc(t.resLbl)}</small>${esc(t.res)}` : '<small>result</small>—';
+  /* caption */
+  $('cap-h').textContent = t.h; $('cap-p').innerHTML = t.p; $('cap-s').textContent = t.src ? 'Source: ' + t.src : '';
+  const lastStep = step === steps.length - 1, moreCmds = sc < SCENES.length - 1;
+  $('b-prev').disabled = step === 0 && sc === 0; $('b-next').disabled = lastStep && !moreCmds;
+  $('b-next').textContent = lastStep && moreCmds ? 'Next cmd' : 'Next step';
+  $('b-next').title = lastStep && moreCmds ? 'go on to the next command: ' + SCENES[sc + 1].label : '';
+  $('b-code').classList.toggle('primary', !codeOpen && !!SRC && fnsForStep(t).names.length > 0);
+  if (codeOpen && SRC) renderCode();
+  if (lastStep && !moreCmds) stop();
+}
+const esc = x => String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+function toMemory() {
+  /* After a step, put the Memory pane at the top of the window: the width and command pickers above it are not needed while stepping. */
+  const el = $('memorypane'), calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  el.scrollIntoView({ block: 'start', behavior: calm ? 'auto' : 'smooth' });
+}
+function go(d) { step += d; codeForce = null; render(); toMemory(); }
+function stop() { if (timer) { clearInterval(timer); timer = null; } $('b-play').textContent = 'Auto-play'; }
+function advance(keep) {
+  if (!keep) stop();
+  if (step >= current().steps.length - 1 && sc < SCENES.length - 1) { sc++; step = 0; codeForce = null; render(); toMemory(); }
+  else go(1);
+}
+$('b-next').onclick = () => advance();
+$('dots').addEventListener('click', e => { const d = e.target.closest('i[data-i]'); if (!d) return; stop(); step = +d.dataset.i; codeForce = null; render(); toMemory(); });
+function retreat() {
+  stop();
+  if (step === 0 && sc > 0) { sc--; step = current().steps.length - 1; codeForce = null; render(); toMemory(); }
+  else go(-1);
+}
+$('b-prev').onclick = retreat;
+$('b-reset').onclick = () => { stop(); step = 0; render(); window.scrollTo({ top: 0, behavior: 'auto' }); };
+$('b-play').onclick = () => {
+  if (timer) { stop(); return; }
+  if (step >= current().steps.length - 1 && sc === SCENES.length - 1) { sc = 0; step = 0; }
+  $('b-play').textContent = 'Pause'; render();
+  timer = setInterval(() => advance(true), 1000 * +$('speed').value);
+};
+$('speed').onchange = () => { $('speed').blur(); if (timer) { clearInterval(timer); timer = setInterval(() => advance(true), 1000 * +$('speed').value); } };
+$('scenes').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; stop(); sc = +b.dataset.i; step = 0; render(); });
+$('widths').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; W = +b.dataset.w; render(); });
+$('shared').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; S = +b.dataset.s; render(); });
+$('params').addEventListener('change', e => {
+  const k = e.target.dataset.k; if (!k) return;
+  PV[SCENES[sc].id][k] = e.target.tagName === 'SELECT' ? e.target.value : e.target.value;
+  const keep = document.activeElement; const pos = keep && keep.dataset ? keep.dataset.k : null;
+  render();
+  if (pos) { const el = document.querySelector(`#params [data-k="${pos}"]`); if (el) { el.focus(); } }
+});
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); if (!e.repeat) $('b-play').click(); return; }   /* always toggles Auto-play; never scrolls or presses the focused button */
+  if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && timer) { stop(); e.preventDefault(); return; }   /* during Auto-play an arrow only pauses; the next one moves */
+  if (e.key === 'ArrowRight') { advance(); } else if (e.key === 'ArrowLeft') { retreat(); }
+});
+/* ---- source viewer: bitarray.c is embedded in the page (script#csrc), so no file has to be read ---- */
+let SRC = null, SRCNAME = 'embedded copy', FUNCS = {}, codeOpen = false, codeTab = null, codeStep = -1, codeForce = null, codeForceTitle = '', codeWant = null, codeHit = null, codeStack = [], codeMark = null, stackKey = '', lastNames = [], lastTitle = '';
+function parseSource(text) {
+  const L = text.replace(/\r\n/g, '\n').split('\n'), F = {};
+  const take = (a, b) => ({ a: a + 1, lines: L.slice(a, b + 1) });
+  for (let i = 0; i < L.length; i++) {
+    const m = /^([A-Za-z_][A-Za-z0-9_]*)\(/.exec(L[i]);
+    if (m && i > 0 && /^[A-Za-z]/.test(L[i - 1]) && !/;\s*$/.test(L[i - 1])) {
+      let a = i - 1, b = i;
+      while (b < L.length && L[b] !== '}') b++;
+      if (b >= L.length) continue;
+      if (a > 0 && /\*\/\s*$/.test(L[a - 1])) { let c = a - 1; while (c > 0 && !/^\/\*/.test(L[c])) c--; a = c; }
+      F[m[1]] = take(a, b);
+    }
+  }
+  const block = (name, startRe, endRe) => { for (let i = 0; i < L.length; i++) if (startRe.test(L[i])) { for (let j = i; j < L.length; j++) if (endRe.test(L[j])) { F[name] = take(i, j); return; } } };
+  block('BitArr', /^typedef struct BitArr \{/, /^\} BitArr;/);
+  block('bitarrayType', /^static const Tcl_ObjType bitarrayType = \{/, /^\};/);
+  block('macros', /^#define GETREP/, /\+ 63\) \/ 64\)\)/);
+  const ver = /#define BA_VERSION "([^"]*)"/.exec(text);
+  return { F, L, ver: ver ? ver[1] : '?', n: L.length };
+}
+function loadSource(text, name) {
+  const r = parseSource(text);
+  if (Object.keys(r.F).length < 10) return false;
+  SRC = r; FUNCS = r.F; SRCNAME = name; return true;
+}
+function fnsForStep(t) {
+  const names = [];
+  const add = n => { if (FUNCS[n] && !names.includes(n)) names.push(n); };
+  if (t.start) { add('Bitarray_Init'); return { names, focus: [] }; }
+  const top0 = t.frames[t.frames.length - 1];
+  if (top0 && (top0.k === 's' || top0.k === 'c')) return { names, focus: [], core: top0 };   /* the newest entry is not in bitarray.c */
+  if (t.lead) {   /* an in-between step: only the newest entry's own code */
+    const toks = (top0 && top0.k === 'h') ? (top0.t.match(/[A-Za-z_][A-Za-z0-9_]*/g) || []) : [];
+    toks.forEach(add);
+    return { names, focus: toks.filter(n => /^(?:[A-Z]\w{3,}|\w+_\w+)$/.test(n) && n !== 'NULL') };
+  }
+  const m = /bitarray\.c:\s*([^;]*)/.exec(t.src || '');
+  if (m) m[1].split(/[,\/]/).forEach(x => add(x.trim().split(/\s/)[0]));
+  if (!names.length) {
+    const hs = t.frames.filter(f => f.k === 'h');
+    for (let i = hs.length - 1; i >= 0 && names.length < 3; i--) (hs[i].t.match(/[A-Za-z_][A-Za-z0-9_]*/g) || []).forEach(add);
+  }
+  if (!names.length && t.slot) { const r = SLOTS.find(x => x[0] === t.slot); if (r) add(r[2]); }
+  const hs = t.frames.filter(f => f.k === 'h'), last = hs.length ? hs[hs.length - 1].t : '';
+  const focus = (last.match(/[A-Za-z_][A-Za-z0-9_]*/g) || []).filter(n => /^(?:[A-Z]\w{3,}|\w+_\w+)$/.test(n) && n !== 'NULL');
+  /* the newest history entry comes first: if it is a bitarray.c call, show that function's code first */
+  const top = t.frames[t.frames.length - 1];
+  if (top && top.k === 'h') {
+    const mine = (top.t.match(/[A-Za-z_][A-Za-z0-9_]*/g) || []).filter(n => FUNCS[n]);
+    if (mine.length) { const rest = names.filter(n => !mine.includes(n)); names.length = 0; mine.concat(rest).forEach(n => names.push(n)); }
+  }
+  return { names, focus };
+}
+const IS_C = /^(static|typedef|#define|return|if|for|while|switch|case)\b/;
+function renderCode() {
+  const { steps } = current(), t = steps[clamp(step, 0, steps.length - 1)];
+  let { names, focus, core } = fnsForStep(t);
+  if (codeForce) { names = codeForce.filter(n => FUNCS[n]); focus = []; core = null; }
+  { const key = sc + ':' + step; if (key !== stackKey) { codeStack = []; stackKey = key; codeHit = null; codeMark = null; } }
+  lastNames = names.slice();
+  lastTitle = codeForce ? codeForceTitle : (step === 0 ? 'Code for the start' : 'Code for step ' + step) + ': ' + t.h;
+  $('code-h').textContent = codeForce ? codeForceTitle : (step === 0 ? 'Code for the start' : 'Code for step ' + step) + ': ' + t.h;
+  if (!names.length) { $('ctabs').innerHTML = ''; $('codepre').innerHTML = core ? `<span class="ln com"><i></i>The newest history entry, "${esc(core.t)}"${core.s ? ' (' + esc(core.s) + ')' : ''}, runs in Tcl itself (the script or the core), not in this extension, so there is no bitarray.c code to show for it. Press Next step to continue.</span>` : '<span class="ln com"><i></i>There is no bitarray.c code for this step.</span>'; }
+  else {
+    if (codeStep !== step + (codeForce ? 0.5 : 0) || !names.includes(codeTab)) codeTab = names[0];
+    codeStep = step + (codeForce ? 0.5 : 0);
+    if (codeWant && names.includes(codeWant)) codeTab = codeWant; codeWant = null;
+    $('ctabs').innerHTML = names.map(n => `<button data-n="${n}" aria-pressed="${n === codeTab}">${n}</button>`).join('');
+    const f = FUNCS[codeTab];
+    /* One line is highlighted: the first line that calls (or defines) the step's function; failing that, the first line that mentions one of its names. */
+    const wordRe = n => new RegExp('\\b' + n + '\\b'), callRe = n => new RegExp('\\b' + n + '\\(');
+    let hitK = -1;
+    for (const n of focus) { hitK = f.lines.findIndex(l => callRe(n).test(l)); if (hitK >= 0) break; }
+    if (hitK < 0) for (const n of focus) { hitK = f.lines.findIndex(l => wordRe(n).test(l)); if (hitK >= 0) break; }
+    if (codeHit && codeHit.tab === codeTab && codeHit.k >= 0) hitK = codeHit.k;
+    let inCom = false;
+    $('codepre').innerHTML = f.lines.map((l, k) => {
+      let cls = 'ln';
+      if (/^\s*\/?\*/.test(l) || inCom) cls += ' com';
+      if (/\/\*/.test(l) && !/\*\//.test(l)) inCom = true; if (/\*\//.test(l)) inCom = false;
+      if (k === hitK) cls += ' hit';
+      const mk = codeMark && codeMark.tab === codeTab && codeMark.k === k ? codeMark : null;
+      const body = mk ? esc(l.slice(0, mk.col)) + '<mark class="clicked">' + esc(l.slice(mk.col, mk.col + mk.len)) + '</mark>' + esc(l.slice(mk.col + mk.len)) : esc(l);
+      return `<span class="${cls}" data-k="${k}"><i>${f.a + k}</i>${body}</span>`;
+    }).join('');
+    const pre = $('codepre');
+    const mEl = pre.querySelector('mark.clicked');
+    if (mEl) pre.scrollTop = Math.max(0, mEl.parentElement.offsetTop - pre.clientHeight / 3);
+    else if (hitK >= 0) { const el = pre.querySelector(`[data-k="${hitK}"]`); pre.scrollTop = Math.max(0, el.offsetTop - 4); } else pre.scrollTop = 0;
+  }
+  $('b-back').textContent = codeStack.length ? '← Back (' + codeStack.length + ')' : '← Back';
+  $('b-back').title = codeStack.length ? 'return to the previous code (Backspace)' : 'nothing to go back to: resume the simulator (Backspace)';
+  $('cnote').innerHTML = `Double-click a function, macro or type name of ours in the code to jump to it. ` + `Source: <code>bitarray.c</code> ${SRC.ver} (${SRCNAME}, ${SRC.n} lines); the highlighted line is the one that makes the step's call. Line numbers are those of the file. ` +
+    `<label>Load another bitarray.c<input type="file" id="srcfile" accept=".c,.h,.txt" hidden></label>`;
+}
+function setCode(on) {
+  codeOpen = on; if (!on) { codeForce = null; codeStack = []; codeHit = null; codeMark = null; }
+  $('codeview').hidden = !on; $('sim').style.display = on ? 'none' : 'flex';
+  $('b-code').textContent = on ? 'Resume' : 'Show code';
+  if (on) renderCode(); else toMemory();
+}
+$('b-code').onclick = () => setCode(!codeOpen);
+$('heap').addEventListener('click', e => { if (!e.target.closest('.showstruct')) return; stop(); codeStack = []; codeHit = null; codeForce = ['BitArr', 'NewRep', 'WrapRep']; codeForceTitle = 'Code: the BitArr block, its allocation and its wrapper'; setCode(true); $('codeview').scrollIntoView({ block: 'nearest' }); });
+$('slots').addEventListener('click', e => {
+  const tr = e.target.closest('tr[data-fn]'); if (!tr || timer) return;
+  codeStack = []; codeHit = null; codeForce = [tr.dataset.fn]; codeForceTitle = 'Code: ' + tr.dataset.fn + ', the ' + tr.dataset.slot + ' hook';
+  setCode(true); $('codeview').scrollIntoView({ block: 'nearest' });
+});
+$('b-resume').onclick = () => setCode(false);
+const macroLine = name => { const f = FUNCS.macros; if (!f) return -1; return f.lines.findIndex(l => new RegExp('^#define\\s+' + name + '\\b').test(l)); };
+$('codepre').addEventListener('mousedown', e => { if (e.detail > 1) e.preventDefault(); });   /* no word selection, so no selection pop-up (the "+ comment" balloon) */
+function wordAt(x, y) {
+  let node = null, off = 0;
+  if (document.caretPositionFromPoint) { const c = document.caretPositionFromPoint(x, y); if (c) { node = c.offsetNode; off = c.offset; } }
+  else if (document.caretRangeFromPoint) { const r = document.caretRangeFromPoint(x, y); if (r) { node = r.startContainer; off = r.startOffset; } }
+  if (!node || node.nodeType !== 3) return null;
+  const ln = node.parentElement && node.parentElement.closest('.ln'); if (!ln) return null;
+  const txt = node.data; let a = off, b = off;
+  while (a > 0 && /\w/.test(txt[a - 1])) a--;
+  while (b < txt.length && /\w/.test(txt[b])) b++;
+  if (a === b) return null;
+  /* the line's text starts after the <i> number, so the offset in this text node is the column; marks split the node, so add what precedes it */
+  const base = node.parentElement.nodeName === 'MARK' ? node.parentElement : node;
+  let col = a, prev = base.previousSibling;
+  while (prev && (prev.nodeType === 3 || prev.nodeName === 'MARK')) { col += prev.textContent.length; prev = prev.previousSibling; }
+  return { word: txt.slice(a, b), k: +ln.dataset.k, col, len: b - a };
+}
+const isDefLine = (w, line) => new RegExp('^(?:#\\s*define\\s+|static\\s+const\\s+\\S+\\s+|typedef\\s+struct\\s+|\\}\\s*)?' + w + '\\b').test(line);
+$('codepre').addEventListener('dblclick', e => {
+  const say = m => { $('cmsg').textContent = m; };
+  const hit = wordAt(e.clientX, e.clientY);
+  { const sel = window.getSelection(); if (sel) sel.removeAllRanges(); }
+  if (!hit) { say(''); return; }
+  const w = hit.word, f = FUNCS[codeTab], line = f ? f.lines[hit.k] || '' : '';
+  /* double-click on the definition we jumped to: that is "go back" */
+  if (codeStack.length && isDefLine(w, line) && (w === codeTab || (codeTab === 'macros' && macroLine(w) === hit.k))) { say(''); $('b-back').click(); return; }
+  let tab = null, k = -1;
+  if (FUNCS[w] && w !== 'macros') tab = w;
+  else {
+    k = macroLine(w); if (k >= 0) tab = 'macros';
+    else {   /* a macro defined elsewhere in the file: show it with a little context */
+      const L = SRC.L, i = L.findIndex(l => new RegExp('^\\s*#\\s*define\\s+' + w + '\\b').test(l));
+      if (i >= 0) { let b = i; while (b < L.length - 1 && /\\\s*$/.test(L[b])) b++; const a = Math.max(0, i - 8); FUNCS[w] = { a: a + 1, lines: L.slice(a, b + 4) }; tab = w; k = i - a; }
+    }
+  }
+  if (!tab) { say('"' + w + '" is not a function, macro or type defined in bitarray.c (it is C, Tcl or a local name).'); return; }
+  if (tab === codeTab && !(k >= 0)) { say('"' + w + '" is the code shown here.'); return; }
+  say('');
+  codeStack.push({ force: codeForce ? codeForce.slice() : null, title: codeForceTitle, tab: codeTab, hit: codeHit, mark: { tab: codeTab, k: hit.k, col: hit.col, len: hit.len } });
+  codeForce = lastNames.includes(tab) ? lastNames.slice() : lastNames.concat(tab);
+  codeForceTitle = 'Code: ' + tab + ' (followed from ' + codeTab + ')';
+  codeWant = tab; codeHit = k >= 0 ? { tab: tab, k } : null; codeMark = null;
+  renderCode();
+});
+$('b-back').onclick = () => {
+  const sn = codeStack.pop(); if (!sn) { setCode(false); return; }
+  codeForce = sn.force; codeForceTitle = sn.title; codeWant = sn.tab; codeHit = sn.hit; codeMark = sn.mark; renderCode();
+};
+$('ctabs').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; codeTab = b.dataset.n; codeHit = null; codeMark = null; renderCode(); });
+$('cnote').addEventListener('change', e => {
+  if (e.target.id !== 'srcfile' || !e.target.files[0]) return;
+  const f = e.target.files[0], r = new FileReader();
+  r.onload = () => { if (loadSource(String(r.result), f.name)) renderCode(); else $('cnote').textContent = 'That file does not look like bitarray.c (too few functions found).'; };
+  r.readAsText(f);
+});
+document.addEventListener('keyup', e => { if ((e.key === ' ' || e.code === 'Space') && e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT') e.preventDefault(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && codeOpen) setCode(false);
+  if (e.key === 'Backspace' && codeOpen && e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT') { e.preventDefault(); $('b-back').click(); }
+});
+loadSource($('csrc').textContent, 'embedded copy');
+SCENES.forEach(s => { s.shared = false; });
+['lset', 'lreplace'].forEach(id => { SCENES.find(s => s.id === id).shared = true; });
+render();
+</script>
+</body>
+</html>

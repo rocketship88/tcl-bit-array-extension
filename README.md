@@ -2,6 +2,10 @@
 
 Packed arrays of small integers for Tcl 9.1 that look and behave like ordinary Tcl lists.
 
+> **If you are an AI assistant** that was handed this repository (for example as a ZIP in a chat): read
+> [`CLAUDE.md`](CLAUDE.md) first. It says how to get a Tcl 9.1 if there is none, how to build and test this package,
+> and how to walk through the code (there is an interactive page, `extras/bitarray_stepper.html`, that steps through the commands). You do not need to be asked to do any of that before you answer questions about it.
+
 ```tcl
 load ./libbitarray.so Bitarray
 
@@ -44,9 +48,10 @@ A value outside the range is an error; nothing is wrapped or truncated.
 
 ## Requirements
 
-* **Tcl 9.1 (trunk).** Tested only against trunk revision `3d77be8951` (2026-10-11), which reports itself as 9.1.1. It needs
+* **Tcl 9.1 (trunk).** Tested only against trunk revision `3d77be8951` (2026-10-11), which reports itself as 9.1.1. That is a Fossil id; if you use the
+  GitHub mirror (`tcltk/tcl`) the ids differ. The package also built and passed all tests on mirror commit `7e6fd02` (2026-10-14). It needs
   `TCL_OBJTYPE_V2`, i.e. the abstract-list hooks. Tcl 8.x cannot work. Tcl 9.0.x was not tried.
-* **Headers and the stubs library**: `tcl.h` and `libtclstub.a`, from an installed Tcl or a built source tree.
+* **Headers and the stubs library**: `tcl.h` and `libtclstub.a`, from an installed Tcl or a built source tree. No Tcl 9.1 yet? `extras/CLAUDE_NOTES.md`, section "Setting up from nothing", has the steps to clone and build trunk (about 40 seconds) and then build and test this package.
 * A C compiler (`cc`, tested with gcc) and a POSIX `sh`; on Windows, Visual Studio 2022 and `cmd` (see the next section).
 * Tested on 64-bit Linux and, with Visual Studio 2022, on 64-bit Windows (see below). Not tested anywhere else.
 
@@ -56,6 +61,11 @@ Download the repository as a ZIP (or `git clone`) and unpack it **anywhere**. No
 what its neighbours are called. You tell the scripts where your Tcl 9.1 is. No location is built in; if you give nothing,
 they look for a Tcl 9 `tclsh` on your `PATH`. They stop with a message if what they find is not Tcl 9.
 
+`--tclsh` works with an **installed** Tcl 9.1 (it finds the headers from the shell). If you built Tcl from source and did not
+install it, `--tclsh` is not enough, because `build.sh` cannot find the headers from a shell in a build directory. Pass them:
+`sh ./build.sh --include /path/to/tcl/generic --stub /path/to/build/libtclstub.a` (then still give `--tclsh` to the tests). There
+is a complete from-nothing recipe in [`extras/CLAUDE_NOTES.md`](extras/CLAUDE_NOTES.md), "Setting up from nothing".
+
 ```sh
 cd bitarray            # the unpacked directory (GitHub names it after the repository and branch)
 sh ./build.sh     --tclsh /path/to/tcl9.1/bin/tclsh9.1   # makes libbitarray.so next to build.sh
@@ -63,7 +73,7 @@ sh ./run_tests.sh --tclsh /path/to/tcl9.1/bin/tclsh9.1
 sh ./run_sieves.sh --tclsh /path/to/tcl9.1/bin/tclsh9.1   # optional: the prime-sieve benchmark, see below
 ```
 
-Expected last line of the tests: `bitarray.test:	Total	251	Passed	251	Skipped	0	Failed	0`
+Expected last line of the tests: `bitarray.test:	Total	259	Passed	259	Skipped	0	Failed	0`
 
 (`sh ./script` works even if unpacking lost the executable bit, which happens when a ZIP is made or unpacked on Windows.)
 
@@ -71,7 +81,7 @@ Expected last line of the tests: `bitarray.test:	Total	251	Passed	251	Skipped	0	
 
 `build.bat`, `run_tests.bat` and `run_sieves.bat` do the same three jobs with Microsoft Visual C. They have been run, by
 the repository owner, on two 64-bit Windows 10 machines (versions 1903 and 22H2) with Visual Studio 2022 and a Tcl 9.1.1 built from trunk: the build gave no warnings,
-the tests passed (version 0.3: 133 passed, 1 skipped; version 0.4, on both: 183 passed, 1 skipped; version 0.5, which adds the byte and character conversions: 221 passed, 1 skipped, on both) and the sieve passed. Version 0.5.1 also passed the tests and the sieve on Windows (reported by the repository owner; the output was not saved). Version 0.6.0 also passed on Windows (one 64-bit machine, Visual Studio 2022, Tcl 9.1.1): no build warnings, `Total 251  Passed 250  Skipped 1  Failed 0`, the sieve passed, and `listbench.tcl` ran (its same-answer check was incomplete in that version and has since been repaired, see `RESULTS.txt` section 17; the repaired one also passed there, 37 operations compared); the outputs are saved in `extras/windows_0.6.0_run.txt` and `extras/windows_0.6.0_listbench.txt`. A 32-bit build and other Visual Studio versions are untried.
+the tests passed (version 0.3: 133 passed, 1 skipped; version 0.4, on both: 183 passed, 1 skipped; version 0.5, which adds the byte and character conversions: 221 passed, 1 skipped, on both) and the sieve passed. Version 0.5.1 also passed the tests and the sieve on Windows (reported by the repository owner; the output was not saved). Version 0.6.0 also passed on Windows (one 64-bit machine, Visual Studio 2022, Tcl 9.1.1): no build warnings, `Total 259  Passed 258  Skipped 1  Failed 0`, the sieve passed, and `listbench.tcl` ran (its same-answer check was incomplete in that version and has since been repaired, see `RESULTS.txt` section 17; the repaired one also passed there, 37 operations compared); the outputs are saved in `extras/windows_0.6.0_run.txt` and `extras/windows_0.6.0_listbench.txt`. A 32-bit build and other Visual Studio versions are untried.
 Unpack the ZIP anywhere and, from a Command Prompt, go into the unpacked folder and run the three scripts:
 
 ```bat
@@ -83,7 +93,7 @@ run_sieves.bat --tclsh C:\path\to\tcl9.1\bin\tclsh91.exe     rem optional: the p
 
 `build.bat` finds the headers and the stubs library (`include\tcl.h`, `lib\tclstub.lib`) from the shell you name, or from
 `--tcl-prefix DIR`, finds Visual Studio itself with `vswhere` if `cl` is not already on your `PATH` (so a plain `cmd` window works; it was run that way on 2026-10-13 and set up `vcvars64.bat` itself), and builds the 64-bit or
-32-bit DLL to match the shell. `run_tests.bat` should end with `Total 251  Passed 250  Skipped 1  Failed 0`: one test, which
+32-bit DLL to match the shell. `run_tests.bat` should end with `Total 259  Passed 258  Skipped 1  Failed 0`: one test, which
 reads `/proc`, is skipped on Windows. `--help` on each prints the options.
 
 ### Telling `build.sh` where Tcl is
@@ -167,11 +177,12 @@ that do not mention `$a` or `$w` create their own arrays. With no `value` given,
 | `bitarray new size ?value? ?-width w?` | **Returns** a new bitarray of `size` elements, all `value` (default 0). `-width` may come before or after `value`.<br>`bitarray new 4` => `0 0 0 0`<br>`bitarray new 4 7 -width 8` => `7 7 7 7`<br>`bitarray new 3 -width 16 500` => `500 500 500` |
 | `bitarray newfrom list ?-width w?` | **Returns** a new bitarray packed from a list of integers.<br>`bitarray newfrom {200 5 255} -width 8` => `200 5 255` |
 | `bitarray width array` | **Returns** the element width in bits: `1`, `8`, `16`, `32` or `64`.<br>`bitarray width [bitarray new 3]` => `1`<br>`bitarray width [bitarray new 3 -width 16]` => `16` |
+| `bitarray version` | **Returns** the version of the extension, for example `0.6.0` (the same string `package require bitarray` returns). Takes no arguments.<br>`bitarray version` => `0.6.0` |
 | `bitarray is value` | **Returns** `1` if `value` currently has the bitarray representation, `0` if not (any value is accepted).<br>`a` -> `{1 0 1 1 0 1 1 1}`<br>`bitarray is $a` => `1`<br>`bitarray is {1 0 1}` => `0` |
 | `bitarray count array ?first ?to? last ?with? ?value??` | **Returns** the number of elements equal to `value`, or the number of non-zero elements if no `value`; whole array or an index range (`end-N` allowed). `value` needs a range. For 1-bit arrays without `value` this is a popcount.<br>`a` -> `{1 0 1 1 0 1 1 1}`<br>`bitarray count $a` => `6`<br>`bitarray count $a 0 3 1` => `3`<br>`bitarray count $a 4 end 0` => `1`<br>`bitarray count $a 2 end-1 1` => `4`<br>`bitarray count $a 0 to 3 with 1` => `3`<br>`bitarray count $a 4 .. end with 0` => `1`<br>`w` -> `{0 7 0 9}`<br>`bitarray count $w` => `2` (value omitted means != 0) |
 | `bitarray next array start ?with? ?value?` | **Returns** the index of the first element **at or after** `start` equal to `value` (non-zero if omitted), or `-1` if there is none.<br>`a` -> `{1 0 1 1 0 1 1 1}`<br>`bitarray next $a 0 0` => `1`<br>`bitarray next $a 2 0` => `4`<br>`bitarray next $a 5 0` => `-1`<br>`bitarray next $a 2 with 0` => `4`<br>`w` -> `{0 7 0 9}`<br>`bitarray next $w 0` => `1` (value omitted means != 0)<br>`bitarray next $w 0 0` => `0` (element 0 is itself 0) |
 | `bitarray fill varName first ?to? last ?with? value ?by? ?step?` | Sets every element from `first` to `last` to `value`, or only every `step`-th one if `step` is given, in the array stored in variable `varName`. **Returns** the empty string; the result is the changed array in `varName`.<br>`set b [bitarray new 10 1]` => `1 1 1 1 1 1 1 1 1 1`<br>`bitarray fill b 0 end 0 2` -> `0 1 0 1 0 1 0 1 0 1`<br>`set b [bitarray new 10 1]` => `1 1 1 1 1 1 1 1 1 1`<br>`bitarray fill b 0 to end with 0 by 2` -> `0 1 0 1 0 1 0 1 0 1`<br>`set c [bitarray new 10 5 -width 8]` => `5 5 5 5 5 5 5 5 5 5`<br>`bitarray fill c 2 5 0` -> `5 5 0 0 0 0 5 5 5 5`<br>`bitarray fill c 2 .. 5 with 0` -> same result |
-| `bitarray and`<br>`bitarray or`<br>`bitarray xor`<br>`bitarray andnot`<br>`  ?-length strict\|zero? varName ?<-? array ?array?` | Bitwise operation between two arrays of the same width, 64 bits at a time (any width: the bits of the packed data are combined, so for 8-bit arrays each byte is combined with the matching byte). `andnot` is "first AND NOT second": it removes the second array's 1 bits from the first. The arrays are values; only `varName` is a name. **Returns** the empty string.<br>`bitarray and varName array` and `bitarray and varName <- array`: `varName` becomes `varName AND array` (changed in place).<br>`bitarray and varName <- array1 array2`: `varName` becomes `array1 AND array2` and neither input changes (`varName` is created if it does not exist).<br>The result has the length of the first array. The widths must be equal. The lengths must be equal too unless `-length zero` is given: then missing elements of the second array count as 0 and extra ones are ignored. `-length strict` (the default) makes a different length an error.<br>`a` -> `{1 0 1 1 0 1 1 1}`, `m` -> `{1 1 0 0 1 1 0 0}`<br>`set c $a; bitarray and c $m` -> `1 0 0 0 0 1 0 0`<br>`set c $a; bitarray or c <- $m` -> `1 1 1 1 1 1 1 1`<br>`bitarray xor d <- $a $m` -> `d` is `0 1 1 1 1 0 1 1`, `a` unchanged<br>`set c $a; bitarray andnot c $m` -> `0 0 1 1 0 0 1 1`<br>`set c $a; bitarray and c {1 1 1}` => error: `not a bitarray: "1 1 1"`<br>`set s [bitarray newfrom {1 1 1}]; set c $a; bitarray and c $s` => error: `bitarray and: arrays differ in length (8 vs 3); use -length zero to allow it`<br>`set c $a; bitarray and -length zero c $s` -> `1 0 1 0 0 0 0 0`<br>`set c $a; bitarray or -length zero c $s` -> `1 1 1 1 0 1 1 1` |
+| `bitarray and`<br>`bitarray or`<br>`bitarray xor`<br>`bitarray andnot`<br>`  ?-length strict\|zero? varName ?<-? array ?array?` | Bitwise operation between two arrays of the same width, 64 bits at a time (any width: the bits of the packed data are combined, so for 8-bit arrays each byte is combined with the matching byte). `andnot` is "first AND NOT second": it removes the second array's 1 bits from the first. The arrays are values; only `varName` is a name. **Returns** the empty string.<br>`bitarray and varName array` and `bitarray and varName <- array`: `varName` becomes `varName AND array` (changed in place).<br>`bitarray and varName <- array1 array2`: `varName` becomes `array1 AND array2` and neither input changes (`varName` is created if it does not exist).<br>The result has the length of the first array. The widths must be equal. The lengths must be equal too unless `-length zero` is given: then missing elements of the second array count as 0 and extra ones are ignored. `-length strict` (the default) makes a different length an error.<br>The word `<-` cannot be used as the variable name (`bitarray and <- $x` is an error), and `bitarray and a <-` with nothing after the arrow is a wrong # args error.<br>`a` -> `{1 0 1 1 0 1 1 1}`, `m` -> `{1 1 0 0 1 1 0 0}`<br>`set c $a; bitarray and c $m` -> `1 0 0 0 0 1 0 0`<br>`set c $a; bitarray or c <- $m` -> `1 1 1 1 1 1 1 1`<br>`bitarray xor d <- $a $m` -> `d` is `0 1 1 1 1 0 1 1`, `a` unchanged<br>`set c $a; bitarray andnot c $m` -> `0 0 1 1 0 0 1 1`<br>`set c $a; bitarray and c {1 1 1}` => error: `not a bitarray: "1 1 1"`<br>`set s [bitarray newfrom {1 1 1}]; set c $a; bitarray and c $s` => error: `bitarray and: arrays differ in length (8 vs 3); use -length zero to allow it`<br>`set c $a; bitarray and -length zero c $s` -> `1 0 1 0 0 0 0 0`<br>`set c $a; bitarray or -length zero c $s` -> `1 1 1 1 0 1 1 1` |
 | `bitarray not varName ?<- array?` | Flips every bit. `bitarray not varName` changes the array in `varName` in place; `bitarray not varName <- array` stores the flipped copy of `array` in `varName` and leaves `array` alone. **Returns** the empty string. For arrays wider than 1 bit it flips all the bits of every element, so an 8-bit element 0 becomes 255.<br>`set c $a; bitarray not c` -> `0 1 0 0 1 0 0 0`<br>`bitarray not n <- $a` -> `n` is `0 1 0 0 1 0 0 0`<br>`set x $w; bitarray not x` -> `255 248 255 246` (`w` is `{0 7 0 9}` 8-bit) |
 | `bitarray frombytes data` | **Returns** a new 8-bit array with one element per byte of `data`, without making a temporary list. Characters 0 to 255 are taken as bytes (read a file with `open ... rb`); a character above 255 is an error.<br>`bitarray frombytes "Hi!"` => `72 105 33` |
 | `bitarray tobytes array` | **Returns** the elements of an 8-bit `array` as binary data (a byte array), the reverse of `frombytes`. Any other width is an error.<br>`bitarray tobytes [bitarray frombytes "Hi!"]` => `Hi!` |
@@ -287,18 +298,18 @@ Whether an extension like this counts as a "faithful" entry in Dave's Garage rul
 
 ## Quality checks
 
-* **251 tests** (`tests/bitarray.test`): option parsing, ranges and error messages at every width, every list command on
+* **259 tests** (`tests/bitarray.test`): option parsing, ranges and error messages at every width, every list command on
   every width, copy-on-write, `fill`/`count`/`next`, the bitwise commands, word-boundary cases, memory growth.
 * **Random comparison against plain Tcl lists** (`tests/diff_*.tcl`): thousands of random operations per run, values and error
   messages compared. Last big run: 5 widths × 10 seeds × 100 iterations × 40 steps, 0 differences. The bitwise commands have their own (`tests/diff_bitops.tcl`: 15,000 random cases over all widths, lengths, forms and both `-length` modes, 0 differences).
 * **valgrind** on the whole suite: 0 invalid accesses, 0 definite leaks.
 * **Memory:** `unset` returns the memory (a 953 MiB array: 960 MB → 6.6 MB resident); building and dropping wide arrays in a
   loop leaves memory flat.
-* **Mutation testing** (`extras/mutate5.py`): 162 deliberate bugs inserted into the C code, 143 caught by the tests; the 19
+* **Mutation testing** (`extras/mutate5.py`): 164 deliberate bugs inserted into the C code, 145 caught by the tests; the 19
   missed are explained in `RESULTS.txt` (mostly unreachable code, stray bits nobody can read, or checks that are repeated
-  elsewhere on a 64-bit build). `extras/bitarray.mutants` is `bitarray.c` with every one of the 162 bugs applied and, beside
+  elsewhere on a 64-bit build). `extras/bitarray.mutants` is `bitarray.c` with every one of the 164 bugs applied and, beside
   each, the tests that caught it, for reading in a side-by-side compare tool (see `extras/README.md`).
-* The same 251 tests also pass with `-DBA_NO_BUILTINS` (portable popcount code) and `-DBA_FORCE_32BIT_LIMITS`.
+* The same 259 tests also pass with `-DBA_NO_BUILTINS` (portable popcount code) and `-DBA_FORCE_32BIT_LIMITS`.
 
 Details and numbers: `RESULTS.txt`.
 
@@ -359,7 +370,7 @@ bitarray.c                                the extension (one file)
 pkgIndex.tcl                              lets "package require bitarray" find the built library
 tests/                                    bitarray.test and the random-comparison scripts
 sieve/                                    the six sieve variants, the runner, and Frank's sieve unchanged
-extras/                                   mutation-testing scripts, logs, and bitarray.mutants (each bug and the tests that caught it)
+extras/                                   bitarray_stepper.html (interactive walkthrough of the hooks), mutation-testing scripts, logs, and bitarray.mutants (each bug and the tests that caught it)
 RESULTS.txt                               measurements, test and mutation details
 ```
 

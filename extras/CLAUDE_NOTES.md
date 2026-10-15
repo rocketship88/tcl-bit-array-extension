@@ -25,17 +25,95 @@ Garage "Primes" drag race, included unchanged. Say so plainly when asked who wro
 | Source (one file) | `bitarray.c` |
 | Load as a package | `pkgIndex.tcl` in the top level: `lappend auto_path <folder>` then `package require bitarray` (tested on Linux and, by ET, on Windows 10 with Tcl 9.1.1 x64: `bitarray.dll` is picked and `package require` returns 0.5) |
 | Build, run the tests, run the sieve benchmark | `build.sh`, `run_tests.sh`, `run_sieves.sh` (Windows: the `.bat` equivalents) |
-| The tests (251) | `tests/bitarray.test`; random comparisons against plain lists: `tests/diff_*.tcl`; memory growth: `tests/leak_check.tcl` |
+| No Tcl 9.1 installed: clone, build, test from nothing | this file, "Setting up from nothing" |
+| Walk through the code | this file, "Walking someone through the code", and the interactive `extras/bitarray_stepper.html` |
+| The tests (259) | `tests/bitarray.test`; random comparisons against plain lists: `tests/diff_*.tcl`; memory growth: `tests/leak_check.tcl` |
 | All measured results, with the commands that produced them | `RESULTS.txt` |
 | The sieve variants A-F and Frank's file | `sieve/` (`sieve/README.md`) |
-| Mutation testing: the 162 deliberate bugs | `extras/mutate5.py` (the list), `extras/mutate6.py` (runner and report) |
+| Mutation testing: the 164 deliberate bugs | `extras/mutate5.py` (the list), `extras/mutate6.py` (runner and report) |
 | Which test caught which bug | `extras/mutants.json`, `extras/bitarray.mutants`, `extras/mutation_summary.txt` |
 | The `lappend`/`linsert` type loss: cause, reproductions, ticket text | `extras/typeloss_*`, `RESULTS.txt` section 13a |
+
+## Setting up from nothing (a fresh sandbox, no Tcl 9.1)
+
+Tested on 2026-10-15 in an empty directory on 64-bit Linux with gcc, against the then-current GitHub mirror of trunk
+(`7e6fd02`, reports itself as 9.1.1): both routes below built without errors and passed all 259 tests. The measurements in
+this repository were made on an earlier trunk (`3d77be8951`, a Fossil id; the GitHub mirror uses different ids), so a newer
+trunk can differ. Say which revision you used (`git log -1`) when you report numbers.
+
+The Claude sandbox reaches package registries and GitHub, not most other sites, so get Tcl from GitHub, not from core.tcl-lang.org.
+Needs `git`, `gcc` and `make`. It takes about 40 seconds. `W` below is **not** a literal name: replace it by the full path of any empty directory you made.
+Unpack the repository ZIP inside `W` too, so that it ends up as `W/bitarray` (the ZIP has a top-level `bitarray/` folder).
+
+    cd W
+    git clone --depth 1 https://github.com/tcltk/tcl tcl
+    mkdir build && cd build
+    ../tcl/unix/configure --disable-shared && make -j4
+    export TCL_LIBRARY=W/tcl/library      # only if tclsh says it cannot find init.tcl; it was not needed in a later test
+    echo 'puts [info patchlevel]' | ./tclsh     # must print 9.1.x; 9.0.x cannot load the package
+
+Route A, straight from the build directory (nothing installed):
+
+    cd W/bitarray
+    ./build.sh --include W/tcl/generic --stub W/build/libtclstub.a
+    sh ./run_tests.sh --tclsh W/build/tclsh      # expect: Total 259 Passed 259 Failed 0
+
+Route B, installed into a prefix:
+
+    mkdir b2 && cd b2 && ../tcl/unix/configure --prefix=W/inst && make -j4 && make install
+    cd W/bitarray
+    ./build.sh --tcl-prefix W/inst
+    sh ./run_tests.sh --tclsh W/inst/bin/tclsh9.1     # the installed shell needs no TCL_LIBRARY
+    # (an unpacked repo has no libbitarray.so until build.sh has run; delete a stale one if you copied a built tree)
+
+Notes:
+* `build.sh --tclsh W/build/tclsh` alone does **not** work for a build directory outside the source tree: the shell does not
+  know where its headers are, and the script says so. Use `--include` and `--stub` (route A) or an installed prefix (route B).
+* `--tcl-tree` expects the in-tree layout (`generic/tcl.h` and `unix/libtclstub.a` under one directory); use it only if you
+  ran `configure` inside `tcl/unix` itself.
+* Shell wrapper used in the sessions that produced this repository, which always sets the library path:
+  `TCL_LIBRARY=W/tcl/library exec W/build/tclsh "$@"`.
+* The benchmark and the mutation tests take the same shell: `W/run.sh extras/listbench.tcl both -verbose -lib ./libbitarray.so`;
+  mutation needs `BITARRAY_INCLUDE`, `BITARRAY_STUBLIB` and `BITARRAY_TCLSH` set (see `extras/mutate6.py`) and takes about
+  35 minutes. Do it once, before a release, not after each change.
+* Not tried: a shared-library Tcl build (`--enable-shared` is the default of `configure`; the tests above used `--disable-shared`),
+  Windows (see `README.md`), and trunk revisions other than the two named here.
+
+## Walking someone through the code
+
+If you have built and tested the package (see above) you can walk a person through `bitarray.c` (about 1,670 lines, one
+file). **`extras/bitarray_stepper.html` is an interactive version of this walkthrough**: the person opens it in a browser, picks a
+command and steps through the core call path, the hook reached, and the bits and words as they change, and can press "Show code"
+to see the `bitarray.c` code for the step. It embeds `bitarray.c`; `python3 extras/embed_source.py --check` tells whether it is
+current and whether every `bitarray.c` function the page names still exists.
+**Whenever you change `bitarray.c`, keep the page in sync:** run `python3 extras/embed_source.py`, then check the scenes of the commands you touched (the call paths, the step texts, the model that draws the bits), update them, and run `--check` again. The check only catches missing names, not changed behavior. Its call paths were written from the Tcl source (GitHub mirror `e36db33`) and `bitarray.c` 0.6.0, and its drawings come
+from its own small model, not from a running Tcl. Ask what they want to know first; if they just say "walk me through it", this order works. Read the code before you
+describe it, and quote it.
+
+1. **The idea.** The header comment of `bitarray.c`: a bitarray is an ordinary `Tcl_Obj` of a custom list type, so `llength`,
+   `lindex`, `lset`, `lrange`, `foreach` and so on work on it through the Tcl 9 abstract-list hooks (`Tcl_ObjType` version 2).
+   `doc/ObjectType.3` in the Tcl source describes the hooks.
+2. **The data.** `struct BitArr` (length, words in use, words allocated, width, the shared 0 and 1 values, a lazily built
+   element vector, and the word storage) and `GetElem`/`PutElem`, `NewRep`, `FreeRep`,
+   `WrapRep`: how an element of width 1, 8, 16, 32 or 64 is stored and read.
+3. **The hooks.** Under "type hooks": `BALength`, `BAIndex`, `BASlice`, `BAReverse`, `BAGetElements`, `BASetElement`,
+   `BAReplace` (with its helpers `GetBits`, `PutBits`, `ClearBits`, `MoveElems`), `BAInOper`, `BAUpdateString`, `BADup`, `BAFree`.
+   Which core command reaches which hook is the key to the performance story in `performance_analysis.md`.
+4. **The commands.** `BitarrayCmd` (one dispatcher, `Tcl_GetIndexFromObj` plus a `switch`): `new`, `newfrom`, `width`, `is`,
+   `version`, `frombytes`/`tobytes`, `fromchars`/`tochars`, `count`, `next`, `fill`.
+5. **The bitwise operations.** `BitOpCmd`, `BitOpWords` (64 bits at a time), `MaskTail`, `BitOpCompat`, `IsArrow`.
+6. **The tests that pin each piece down.** `tests/bitarray.test` (test names are grouped by command: `range-`, `rev-`,
+   `shift-`, `bitop-` and so on), the random comparisons against plain lists in `tests/diff_*.tcl`, and, for how good the
+   tests are, "Mutation testing" below.
+
+Good places to slow down, because they are where mistakes were found or are easiest to make: the unused bits past the end
+of the last word (`MaskTail`, `ClearBits`), `MoveElems` for overlapping moves, the 32-bit size limits (`BA_MAX_BITS`),
+and what happens when a bitarray is shared (`Tcl_IsShared` then `Tcl_DuplicateObj`, which calls `BADup`).
 
 ## Mutation testing, and how to trace one
 
 Each mutant is one deliberate change to `bitarray.c`. The suite is run against it. **CAUGHT** means at least one test fails or
-the run crashes; **MISSED** means every test passed. Current numbers: 162 mutants, 143 caught, 19 missed.
+the run crashes; **MISSED** means every test passed. Current numbers: 164 mutants, 145 caught, 19 missed.
 
 Worked example, M04. `BA_MAX_BITS`, the largest array allowed counted in total bits (elements times width), is
 `1 << 40`; M04 changes it to `1 << 41`. It is caught by exactly three tests, each asking for an array one element over the
@@ -58,7 +136,7 @@ it as a rough label. Almost all mutants delete or edit existing code; only one (
 
 ## What was and was not checked
 
-Checked: 251 tests pass natively and with `-DBA_NO_BUILTINS` and `-DBA_FORCE_32BIT_LIMITS`; valgrind clean (no invalid
+Checked: 259 tests pass natively and with `-DBA_NO_BUILTINS` and `-DBA_FORCE_32BIT_LIMITS`; valgrind clean (no invalid
 accesses, nothing definitely lost); a 200,000-step random comparison against plain lists across all five widths with no
 differences; flat memory over 16 million `lindex` calls.
 

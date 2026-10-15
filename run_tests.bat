@@ -8,7 +8,7 @@ rem   --tclsh FILE    the Tcl 9.1 shell to test with (use the one you built agai
 rem                   tclsh91.exe, tclsh90.exe or tclsh.exe on your PATH, if it is Tcl 9
 rem   --lib FILE      the extension to load (default: bitarray.dll next to this file)
 rem   -h, --help
-rem Expected last line:   bitarray.test:	Total	251	Passed	250	Skipped	1	Failed	0
+rem Expected last line:   bitarray.test:	Total	259	Passed	258	Skipped	1	Failed	0
 rem (one test, mem-1.1, is skipped on Windows because it reads /proc)
 setlocal EnableExtensions
 set "HERE=%~dp0"
@@ -86,6 +86,6 @@ echo   --tclsh FILE    the Tcl 9.1 shell to test with (use the one you built aga
 echo   --lib FILE      the extension to load (default: bitarray.dll next to this file)
 echo   -h, --help
 echo.
-echo Expected last line:   bitarray.test:  Total 251  Passed 250  Skipped 1  Failed 0
+echo Expected last line:   bitarray.test:  Total 259  Passed 258  Skipped 1  Failed 0
 echo (one test, mem-1.1, is skipped on Windows because it reads /proc)
 exit /b 0

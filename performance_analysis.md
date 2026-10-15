@@ -1,6 +1,6 @@
 # bitarray: why it exists, what it costs, when to use it
 
-Version 0.6.0, Tcl 9.1. The figures were measured with 0.5; the only ones measured again since are the two 1-bit edit rows in section 3 (after the 0.5.1 change) and the bitwise rows in section 4 (0.6.0). Written by Eric Taylor together with Claude (Anthropic's AI model), which ran the measurements and
+Version 0.6.0, Tcl 9.1. The figures were measured with 0.5; the only ones measured again since are the two 1-bit edit rows in section 3 (after the 0.5.1 change) and the bitwise rows in section 4 (0.6.0), the `lreverse` row in section 3 and the table in section 6 (0.6.0 after the word-at-a-time copies). Written by Eric Taylor together with Claude (Anthropic's AI model), which ran the measurements and
 drafted the text. Every figure below was measured on the machines named in each section; nothing is estimated unless it says so.
 
 ## 1. Why bitarray
@@ -49,7 +49,7 @@ One million elements, microseconds per call (best of five runs), Tcl 9.1.1 on Li
 | `lindex`, `lset`, `lappend` (one), `llength`, `lsearch` (hit at start) | 0.3 to 0.4 | same | same |
 | `lrange` 10..19 | 0.33 | 0.39 | 0.38 |
 | `lrange` half the array | 0.30 | 2.8 | 18.7 |
-| `lreverse` | 0.40 | 1,156 | 1,805 |
+| `lreverse` | 0.40 | 54 | 448 |
 | `lreplace` (delete 1000 near the start) | 3,872 | 57 | 75 |
 | `linsert` (one element in the middle) | 4,136 | 33 | 139 |
 | `foreach` over the whole array | 114,120 | 117,361 | 115,633 |
@@ -58,8 +58,17 @@ One million elements, microseconds per call (best of five runs), Tcl 9.1.1 on Li
 - Edits are faster: about 52x (`lreplace`) and 30x (`linsert`) for 8-bit data, and about 68x and 125x for 1-bit. Before 0.5.1 the 1-bit figures were 2,139 and 1,153 µs (only 2x and 4x faster than a plain list), because the part of the array after the edit was moved one bit at a time; it is now moved 64 bits at a time. Timings in this container vary by about 30% from run to run.
 - Large slices and reversals favour the core: a plain `lrange` and `lreverse` do no copying (see section 2). Once you
   use the elements the difference vanishes: running through every element of a reversed array took about 122 ms (1-bit),
-  145 ms (8-bit) and 125 ms (plain list). The 1 to 2 ms `lreverse` is slower than a plain memory copy of that size
-  should be, so it can probably be improved; that has not been looked at.
+  145 ms (8-bit) and 125 ms (plain list). The `lreverse` and unaligned `lrange` copies work a word (64 bits) at a time
+  for 1-bit arrays, and `lreverse` copies the wider elements without going through a function per element; before that
+  change `lreverse` of a million elements took about 1,200 µs (1-bit) and 5,600 µs (8-bit), against about 54 and 450 µs now
+  (extras/listbench.tcl on the same machine, one run each). The same copy is behind `lassign` when it names a few
+  variables for the first elements of a huge array and the rest is used (1,400 µs before, about 45 µs now); that is rare, because
+  the core skips building the rest when the result is unused, and the usual `lassign` of a short list or of an `lrange`
+  costs the same as with a plain list (about 0.4 to 0.5 µs).
+- Deleting at the front is still not free: a plain list drops the first elements in a fraction of a microsecond, while a
+  bitarray has to move all the rest down: about 32 µs (1-bit) and 80 to 90 µs (8-bit) per million elements (it was 55 to 100 µs
+  for 1-bit before the word-at-a-time left shift). A queue that is emptied from the front is better served by an index
+  that moves along the array, or by `lappend` and reading from a position.
 
 ## 4. Where the large gains are: the bulk commands and files
 
@@ -125,7 +134,87 @@ All five rows at the three sizes are in the saved benchmark output, and the benc
 | Small arrays (tens or hundreds of elements) | plain list: savings are tiny and no extension is needed |
 | Large slices or reversals where little of the result is used | plain list: lazy views cost nothing |
 | Must run on a Tcl older than 9.1, or without a compiled extension | plain list |
+| Taking elements off the front again and again (a queue) | plain list: a front delete moves the start, a bitarray moves all the data |
 | Results of `lsort`, `lmap`, `split` | plain list (the result is one; use `newfrom` to pack it again) |
+
+### Why: how each one is stored, and what that costs
+
+This is the old trade-off between a sequence kept in a movable window and one kept packed in a single block.
+
+- **A Tcl 9.1 list** is a block of pointers plus a small "span" that says which part is in use. Moving the start or the end
+  of the span costs nothing, so deleting at the front or the back, `lrange` and `lreverse` (a lazy view) are almost free:
+  about 1 µs at any size. It is not free in the middle: deleting from the middle of 100,000 elements moves 100,000 pointers
+  and took about 190 µs. Each element also costs a pointer (8 bytes), more if the values are distinct objects.
+- **A bitarray** is one packed block of exactly the bits it holds (1, 8, 16, 32 or 64 per element). Editing the middle is a
+  shift of packed data, 64 bits at a time for 1-bit arrays: the same deletion in 100,000 elements took about 3 to 4 µs (1-bit)
+  and 7 µs (8-bit). `and`, `or`, `count` and the other bulk commands work on whole words. The price is at the ends: with no
+  movable start, a delete at the front shifts everything, and a slice or a reversal is a real copy.
+
+Measured with 0.6.0 on Linux, one machine, microseconds per call (the same shape appears in the Windows runs):
+
+| operation | plain list | bitarray 1-bit | bitarray 8-bit |
+|---|---|---|---|
+| delete the first element, 2,000,000 elements | 1.2 | 63 | 293 |
+| delete one element in the middle, 100,000 elements | 190 | 3 to 4 | 7 |
+| `lreverse`, 1,000,000 elements | about 0.2 to 0.4 (lazy) | 54 | 448 |
+| `lassign` of a few elements, or of an `lrange` | about 0.4 | about 0.5 | about 0.5 |
+
+Three practical points that follow:
+
+1. A queue that is emptied from the front by deleting is a poor fit for a bitarray; see "A queue of bits" below.
+2. `ledit X 0 0` and `set X [lremove $X 0]` end with the same array and cost about the same (0.8 to 1.0 µs at 100 elements,
+   63 µs against 64 µs at 2,000,000, 1-bit). The `set` form allocates a new block and frees the old one, so for a big
+   array it briefly needs twice the memory. `ledit` in a loop also copies the whole array on every call, for a plain list as
+   well as for a bitarray: appending one element with `ledit q end+1 end+1 1` took 0.5 µs at 100,000 elements, 8.8 µs at
+   1,000,000 and 29 µs at 4,000,000 (a plain list: 360 µs, 4,100 µs; the cause is in the core's `ledit`, not isolated here).
+   To add one element at the end of a bitarray, use `lset q end+1 value` (0.1 to 0.6 µs at any size), or `lappend` at
+   global level; inside a proc `lappend` turns the bitarray into an ordinary list (section 5).
+3. `lassign` is cheap on a list of any size when the rest of the list is not used, which is its usual use: Tcl skips building
+   the rest when the result is thrown away. Only `lassign` of the first few elements of a huge array with the rest used
+   (36 µs for 1-bit, 82 µs for 8-bit at 1,000,000 elements, against 5 µs for a list) shows the copy.
+
+### Memory
+
+| 1,000,000 elements | plain list | bitarray 1-bit | bitarray 8-bit |
+|---|---|---|---|
+| the array itself | about 8 MB (a pointer per element) | 125 KB | 1 MB |
+| a list of separate integer objects instead of shared 0 and 1 | about 55 MB | 125 KB | 1 MB |
+
+See section 2 for the extra memory each command needs while it runs. A copy made by a command (`lrange`, `lreverse`,
+`lreplace`, `set X [lremove ...]`) is as small as the array: 125 KB for a million bits. A plain list's `lrange` and
+`lreverse` are lazy views that share the original's 8 MB and add almost nothing, but its `lreplace` makes a real copy of the pointers.
+
+### A queue of bits
+
+A queue of 1s and 0s that enter at one end and leave at the other is a real use (a bit stream, a sliding window, a shift
+register), though most large 1-bit arrays are indexed by position (sieves, bitmaps, sets of flags), and that is where a
+bitarray pays off. For a queue the plain list is faster if you delete from the front, and it needs more memory (a million
+queued bits: about 8 MB against 125 KB). Measured with a queue held at a fixed length, microseconds for one push and one pop:
+
+| bits in the queue | plain list (`lappend`, `ledit q 0 0`) | bitarray, `ledit q 0 0` to pop | bitarray, head index | bitarray, ring buffer |
+|---|---|---|---|---|
+| 1,000 | 0.26 | 0.42 | 0.23 | 0.20 |
+| 100,000 | 0.26 | 3.3 | 0.27 | 0.19 |
+| 1,000,000 | 0.26 | 33 | 0.24 | 0.18 |
+
+The head index keeps the array as it is: pop with `lindex $q $head; incr head`, push with `lset q end+1 $bit`, and when
+`head` has gone far enough drop the consumed front once with `ledit q 0 [expr {$head-1}]; set head 0` (the table's figure
+does not include that occasional compaction). The ring buffer has a fixed capacity: `lset q $head $bit` replaces the
+oldest bit with the newest and `head` wraps around. Either way the queue costs about the same as the plain list and uses
+the bitarray's memory. If the queue is short (hundreds of bits) a plain list is simpler and just as fast.
+
+So the choice is the familiar one. Use a list when the work is at the ends or the elements are not small integers; use a
+bitarray when there are many elements, the work is in the middle or over the whole array, or the memory matters.
+
+### Getting a recommendation for your own data
+
+If you are unsure which to use, give the zip to Claude (Anthropic's AI model, which wrote this package with Eric Taylor),
+describe your data (how many elements, their size, how they are read and changed: random access, the ends, ranges, whole-array
+operations, how many at once) and ask it to build the extension, time the operations you will actually use on both a list and a
+bitarray with `extras/listbench.tcl` and small scripts of its own, and recommend one. `extras/CLAUDE_NOTES.md` tells it where
+everything is. It needs a session that can run a C compiler and has Tcl 9.1 headers or source to build against (the sessions this
+package was developed in built Tcl 9.1 from source). The answer is a set of measurements on that machine for the usage you describe,
+so check it against your real data and treat it as a recommendation to review, not a guarantee.
 
 ## 7. Questions a reviewer may ask
 
@@ -133,7 +222,7 @@ All five rows at the three sizes are in the saved benchmark output, and the benc
    than bytes. The `binary` commands are the slow route to it (section 4). See Appendix 1 for what a byte array is.
 2. **Why not a dict or an array with integer keys?** They use far more memory per element and have no bulk commands. Not
    benchmarked here; the plain-list sieve is the comparison that was measured.
-3. **Does it break code that expects lists?** Everything that accepts a list accepts it. The 251 tests, and random
+3. **Does it break code that expects lists?** Everything that accepts a list accepts it. The 259 tests, and random
    comparisons against plain lists (values and error text), check that results equal a list's apart from the intended errors.
 4. **What about threads and shared values?** Values are immutable and copy on write like any Tcl value. Threads have not been
    tested.

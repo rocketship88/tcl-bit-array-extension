@@ -132,7 +132,7 @@ if {$mode ne "l"} {
     }
     if {$lib eq ""} { die "cannot find the extension; use -lib FILE, set BITARRAY_LIB, or run with mode l to time plain lists only" }
     if {[catch {load $lib Bitarray} err]} { die "cannot load $lib: $err" }
-    set bav [expr {[catch {package present bitarray} v] ? "?" : $v}]
+    set bav [expr {[catch {bitarray version} v] ? "?" : $v}]
 }
 
 # ---- the operations ----
@@ -177,7 +177,8 @@ op "ledit 1 for 2 (shared: copies)" {set Y $X; ledit Y @MID @MID 1 1}
 op "ledit 1 for 1 (in place)"      {ledit X @MID @MID 1} prep own
 op "ledit delete 1 at front (in place)" {ledit X 0 0} prep own reps {@N/10}
 op "lremove 3 elements"            {lremove $X 0 @MID end}
-op "lassign 3 variables"           {lassign $X a b c} cold 1
+op "lassign 3 variables (of lrange)" {lassign [lrange $X @MID @MID+2] a b c}
+op "lassign first 3 (rest returned)" {lassign $X a b c} cold 1
 op "lsearch -exact (hit at 0, warm)" {lsearch -exact $X 1}
 op "lsearch -exact (hit at 0, cold)" {lsearch -exact $X 1} cold 1
 op "lsearch -exact (miss, scans all)" {lsearch -exact $X 2} cold 1
@@ -401,7 +402,10 @@ if {$ratios} { lappend heads "list/bit1" "list/bit8" }
 if {$ratiosOnly} { set heads {list/bit1 list/bit8} }
 
 puts "listbench ($mode): Tcl [info patchlevel], bitarray $bav, $::tcl_platform(machine) $::tcl_platform(os), [clock format [clock seconds] -format %Y-%m-%d]"
-if {$mode ne "l"} { puts "library $lib" }
+if {$mode ne "l"} {
+    puts "[string repeat - 30] bench: $bav [clock format [file mtime $lib] -format {%Y-%m-%d %H:%M:%S}] [string repeat - 15]"
+    puts "library $lib"
+}
 puts "calibration: [calibrate]"
 set t0 [clock seconds]
 foreach n $sizes {
@@ -483,7 +487,10 @@ if {$verbose} {
     puts " * 'create from text': both start from the same fresh string of values.  The plain list is made by parsing it (llength forces the"
     puts "   string to become a list); newfrom parses it the same way and then also range-checks and packs every element.  Assigning an"
     puts "   existing list (set a \$L) just shares it and costs almost nothing, so that is not a fair comparison."
-    puts " * lrepeat is also lazy in Tcl 9.1 (a repeated-list view), which is why plain 'create' is so cheap."
+    puts " * lassign: the first row is the usual use (take a few elements, here from the middle, into variables). The second names three
+   variables for the first three elements of the whole array and returns the rest as its result; the core skips building that
+   rest when the result is unused (a loop or proc body), so the row shows only the cost when it is used, which is rare.
+ * lrepeat is also lazy in Tcl 9.1 (a repeated-list view), which is why plain 'create' is so cheap."
 } else {
     puts "(add -verbose for notes on how to read these numbers)"
 }

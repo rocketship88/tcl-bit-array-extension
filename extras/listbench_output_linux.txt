@@ -1,133 +1,137 @@
-check: 37 operations compared, same answers in every column (2 not comparable: creation and parsing)
+check: 38 operations compared, same answers in every column (2 not comparable: creation and parsing)
 listbench (both): Tcl 9.1.1, bitarray 0.6.0, x86_64 Linux, 2026-10-15
+------------------------------ bench: 0.6.0 2026-10-15 09:40:03 ---------------
 library ./libbitarray.so
-calibration: empty loop of 1,000,000 iterations 23.3 ms (best of 5)
+calibration: empty loop of 1,000,000 iterations 32.6 ms (best of 5)
 
 1000 elements: us per call, best of 3; memory 62x/8x less
 operation                               list us    bit1 us    bit8 us  list/bit1  list/bit8
-create (lrepeat / bitarray new)            0.11       0.19       0.19      0.57x      0.57x
-create from text (parse / newfrom)         25.2       32.9       31.8      0.77x      0.79x
-llength                                    0.08       0.08       0.08      0.97x      0.98x
-lindex (middle)                            0.08       0.08       0.09      0.98x      0.95x
-lset (middle, in place)                    0.15       0.15       0.15      0.98x      0.98x
-lappend (one element)                      0.17       0.17       0.17      0.95x      0.97x
-lrange 10..19                              0.13        0.2       0.19      0.63x      0.66x
-lrange first half                          0.12        0.2       0.19      0.59x      0.62x
-lreverse                                   0.13       0.96       2.17      0.14x      0.06x
-lreplace delete 100 at front               0.13       0.33       0.22      0.39x      0.58x
-lreplace delete 100 in middle              3.67       0.21       0.21        17x        17x
-lreplace 10 for 10 (middle)                4.03        0.3       0.32        13x        12x
-linsert 1 at front                         4.08       0.27       0.24        15x        17x
-linsert 1 in middle                        4.03       0.22       0.23        19x        18x
-linsert 1 at end                            4.2       0.22       0.25        19x        17x
-linsert 100 in middle                      4.39       1.03       1.03       4.3x       4.3x
-ledit 1 for 2 (shared: copies)             4.18       0.39       0.41        11x        10x
-ledit 1 for 1 (in place)                   4.25       0.31       0.29        14x        15x
-ledit delete 1 at front (in place)         0.21       0.33       0.29      0.64x      0.72x
-lremove 3 elements                         4.17       0.47       0.37       8.8x        11x
-lassign 3 variables                        0.44       1.26       0.56      0.35x      0.79x
-lsearch -exact (hit at 0, warm)            0.15       0.16       0.16      0.97x      0.97x
-lsearch -exact (hit at 0, cold)            0.32       1.22       2.36      0.26x      0.14x
-lsearch -exact (miss, scans all)            3.6       4.96       5.78      0.73x      0.62x
-2 in $X (miss)                              2.5        0.2       0.28        n/a        n/a
-lsort -integer                             35.7       32.1       33.3       1.1x       1.1x
-foreach over all elements                   102        103        114      0.99x      0.90x
-lmap over all elements                      155        147        145       1.1x       1.1x
-join with a comma                          23.7       43.5       45.5      0.55x      0.52x
-fill first half with 1 (no step)           5.28       0.38       0.38        14x        14x
-fill every 3rd element with 1              33.3       0.98       0.62        34x        54x
-count the 1s                               14.3       0.31       0.74        46x        19x
-next 1: one scan of the whole array         7.1       0.28       0.36        25x        20x
-next 1: visit every 1 (every 7th)          37.2       29.0       21.7       1.3x       1.7x
-bitop and (a AND b)                        70.0       0.23       0.27       304x       256x
-bitop or (a OR b)                          67.9       0.23       0.28       291x       246x
-bitop xor (a XOR b)                        70.8       0.33       0.39       212x       184x
-bitop andnot (a AND NOT b)                  110       0.37       0.41       297x       269x
-bitop not (flip every bit)                 75.4       0.29       0.34       262x       199x
+create (lrepeat / bitarray new)            0.14       0.28       0.29      0.49x      0.47x
+create from text (parse / newfrom)         39.9       47.5       48.7      0.84x      0.82x
+llength                                    0.13       0.13       0.12       1.0x       1.1x
+lindex (middle)                            0.12       0.12       0.11       1.1x       1.1x
+lset (middle, in place)                    0.18       0.18       0.18      0.98x      0.96x
+lappend (one element)                      0.21       0.21       0.22       1.0x      0.99x
+lrange 10..19                              0.38       0.51       0.33      0.75x       1.1x
+lrange first half                          0.24       0.35       0.37      0.70x      0.66x
+lreverse                                   0.25       0.59        1.5      0.43x      0.17x
+lreplace delete 100 at front               0.27       0.47       0.38      0.56x      0.70x
+lreplace delete 100 in middle              4.62       0.28       0.26        16x        18x
+lreplace 10 for 10 (middle)                4.72       0.34       0.37        14x        13x
+linsert 1 at front                         4.68       0.31        0.3        15x        15x
+linsert 1 in middle                        4.73       0.27       0.31        18x        15x
+linsert 1 at end                           4.78       0.28       0.35        17x        14x
+linsert 100 in middle                       5.1       1.46       1.27       3.5x       4.0x
+ledit 1 for 2 (shared: copies)             5.19       0.47       0.48        11x        11x
+ledit 1 for 1 (in place)                   4.78       0.34       0.39        14x        12x
+ledit delete 1 at front (in place)         0.25       0.35       0.36      0.71x      0.69x
+lremove 3 elements                         5.03       0.82       0.52       6.1x       9.6x
+lassign 3 variables (of lrange)            0.66       0.73       0.86      0.90x      0.77x
+lassign first 3 (rest returned)            1.02       1.22       1.18      0.84x      0.86x
+lsearch -exact (hit at 0, warm)            0.38       0.41       0.39      0.95x      0.98x
+lsearch -exact (hit at 0, cold)            0.82       2.08       4.48      0.39x      0.18x
+lsearch -exact (miss, scans all)           10.3       10.4       13.3      0.99x      0.78x
+2 in $X (miss)                              5.6       0.52       0.56        n/a        n/a
+lsort -integer                             66.7       68.3       69.5      0.98x      0.96x
+foreach over all elements                   287        307        270      0.94x       1.1x
+lmap over all elements                      389        216        215       1.8x       1.8x
+join with a comma                          33.6       34.7       36.5      0.97x      0.92x
+fill first half with 1 (no step)            5.4       0.26       0.26        21x        21x
+fill every 3rd element with 1              29.4       0.67       0.47        44x        63x
+count the 1s                               12.3       0.21       0.56        60x        22x
+next 1: one scan of the whole array        6.06       0.24       0.25        26x        24x
+next 1: visit every 1 (every 7th)          36.6       28.2       28.1       1.3x       1.3x
+bitop and (a AND b)                        83.0       0.28       0.33       293x       253x
+bitop or (a OR b)                          91.8       0.29       0.38       318x       243x
+bitop xor (a XOR b)                        88.2       0.28       0.34       314x       263x
+bitop andnot (a AND NOT b)                  107       0.29       0.34       374x       318x
+bitop not (flip every bit)                 68.9       0.23       0.32       301x       216x
 
 100000 elements: us per call, best of 3; memory 64x/8x less
 operation                               list us    bit1 us    bit8 us  list/bit1  list/bit8
-create (lrepeat / bitarray new)            0.16       0.38       2.23      0.41x      0.07x
-create from text (parse / newfrom)        3,218      3,739      3,813      0.86x      0.84x
-llength                                    0.08       0.08       0.08      0.95x      0.96x
-lindex (middle)                            0.08       0.08       0.08      0.98x      0.98x
-lset (middle, in place)                    0.17       0.27       0.26      0.65x      0.67x
-lappend (one element)                      0.27       0.26       0.26       1.0x       1.0x
-lrange 10..19                              0.21       0.29       0.18      0.72x       1.1x
-lrange first half                          0.15       0.28       2.31      0.54x      0.06x
-lreverse                                   0.13       74.5        198     <0.01x     <0.01x
-lreplace delete 100 at front               0.12       4.59       6.72      0.03x      0.02x
-lreplace delete 100 in middle               380       3.08       5.51       123x        69x
-lreplace 10 for 10 (middle)                 382       0.44       4.72       875x        81x
-linsert 1 at front                          383       6.38       10.8        60x        36x
-linsert 1 in middle                         383       3.39       9.86       113x        39x
-linsert 1 at end                            382       0.35       8.89      1090x        43x
-linsert 100 in middle                       381       4.56       10.7        84x        36x
-ledit 1 for 2 (shared: copies)              390       3.61       10.3       108x        38x
-ledit 1 for 1 (in place)                    441        0.4       4.67      1112x        94x
-ledit delete 1 at front (in place)         0.21       4.68        6.5      0.05x      0.03x
-lremove 3 elements                          382       7.79       7.68        49x        50x
-lassign 3 variables                        3.18       75.6        4.8      0.04x      0.66x
-lsearch -exact (hit at 0, warm)            0.15       0.16       0.14      0.93x       1.1x
-lsearch -exact (hit at 0, cold)            3.84       97.9        213      0.04x      0.02x
-lsearch -exact (miss, scans all)            321        403        482      0.80x      0.67x
-2 in $X (miss)                              217       0.16        1.6        n/a        n/a
-lsort -integer                            4,971      4,717      4,957       1.1x       1.0x
-foreach over all elements                10,233     14,509     16,284      0.71x      0.63x
-lmap over all elements                   16,043     14,549     14,322       1.1x       1.1x
-join with a comma                         2,024      2,175      2,259      0.93x      0.90x
-fill first half with 1 (no step)            249        0.3       0.73       834x       341x
-fill every 3rd element with 1             1,899       29.6       10.7        64x       177x
-count the 1s                                906       3.47       38.4       261x        24x
-next 1: one scan of the whole array         558       1.11       5.94       501x        94x
-next 1: visit every 1 (every 7th)         2,923      2,388      2,204       1.2x       1.3x
-bitop and (a AND b)                       6,041       0.68       5.53      8912x      1092x
-bitop or (a OR b)                         5,876       0.68       6.02      8591x       976x
-bitop xor (a XOR b)                       6,024       0.68        5.7      8822x      1056x
-bitop andnot (a AND NOT b)                8,216       0.73       6.42     11303x      1281x
-bitop not (flip every bit)                5,073       0.61       4.31      8278x      1255x
+create (lrepeat / bitarray new)            0.13        0.3       2.38      0.45x      0.06x
+create from text (parse / newfrom)        3,793      4,547      4,447      0.83x      0.85x
+llength                                     0.1        0.1        0.1      0.97x      0.93x
+lindex (middle)                             0.1       0.11       0.11      0.91x      0.89x
+lset (middle, in place)                    0.19       0.18       0.21       1.0x      0.88x
+lappend (one element)                      0.21       0.21        0.2       1.0x       1.0x
+lrange 10..19                              0.16       0.24       0.25      0.67x      0.63x
+lrange first half                          0.14       0.32       2.75      0.44x      0.05x
+lreverse                                   0.16       5.88       44.2      0.03x     <0.01x
+lreplace delete 100 at front               0.15        3.0       7.59      0.05x      0.02x
+lreplace delete 100 in middle               426       1.69       6.41       252x        66x
+lreplace 10 for 10 (middle)                 431       0.49       5.27       874x        82x
+linsert 1 at front                          430       7.64       12.3        56x        35x
+linsert 1 in middle                         433        4.0       11.2       108x        39x
+linsert 1 at end                            424        0.4       10.0      1064x        42x
+linsert 100 in middle                       426       5.41       12.4        79x        34x
+ledit 1 for 2 (shared: copies)              429       4.12       11.5       104x        37x
+ledit 1 for 1 (in place)                    481       0.48       5.31      1002x        91x
+ledit delete 1 at front (in place)         0.26       3.01       7.54      0.09x      0.03x
+lremove 3 elements                          422       4.36       8.64        97x        49x
+lassign 3 variables (of lrange)            0.39       0.47       0.48      0.83x      0.82x
+lassign first 3 (rest returned)            1.62       3.74       5.58      0.43x      0.29x
+lsearch -exact (hit at 0, warm)            0.18        0.2       0.18      0.93x       1.0x
+lsearch -exact (hit at 0, cold)            1.22        108        227      0.01x     <0.01x
+lsearch -exact (miss, scans all)            524        668        768      0.78x      0.68x
+2 in $X (miss)                              294       0.22        1.7        n/a        n/a
+lsort -integer                            6,183      6,280      6,500      0.98x      0.95x
+foreach over all elements                13,486     13,626     13,884      0.99x      0.97x
+lmap over all elements                   20,370     20,840     21,253      0.98x      0.96x
+join with a comma                         3,451      3,508      3,569      0.98x      0.97x
+fill first half with 1 (no step)            389       0.54       1.04       720x       375x
+fill every 3rd element with 1             2,788       41.2       16.7        68x       167x
+count the 1s                              1,128       2.91       36.2       388x        31x
+next 1: one scan of the whole array         537       1.34       4.77       401x       112x
+next 1: visit every 1 (every 7th)         3,109      2,506      2,683       1.2x       1.2x
+bitop and (a AND b)                       8,686       1.43       6.29      6067x      1381x
+bitop or (a OR b)                         6,352        1.4       9.24      4549x       688x
+bitop xor (a XOR b)                       6,353       0.86       6.37      7384x       997x
+bitop andnot (a AND NOT b)                8,722       0.97       6.56      8995x      1330x
+bitop not (flip every bit)                5,084       1.36       8.75      3746x       573x
 
 1000000 elements: us per call, best of 3; memory 64x/8x less
 operation                               list us    bit1 us    bit8 us  list/bit1  list/bit8
-create (lrepeat / bitarray new)            0.09       2.14       15.6      0.04x     <0.01x
-create from text (parse / newfrom)       36,288     54,057     56,163      0.67x      0.65x
-llength                                    0.16       0.15       0.14       1.0x       1.1x
-lindex (middle)                            0.14       0.12       0.13       1.1x       1.1x
-lset (middle, in place)                    0.23       0.23       0.26      0.98x      0.89x
-lappend (one element)                      0.17       0.27       0.25      0.64x      0.67x
-lrange 10..19                              0.22       0.24       0.26      0.91x      0.85x
-lrange first half                          0.18       3.73       23.6      0.05x     <0.01x
-lreverse                                   0.23        895      3,974     <0.01x     <0.01x
-lreplace delete 100 at front                0.2       49.9       73.8     <0.01x     <0.01x
-lreplace delete 100 in middle             3,096       33.1       70.7        94x        44x
-lreplace 10 for 10 (middle)               3,068       5.31       47.9       578x        64x
-linsert 1 at front                        2,894       56.4        147        51x        20x
-linsert 1 in middle                       3,426       35.6        136        96x        25x
-linsert 1 at end                          3,492       8.05        134       434x        26x
-linsert 100 in middle                     3,390       36.3        142        93x        24x
-ledit 1 for 2 (shared: copies)            4,031       34.5        150       117x        27x
-ledit 1 for 1 (in place)                  3,558       4.65       45.9       766x        78x
-ledit delete 1 at front (in place)         0.17       38.5       63.1     <0.01x     <0.01x
-lremove 3 elements                        2,652       60.7       70.2        44x        38x
-lassign 3 variables                        5.46        639       82.8     <0.01x      0.07x
-lsearch -exact (hit at 0, warm)            0.14       0.14       0.25      0.95x      0.54x
-lsearch -exact (hit at 0, cold)            4.82      1,004      2,020     <0.01x     <0.01x
-lsearch -exact (miss, scans all)          3,618      4,669      5,487      0.77x      0.66x
-2 in $X (miss)                            2,443       0.22       14.7        n/a        n/a
-lsort -integer                           69,713     70,471     71,759      0.99x      0.97x
-foreach over all elements               116,799    114,284    115,921       1.0x       1.0x
-lmap over all elements                  174,079    220,438    187,189      0.79x      0.93x
-join with a comma                        27,903     27,811     33,375       1.0x      0.84x
-fill first half with 1 (no step)          4,933       3.12       10.9      1583x       451x
-fill every 3rd element with 1            24,467        403        127        61x       192x
-count the 1s                             10,779       19.4        303       554x        36x
-next 1: one scan of the whole array       4,918       7.71       41.4       638x       119x
-next 1: visit every 1 (every 7th)        27,835     27,412     30,917       1.0x     <0.01x
-bitop and (a AND b)                      74,248       8.15       57.7      9109x      1286x
-bitop or (a OR b)                        52,974       6.55       89.9      8086x       589x
-bitop xor (a XOR b)                      50,034       5.22       52.8      9591x       948x
-bitop andnot (a AND NOT b)               68,068        7.7       85.8      8842x       794x
-bitop not (flip every bit)               53,665       5.26       40.2     10212x      1330x
+create (lrepeat / bitarray new)            0.13       2.99       22.3      0.04x     <0.01x
+create from text (parse / newfrom)       48,242     61,423     68,151      0.79x      0.71x
+llength                                     0.1        0.1        0.1       1.0x       1.0x
+lindex (middle)                             0.1        0.1       0.11       1.1x      0.98x
+lset (middle, in place)                    0.18       0.28       0.18      0.63x       1.0x
+lappend (one element)                      0.34       0.35       0.39      0.98x      0.88x
+lrange 10..19                              0.28       0.24       0.25       1.2x       1.1x
+lrange first half                          0.13       3.79       26.6      0.04x     <0.01x
+lreverse                                   0.26       49.3        447     <0.01x     <0.01x
+lreplace delete 100 at front               0.15       32.2       73.6     <0.01x     <0.01x
+lreplace delete 100 in middle             3,301       19.5       63.6       170x        52x
+lreplace 10 for 10 (middle)               3,609       6.67       50.6       542x        71x
+linsert 1 at front                        3,548       72.5        133        49x        27x
+linsert 1 in middle                       3,604       41.7        118        86x        30x
+linsert 1 at end                          3,811       9.43        113       404x        34x
+linsert 100 in middle                     3,581       44.5        134        80x        27x
+ledit 1 for 2 (shared: copies)            4,372       41.2        128       106x        34x
+ledit 1 for 1 (in place)                  4,318       6.78       59.6       637x        72x
+ledit delete 1 at front (in place)         0.25       35.9       91.1     <0.01x     <0.01x
+lremove 3 elements                        3,595       45.3       87.7        79x        41x
+lassign 3 variables (of lrange)             0.4       0.47       0.48      0.85x      0.84x
+lassign first 3 (rest returned)            4.86       36.6       82.1      0.13x      0.06x
+lsearch -exact (hit at 0, warm)            0.19       0.25       0.25      0.76x      0.76x
+lsearch -exact (hit at 0, cold)            3.62      1,100      2,446     <0.01x     <0.01x
+lsearch -exact (miss, scans all)          5,264      6,717      8,217      0.78x      0.64x
+2 in $X (miss)                            3,543       0.24       16.8        n/a        n/a
+lsort -integer                           80,574     81,942     83,644      0.98x      0.96x
+foreach over all elements               152,692    144,245    160,295       1.1x      0.95x
+lmap over all elements                  230,345    216,060    216,567       1.1x       1.1x
+join with a comma                        35,463     36,516     35,777      0.97x      0.99x
+fill first half with 1 (no step)          4,549        3.1       11.3      1468x       404x
+fill every 3rd element with 1            28,374        400        160        71x       178x
+count the 1s                             11,488       27.1        357       424x        32x
+next 1: one scan of the whole array       5,041       11.3       46.0       447x       110x
+next 1: visit every 1 (every 7th)        31,294     24,910     27,209       1.0x       1.0x
+bitop and (a AND b)                      69,735       7.79       68.3      8957x      1020x
+bitop or (a OR b)                        73,834       17.1       89.3      4329x       827x
+bitop xor (a XOR b)                      74,305       7.92       65.9      9382x      1128x
+bitop andnot (a AND NOT b)              102,236       8.07       66.3     12666x      1542x
+bitop not (flip every bit)               60,311       14.5       94.0      4165x       646x
 
 notes:
  * 'memory 64x/8x less' in each title (bit1 first, then bit8) is an estimate for the array itself, list size divided by bitarray size: a list holds
@@ -145,6 +149,9 @@ notes:
  * 'create from text': both start from the same fresh string of values.  The plain list is made by parsing it (llength forces the
    string to become a list); newfrom parses it the same way and then also range-checks and packs every element.  Assigning an
    existing list (set a $L) just shares it and costs almost nothing, so that is not a fair comparison.
+ * lassign: the first row is the usual use (take a few elements, here from the middle, into variables). The second names three
+   variables for the first three elements of the whole array and returns the rest as its result; the core skips building that
+   rest when the result is unused (a loop or proc body), so the row shows only the cost when it is used, which is rare.
  * lrepeat is also lazy in Tcl 9.1 (a repeated-list view), which is why plain 'create' is so cheap.
-elapsed 13 seconds
-calibration at the end: empty loop of 1,000,000 iterations 18.5 ms (best of 5)  (a big difference from the start means the machine was busy)
+elapsed 15 seconds
+calibration at the end: empty loop of 1,000,000 iterations 30.4 ms (best of 5)  (a big difference from the start means the machine was busy)
