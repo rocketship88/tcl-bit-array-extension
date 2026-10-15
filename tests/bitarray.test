@@ -78,6 +78,279 @@ test repl-1.2 {lreplace with bad value} -returnCodes error -body {lreplace [bita
 test repl-1.3 {linsert / lappend values are right whether or not the type is kept} -body {
     set a [bitarray newfrom {1 0}]; set b [linsert $a 1 1 1]; lappend a 1 1; list $b $a
 } -result {{1 1 1 0} {1 0 1 1}}
+test ledit-1.1 {ledit grows, shrinks, same size and appends; same answers as a plain list, type kept} -body {
+    set res {}
+    foreach {f n ins} {2 3 {0 0 0 0}  2 5 {}  3 2 {1 1}  8 7 {1 1}  0 0 {1}  0 7 {}} {
+	set a [bitarray newfrom {1 0 1 1 0 0 1 0}]; set p {1 0 1 1 0 0 1 0}
+	ledit a $f [expr {$f + $n - 1}] {*}$ins
+	ledit p $f [expr {$f + $n - 1}] {*}$ins
+	lappend res [list [expr {"$a" eq "$p"}] [bitarray is $a]]
+    }
+    set res
+} -result {{1 1} {1 1} {1 1} {1 1} {1 1} {1 1}}
+test ledit-1.2 {ledit does not change another variable holding the same array, and its result is the new value} -body {
+    set a [bitarray newfrom {1 0 1 1}]; set keep $a
+    set r [ledit a 1 2 0 0 0]
+    list $keep $a $r [bitarray is $r]
+} -result {{1 0 1 1} {1 0 0 0 1} {1 0 0 0 1} 1}
+test ledit-1.3 {ledit with a bad value is an error and leaves the array unchanged} -body {
+    set a [bitarray newfrom {1 0 1 1}]
+    set code [catch {ledit a 1 1 0 7} msg]
+    list $code $msg $a [bitarray is $a]
+} -result {1 {expected 0 or 1 but got "7"} {1 0 1 1} 1}
+test lremove-1.1 {lremove with unordered, repeated and out-of-range indices matches a plain list; type kept} -body {
+    set res {}
+    foreach idx {{0 2 end} {3 3 1} {end 0} {20} {-1} {end-1 end-1}} {
+	set a [bitarray newfrom {1 0 1 1 0 0 1 0}]; set p {1 0 1 1 0 0 1 0}
+	set ra [lremove $a {*}$idx]; set rp [lremove $p {*}$idx]
+	lappend res [list [expr {"$ra" eq "$rp"}] [bitarray is $ra]]
+    }
+    set res
+} -result {{1 1} {1 1} {1 1} {1 1} {1 1} {1 1}}
+test lassign-1.1 {lassign sets the variables and returns the rest, same as a plain list} -body {
+    set a [bitarray newfrom {1 0 1 1 0}]; set p {1 0 1 1 0}
+    set ra [lassign $a q w e]; set rp [lassign $p q2 w2 e2]
+    set r1 [list $q $w $e $ra [bitarray is $ra]]
+    set ra [lassign $a v1 v2 v3 v4 v5 v6 v7]; set rp [lassign $p u1 u2 u3 u4 u5 u6 u7]
+    list $r1 $v1 $v5 "<$v6>" "<$v7>" "<$ra>" [expr {$q eq $q2 && $w eq $w2 && $e eq $e2 && $rp eq $ra}]
+} -result {{1 0 1 {1 0} 1} 1 0 <> <> <> 1}
+test lcmd-w8 {ledit, lremove and lassign keep the width and the values of an 8-bit array} -body {
+    set a [bitarray newfrom {10 20 30 40} -width 8]
+    set x $a; ledit x 1 1 99 98
+    set y [lremove $a 1]
+    set z [lassign $a s1 s2]
+    list $x [bitarray width $x] $y [bitarray width $y] $z [bitarray width $z] $s1 $s2
+} -result {{10 99 98 30 40} 8 {10 30 40} 8 {30 40} 8 10 20}
+test shift-1.1 {width 1: insert and delete across 64-bit word boundaries match a plain list} -body {
+    set bad {}
+    foreach len {1 63 64 65 127 128 129 130 200} {
+	set p {}; for {set i 0} {$i < $len} {incr i} {lappend p [expr {($i * 7 + $i / 3) % 3 == 0}]}
+	set a [bitarray newfrom $p]
+	foreach f {0 1 31 32 62 63 64 65 127 128} {
+	    foreach {d k} {0 1  0 64  0 65  1 0  1 1  3 0  64 0  65 2  70 64  1 70} {
+		if {$f > $len} continue
+		set ins [lrepeat $k 1]
+		set e [expr {$f + $d - 1}]
+		if {[lreplace $a $f $e {*}$ins] ne [lreplace $p $f $e {*}$ins]} {lappend bad [list $len $f $d $k]}
+	    }
+	}
+    }
+    set bad
+} -result {}
+test shift-1.2 {width 1: bits vacated by a delete are zero, so a regrown array and count are right} -body {
+    set a [bitarray new 200 1]
+    set b [lreplace $a 60 150]
+    set c [lreplace $b end+1 end+1 {*}[lrepeat 100 0]]
+    set d [lreplace $a 0 99]
+    list [bitarray count $b] [llength $b] [bitarray count $c] [llength $c] [bitarray count $d] [bitarray next $c 0 0]
+} -result {109 109 109 209 100 109}
+# ---- bitwise operations: and, or, xor, andnot, not (0.6.0) ----
+# Reference model: the same operation done element by element on plain lists.
+proc bitgen {n w seed} {
+    set r {}
+    for {set i 0} {$i < $n} {incr i} {
+	set x [expr {($i*1103515245 + $seed*12345 + $i*$i*7) & 0x7fffffff}]
+	if {$w == 1} {
+	    set v [expr {($x >> 7) & 1}]
+	} elseif {$w == 64} {
+	    set v [expr {($x & 1) ? -$x*65537 : $x*65537}]
+	} else {
+	    set v [expr {$x & ((1 << $w) - 1)}]
+	}
+	lappend r $v
+    }
+    return $r
+}
+proc bitref {op x y w} {
+    set mask [expr {$w == 64 ? -1 : (1 << $w) - 1}]
+    set r {}
+    set i 0
+    set ny [llength $y]
+    foreach xv $x {
+	set yv [expr {$i < $ny ? [lindex $y $i] : 0}]
+	switch $op {
+	    and    {set v [expr {$xv & $yv}]}
+	    or     {set v [expr {$xv | $yv}]}
+	    xor    {set v [expr {$xv ^ $yv}]}
+	    andnot {set v [expr {$xv & ~$yv}]}
+	    not    {set v [expr {~$xv & $mask}]}
+	}
+	lappend r $v
+	incr i
+    }
+    return $r
+}
+# Run OP on arrays of N1 and N2 elements of width W; return "" if it matches
+# the reference model (values, length and number of nonzero elements), else a
+# description of the mismatch.
+proc bitcheck {op n1 n2 w zero} {
+    set xl [bitgen $n1 $w 1]
+    set yl [bitgen $n2 $w 2]
+    set a [bitarray newfrom $xl -width $w]
+    set b [bitarray newfrom $yl -width $w]
+    set exp [bitref $op $xl $yl $w]
+    if {$op eq "not"} {
+	bitarray not a
+    } elseif {$zero} {
+	bitarray $op -length zero a $b
+    } else {
+	bitarray $op a $b
+    }
+    set nz 0
+    foreach v $exp {if {$v != 0} {incr nz}}
+    if {[llength $a] != $n1 || [list {*}$a] ne $exp || [bitarray count $a] != $nz
+	    || ![bitarray is $a] || [bitarray width $a] != $w} {
+	return "$op n1=$n1 n2=$n2 w=$w zero=$zero"
+    }
+    return ""
+}
+test bitop-1.1 {truth table, 8 bits} -body {
+    set a [bitarray newfrom {1 1 0 1 1 0 0 1}]
+    set b [bitarray newfrom {0 1 1 1 0 0 0 1}]
+    set r {}
+    foreach op {and or xor andnot} {set c $a; bitarray $op c $b; lappend r [list {*}$c]}
+    set c $a; bitarray not c; lappend r [list {*}$c]
+    set r
+} -result {{0 1 0 1 0 0 0 1} {1 1 1 1 1 0 0 1} {1 0 1 0 1 0 0 0} {1 0 0 0 1 0 0 0} {0 0 1 0 0 1 1 0}}
+test bitop-1.2 {width 1 matches the plain-list model across word boundaries} -body {
+    set bad {}
+    foreach n {0 1 2 63 64 65 127 128 129 1000} {
+	foreach op {and or xor andnot not} {
+	    set e [bitcheck $op $n $n 1 0]
+	    if {$e ne ""} {lappend bad $e}
+	}
+    }
+    set bad
+} -result {}
+test bitop-1.3 {widths 8 16 32 64 match the plain-list model} -body {
+    set bad {}
+    foreach w {8 16 32 64} {
+	foreach n {0 1 7 8 9 33 100} {
+	    foreach op {and or xor andnot not} {
+		set e [bitcheck $op $n $n $w 0]
+		if {$e ne ""} {lappend bad $e}
+	    }
+	}
+    }
+    set bad
+} -result {}
+test bitop-1.4 {-length zero: shorter and longer second array, all widths} -body {
+    set bad {}
+    foreach w {1 8 16 64} {
+	foreach pair {{70 5} {5 70} {64 64} {64 65} {65 64} {130 1} {1 130} {0 5} {5 0} {128 64}} {
+	    lassign $pair n1 n2
+	    foreach op {and or xor andnot} {
+		set e [bitcheck $op $n1 $n2 $w 1]
+		if {$e ne ""} {lappend bad $e}
+	    }
+	}
+    }
+    set bad
+} -result {}
+test bitop-1.5 {not: count and double negation, including a partial last word} -body {
+    set r {}
+    foreach n {1 63 64 65 1000} {
+	set a [bitarray new $n]
+	bitarray not a
+	set c1 [bitarray count $a]
+	bitarray not a
+	lappend r [list $n $c1 [bitarray count $a] [bitarray next $a 0]]
+    }
+    set r
+} -result {{1 1 0 -1} {63 63 0 -1} {64 64 0 -1} {65 65 0 -1} {1000 1000 0 -1}}
+test bitop-1.6 {the command returns the empty string} -body {
+    set a [bitarray new 4 1]
+    list [bitarray and a [bitarray new 4]] [bitarray or a [bitarray new 4]] \
+	[bitarray xor a [bitarray new 4]] [bitarray andnot a [bitarray new 4]] [bitarray not a]
+} -result {{} {} {} {} {}}
+test bitop-2.1 {arrow with one array is the same as the short form} -body {
+    set a [bitarray newfrom {1 1 0 0}]
+    set b [bitarray newfrom {1 0 1 0}]
+    set c $a; bitarray and c $b
+    set d $a; bitarray and d <- $b
+    expr {[list {*}$c] eq [list {*}$d] && [list {*}$d] eq {1 0 0 0}}
+} -result 1
+test bitop-2.2 {arrow with two arrays: result in a third variable, inputs untouched} -body {
+    set a [bitarray newfrom {1 1 0 0}]
+    set b [bitarray newfrom {1 0 1 0}]
+    bitarray or r <- $a $b
+    bitarray not n <- $a
+    bitarray xor x <- $a $b
+    list [list {*}$r] [list {*}$n] [list {*}$x] [list {*}$a] [list {*}$b]
+} -result {{1 1 1 0} {0 0 1 1} {0 1 1 0} {1 1 0 0} {1 0 1 0}}
+test bitop-2.3 {an array combined with itself} -body {
+    set a [bitarray newfrom {1 1 0 1}]
+    set x $a; bitarray xor x $x
+    set o $a; bitarray or o $o
+    set n $a; bitarray andnot n <- $n $n
+    list [list {*}$x] [list {*}$o] [list {*}$n]
+} -result {{0 0 0 0} {1 1 0 1} {0 0 0 0}}
+test bitop-2.4 {destination variable is also one of the two sources} -body {
+    set c [bitarray newfrom {1 1 0 0}]
+    set b [bitarray newfrom {1 0 1 0}]
+    bitarray and c <- $c $b
+    set d [bitarray newfrom {1 1 0 0}]
+    bitarray andnot d <- $b $d
+    list [list {*}$c] [list {*}$d]
+} -result {{1 0 0 0} {0 0 1 0}}
+test bitop-2.5 {a shared value is copied, the other holder keeps its value} -body {
+    set a [bitarray newfrom {1 0 1 1}]
+    set b $a
+    bitarray not a
+    set s [bitarray new 4 1]
+    set c $b
+    bitarray and c $s
+    list [list {*}$a] [list {*}$b] [list {*}$c] [list {*}$s]
+} -result {{0 1 0 0} {1 0 1 1} {1 0 1 1} {1 1 1 1}}
+test bitop-2.6 {the string form follows the change (an unshared value that already has one)} -body {
+    set a [bitarray newfrom {1 0 1 1}]
+    set before [expr {$a eq "1 0 1 1"}]	;# builds the string form; the value stays an unshared bitarray
+    bitarray not a
+    list $before "$a" [llength $a]
+} -result {1 {0 1 0 0} 4}
+test bitop-2.7 {-length zero with the arrow forms; the result keeps the first length} -body {
+    set a [bitarray newfrom {1 0 1 0 1 0}]
+    set b [bitarray newfrom {1 1 1}]
+    bitarray or -length zero r <- $a $b
+    bitarray and -length zero s <- $a $b
+    set c $b; bitarray xor -length zero c <- $a
+    list [list {*}$r] [list {*}$s] [list {*}$c]
+} -result {{1 1 1 0 1 0} {1 0 1 0 0 0} {0 1 0}}
+test bitop-3.1 {width mismatch is an error} -returnCodes error -body {
+    set a [bitarray new 4]; bitarray and a [bitarray new 4 -width 8]
+} -result {bitarray and: arrays differ in width (1 vs 8)}
+test bitop-3.2 {length mismatch is an error and leaves the variable alone} -body {
+    set a [bitarray newfrom {1 0 1 0}]
+    set rc [catch {bitarray or a [bitarray new 5 1]} msg]
+    list $rc $msg [list {*}$a]
+} -result {1 {bitarray or: arrays differ in length (4 vs 5); use -length zero to allow it} {1 0 1 0}}
+test bitop-3.3 {bad length mode} -returnCodes error -body {
+    set a [bitarray new 4]; bitarray and -length maybe a $a
+} -result {bad length mode "maybe": must be strict or zero}
+test bitop-3.4 {second array is not a bitarray} -returnCodes error -body {
+    set a [bitarray new 3]; bitarray xor a {1 0 1}
+} -result {not a bitarray: "1 0 1"}
+test bitop-3.5 {variable holds a plain list} -returnCodes error -body {
+    set a {1 0 1}; bitarray not a
+} -result {not a bitarray: "1 0 1"}
+test bitop-3.6 {variable does not exist} -returnCodes error -body {
+    unset -nocomplain nosuchvar; bitarray not nosuchvar
+} -result {can't read "nosuchvar": no such variable}
+test bitop-3.7 {usage messages} -body {
+    set r {}
+    foreach cmd {{bitarray and} {bitarray and a} {bitarray xor a b c} {bitarray and -length zero a}
+	    {bitarray and -length} {bitarray not} {bitarray not a b} {bitarray not -length zero a}} {
+	catch $cmd msg
+	lappend r $msg
+    }
+    set r
+} -result {{wrong # args: should be "bitarray and ?-length strict|zero? varName ?<-? array ?array?"} {wrong # args: should be "bitarray and ?-length strict|zero? varName ?<-? array ?array?"} {wrong # args: should be "bitarray xor ?-length strict|zero? varName ?<-? array ?array?"} {wrong # args: should be "bitarray and ?-length strict|zero? varName ?<-? array ?array?"} {wrong # args: should be "bitarray and ?-length strict|zero? varName ?<-? array ?array?"} {wrong # args: should be "bitarray not varName ?<- array?"} {wrong # args: should be "bitarray not varName ?<- array?"} {wrong # args: should be "bitarray not varName ?<- array?"}}
+test bitop-3.8 {a failed arrow form creates no result variable} -body {
+    unset -nocomplain r
+    set a [bitarray new 3]
+    set rc [catch {bitarray and r <- $a [bitarray new 4]} msg]
+    list $rc [info exists r]
+} -result {1 0}
 test in-1.1 {in and ni} -body {
     set a [bitarray newfrom {0 0 0}]
     list [expr {0 in $a}] [expr {1 in $a}] [expr {1 ni $a}] [expr {"01" in $a}] [expr {2 in $a}]

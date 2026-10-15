@@ -1,4 +1,4 @@
-RESULTS -- bitarray 0.5 (sections 8-13a are the 0.3 results; section 14 is 0.4; section 15 is 0.5) (run 2026-10-13, Linux container, gcc -O2, Tcl trunk 3d77be8951)
+RESULTS -- bitarray 0.6.0 (sections 8-13a are the 0.3 results; section 14 is 0.4; section 15 is 0.5; section 16 is 0.5.1; section 17 is 0.6.0) (run 2026-10-13, Linux container, gcc -O2, Tcl trunk 3d77be8951)
 
 Sections 8-13 are new in 0.3.  Sections 1-7 are the 0.2 results, kept for history; where a number there was for 1-bit
 arrays only it is still true of the 1-bit code, which 0.3 keeps (the 66 old tests pass unchanged apart from "from" ->
@@ -210,6 +210,130 @@ arrays only it is still true of the 1-bit code, which 0.3 keeps (the 66 old test
    the same security-camera recorder program were running (it uses much less CPU on this machine): A 436,245  B 139,524  C 51,818
    D 721  E 53,379  F 570; the second with the indexer finished and the recorder suspended: A 423,724  B 136,552  C 50,688
    D 688  E 51,312  F 544 (section 14, same machine: A 430,725, D 716, F 577).
+
+16. Version 0.5.1: width-1 edits move 64 bits at a time (run 2026-10-14, Linux container, gcc -O2, Tcl 9.1 from trunk)
+   Change: when lreplace / linsert / ledit change the length of a 1-bit array, the part after the edit used to be moved one bit at a
+   time (MoveElems) and the bits vacated at the end were cleared one at a time.  Both now work on up to 64 bits per step (new
+   helpers GetBits, PutBits, ClearBits; the direction rule is unchanged: left moves go from the front, right moves from the back).
+   Arrays of width 8 to 64 are unchanged (memmove).  The helpers touch only the words that hold the bits asked for, so nothing is
+   read or written past the end of the data.  No change to behaviour; the version is now 0.5.1 (bitarray.c and pkgIndex.tcl).
+   Tests: 230 (222 + 6 for ledit, lremove and lassign compared with plain lists + 2 shift tests across 64-bit word boundaries).
+   All pass natively and with -DBA_NO_BUILTINS, -DBA_FORCE_32BIT_LIMITS and both; gcc -Wall -Wextra gives no warnings.
+   Checks of the new code: 5,700 random lreplace edits (array lengths 0 to 300, around the 64-bit boundaries, 0 to 139 values
+   inserted, positions and delete counts random) compared with a plain list, plus count and the regrown tail: 0 differences, and the
+   same 0 with the 0.5 code.  A small C program using the same functions on buffers of exactly the needed size, 300,000 random
+   moves and clears checked against a bit-at-a-time copy, run under valgrind: 0 mismatches, no invalid reads or writes (and it does
+   report an invalid read when I break the guard on purpose).  valgrind --leak-check=full on the whole suite (definite and
+   indirect leaks counted as errors): exit 0, no invalid reads or writes, no uninitialised values; only the "possibly lost"
+   records from Tcl's own allocator, as in sections 9, 14 and 15.  (valgrind on the library alone could not show the over-read
+   check: the array keeps spare capacity, so a read just past the data stays inside the allocation.)
+   Time per call, microseconds, 1,000,000-bit array, a copy of the array is made by each call (copy alone: 5.6 to 6.0), two runs
+   each, 0.5 then 0.5.1; this container varies by about 30% between runs:
+       linsert 1 bit at the front (1,000,000 bits move right)     2,470 / 2,211  ->   64 / 83
+       linsert 1 bit in the middle (500,000 move right)            1,298 / 1,121  ->   55 / 67
+       linsert 1 bit near the end (1,000 move)                        36 / 27     ->   27 / 26
+       lreplace delete 1 at the front (999,999 move left)          2,881 / 2,178  ->   72 / 51
+       lreplace delete 1 in the middle (499,999 move left)         1,304 / 1,597  ->   41 / 34
+       lreplace delete 1,000 in the middle (499,000 move left)    1,396 / 1,093  ->   45 / 32
+       lreplace same size, 1,000 bits (nothing moves)                 18 / 17     ->   24 / 16
+       lreplace delete the first half (500,000 gone)               1,945 / 1,726  ->   88 / 45
+       lreplace delete the last half (nothing moves)                  903 / 641   ->   47 / 25
+       5,000-bit array, linsert at the front                        15.6 / 11.8   ->  1.0 / 0.6
+       5,000-bit array, lreplace delete at the front                11.7 / 12.0   ->  0.9 / 0.5
+       100-bit array, linsert at the front                           0.5 / 0.5    ->  0.3 / 0.3
+   The speed table in performance_analysis.md (perf.tcl, quiet machine, best of five): 1-bit "lreplace 1000 1999" 2,195 -> 57,
+   "linsert 500000 1" 1,187 -> 33; the plain list and 8-bit columns are unchanged within noise.
+   Mutation testing (extras/mutate6.py, output extras/mutation_round8.txt): 138 mutants, 121 caught, 17 missed.  M36 and M37 were
+   re-written to match the new code; 15 new ones (S01-S15) target GetBits, PutBits, ClearBits and the two shift loops.  The 17 are
+   the 14 of section 10 plus S03, S04 and S10.  S03 and S04 remove the mask on the value read and on the value stored; each mask
+   makes the other redundant, so removing one alone changes nothing (equivalent mutants).  S10 stops ClearBits advancing, so only the
+   first 64 vacated bits are cleared; the rest are bits past the end that nothing reads, the same kind as M36.  54 of the 230 tests
+   failed on none of the 138 mutants (all 8 new tests failed on at least one).
+   Run from a fresh copy of the folder: run_tests.sh Total 230, Passed 230; package require bitarray (through pkgIndex.tcl) returns
+   0.5.1; run_sieves.sh PASS at every limit (microseconds per pass at limit 1,000,000: A 668,347  B 186,776  C 59,924  D 1,036
+   E 67,348  F 842; the sieve does not edit the length of an array, so it should not change).
+   Not run here: Windows.  Afterwards the repository owner reported that 0.5.1 passed the build, the tests and the sieve on a Windows machine (his output was not saved here).
+
+17. Version 0.6.0: bitwise commands and, or, xor, andnot, not (run 2026-10-14, Linux container, gcc -O2, Tcl 9.1 from trunk)
+   Change: five new subcommands.  and / or / xor / andnot combine two arrays of the same width and not flips one, all 64 bits at a
+   time (new functions BitOpWords, MaskTail, BitOpCompat, BitOpCmd).  Forms: "bitarray and ?-length strict|zero? varName array"
+   and "... varName <- array" (varName becomes varName AND array, in place), "... varName <- array1 array2" (varName becomes
+   array1 AND array2, inputs unchanged, varName created if needed), "bitarray not varName" and "bitarray not varName <- array".
+   varName is a variable name; the arrays are values.  The result has the length of the first array.  Different widths are always an
+   error.  Different lengths are an error unless -length zero is given: then missing elements of the second array count as 0 and extra
+   ones are ignored.  There is no -length grow.  The commands return the empty string.  After each operation the unused bits of the
+   last word are cleared again (width 1: a bit mask; wider: the unused bytes), which keeps the layout rule that those bits are 0.
+   Wider arrays are combined as packed bytes, so the operation is the same for every width; "not" on an 8-bit array turns 0 into 255.
+   The version is now 0.6.0 (bitarray.c and pkgIndex.tcl).  The comment at the top of bitarray.c, which still listed only the 7
+   original commands, was replaced by one listing all 16 (same number of lines).  README.md "Limits" no longer says that there is no
+   and/or/xor or that there is no conversion to or from a binary string (the second has been wrong since 0.5).
+   Tests: 251 (230 + 21: bitop-1.1 to 1.6 truth table, plain-list model at word boundaries for all five operations at width 1 and at
+   widths 8/16/32/64, -length zero with shorter and longer second arrays, not and double not on partial last words, empty result;
+   bitop-2.1 to 2.7 the arrow forms, an array combined with itself, destination also a source, copy-on-write of a shared value, the
+   string form after a change, -length with the arrow forms; bitop-3.1 to 3.8 the error messages, usage text and that a failed
+   command changes nothing).  All pass natively and, separately, with -DBA_NO_BUILTINS and -DBA_FORCE_32BIT_LIMITS; gcc -Wall
+   -Wextra gives no warnings.
+   Random test: new tests/diff_bitops.tcl compares every operation, form and -length mode, at widths 1/8/16/32/64 and lengths 0 to
+   1000 (including 63/64/65 and so on), with a plain-list model; it also checks that the inputs and a shared copy are unchanged, the
+   width, the length, and that the result still grows correctly (lappend of 70 values, then count).  Seeds 1 to 5, 3,000 cases each
+   (15,000): 0 mismatches.  Seed 7, 2,000 cases, on each of the two alternative builds: 0 mismatches.  As a check of the test, with
+   the "words past the end of y" case of xor changed to 0 it reports 204 mismatches in 3,000 cases.
+   valgrind --leak-check=full (definite and indirect leaks counted as errors) on the whole suite: exit 0, Total 251 Passed 251, ERROR
+   SUMMARY 0 errors, definitely lost 0, indirectly lost 0, possibly lost 62,665,584 bytes in 1,650 blocks (records of the kind seen
+   in sections 9, 14, 15 and 16).  The same on diff_bitops.tcl (400 cases): 0 errors, nothing definitely or indirectly lost; its
+   "possibly lost" records end in Tcl's own allocator (string buffer growth).  A small C program using the extracted word loops
+   (BitOpWords, MaskTail) on buffers of exactly the needed size, 7,225 cases (5 widths, 17 lengths for each array, 5 operations, in
+   place and into a separate array) checked bit by bit, including that the unused tail is 0: 0 mismatches under valgrind, no invalid
+   reads or writes (and it reports an invalid read when I make the common-word count wrong on purpose).  As in section 16, valgrind on
+   the library alone cannot show an over-read of the spare capacity, which is why the harness uses exact sizes.
+   Time per call, microseconds (extras/listbench.tcl both -verbose, the machine otherwise idle, best of 3; saved in
+   extras/listbench_output_linux.txt, which now has 39 operations).  Plain list = one-line lmap loop, for example
+   set l [lmap x $l y $other {expr {$x & $y}}].  The benchmark first checks, on 1,000 elements, that the columns give the same
+   answers (37 of the 39 operations; creation and text parsing cannot be compared).  For "not" the 8-bit column is checked, and
+   the list / 8-bit ratio is taken, against the plain list doing x ^ 255, the same bitwise NOT; the "list us" column and the
+   list / 1-bit ratio use x ^ 1:
+        elements   operation   plain list    1-bit    8-bit   list/1-bit   list/8-bit
+          1,000    and              70.0      0.23     0.27         304x         256x
+        100,000    and             6,041      0.68     5.53       8,912x       1,092x
+      1,000,000    and            74,248      8.15     57.7       9,109x       1,286x
+      1,000,000    or             52,974      6.55     89.9       8,086x         589x
+      1,000,000    xor            50,034      5.22     52.8       9,591x         948x
+      1,000,000    andnot         68,068       7.7     85.8       8,842x         794x
+      1,000,000    not            53,665      5.26     40.2      10,212x       1,330x
+   This is a second run of the benchmark, made after the check below was repaired; a first run gave similar ratios (5,901x to
+   12,111x for 1 bit).  The plain-list times vary by about 30% between runs, which moves the ratios by as much.
+   Correction (2026-10-15): in the first version of the check in listbench.tcl, which I wrote, an operation defined with separate
+   plain / 1-bit / 8-bit scripts was skipped, so the fill, count and next rows and the five bitop rows (9 of the 39 operations)
+   were never compared, although the program printed "39 operations" and I wrote that all columns were checked.  Fixed: it now
+   compares every column that has a script, and I broke three helper loops on purpose to see that it stops (it did, one of them
+   on a fill row).  All 37 comparable operations pass.  I also compared the other 306 figures with the 0.5.1 run (same machine):
+   all agree within 2.5x, 15 of them by more than 2x, all values under 10 us.
+   Mutation testing (extras/mutate6.py, output extras/mutation_round9.txt): 162 mutants, 143 caught, 19 missed.  24 new ones (B01 to
+   B24) target BitOpWords (each operation on the common words and on the words past the end of y, the common-word count), MaskTail,
+   the width and length checks, copy-on-write and the string form, the arrow parsing and the -length option.  22 were caught.  B11 and
+   B13 remove the clearing of the unused bits in the last word (the bit mask at width 1, the memset at wider widths) and were missed:
+   nothing reads those bits, so no test can see the difference, the same kind as M36.  The 19 are the 17 of section 16 plus B11 and
+   B13.  B18 (string form not invalidated) was first missed, because test bitop-2.6 used "$a", which shares the array and so takes
+   the copy path; the test now builds the string form with expr {$a eq ...} on an unshared array, and B18 is caught.  58 of the 251
+   tests failed on none of the 162 mutants (54 of 230 before); of the 21 new tests, 16 failed on at least one mutant and 5 did not
+   (bitop-1.6 empty return value; bitop-3.3 to 3.6 error text for a bad mode, a non-bitarray value, a plain-list variable and an
+   unset variable), because no mutant touches those.
+   Run from a fresh copy of the folder (tar copy without the library): build.sh built libbitarray.so; run_tests.sh Total 251, Passed
+   251; package require bitarray (through pkgIndex.tcl) returns 0.6.0; run_sieves.sh PASS at every limit (microseconds per pass at
+   limit 1,000,000: A 507,345  B 197,485  C 62,226  D 1,000  E 60,977  F 804; the sieve does not use the new commands).
+   Windows (run by the repository owner, 2026-10-14, one 64-bit machine, Visual Studio 2022, Tcl 9.1.1 x64; his output is saved as
+   extras/windows_0.6.0_run.txt; it used the first version of listbench.tcl, whose same-answer check skipped the fill, count, next
+   and bitop rows (see the correction above), and its "bitop not" 8-bit cell is n/a; the repaired version was run afterwards, see the end of this paragraph): build.bat built bitarray.dll with no warnings shown; run_tests.bat Total 251, Passed 250, Skipped 1
+   (procfs), Failed 0; run_sieves.bat PASS at every limit (microseconds per pass at limit 1,000,000: A 682,583  B 215,771  C 86,928
+   D 1,175  E 86,783  F 1,207); extras/listbench.tcl printed "check: 39 operations, same answers in every column" (the flawed check), then at 1,000,000
+   elements list/bit1 and list/bit8 were: andnot 11,437x / 1,405x, not 11,195x / n/a, and 10,333x / 1,210x, xor 10,192x / 1,216x,
+   or 7,789x / 1,148x (Linux, above: 8,086x to 10,212x for 1 bit).  Not run: a 32-bit build, other Visual Studio versions.
+   Afterwards (2026-10-15) the owner ran the repaired listbench.tcl on the same Windows machine (extras/windows_0.6.0_listbench.txt,
+   -rat -sizes 2000000 -sort best1): "check: 37 operations compared, same answers in every column".  At 2,000,000 elements
+   list/bit1 and list/bit8: not 11,800x / 1,378x, andnot 10,722x / 1,314x, xor 9,521x / 1,154x, or 9,466x / 1,162x, and 9,290x / 977x,
+   fill first half 6,129x / 791x, count 673x / 36x, next (one scan) 600x / 124x.  One cell, lsearch -exact (hit at 0, warm) list/bit8, is
+   n/a: the 8-bit time was too small to divide by.  The rows where the bitarray is slower are the same as on Linux (lreverse, large
+   lrange, lassign, deleting at the front, cold lsearch, creating).
 
 1. Test suite
    tests/bitarray.test: Total 66, Passed 66, Failed 0 (also with -DBA_NO_BUILTINS, the portable bit-count code).  Includes 2 randomized differential tests:

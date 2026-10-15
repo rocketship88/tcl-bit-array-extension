@@ -1,0 +1,50 @@
+A:\testit\bitarray>A:\aaa\tcltk-merged-release\bin\tclsh91.exe listbench.tcl -rat   -sizes 2000000 -sort best1
+check: 37 operations compared, same answers in every column (2 not comparable: creation and parsing)
+listbench (both): Tcl 9.1.1, bitarray 0.6.0, amd64 Windows NT, 2026-10-15
+library A:/testit/bitarray/bitarray.dll
+calibration: empty loop of 1,000,000 iterations 37.0 ms (best of 5)
+
+2000000 elements: time list/bitarray (>1x: bitarray faster), sorted by bit1; memory 64x/8x less
+operation                             list/bit1  list/bit8
+bitop not (flip every bit)               11800x      1378x
+bitop andnot (a AND NOT b)               10722x      1314x
+bitop xor (a XOR b)                       9521x      1154x
+bitop or (a OR b)                         9466x      1162x
+bitop and (a AND b)                       9290x       977x
+fill first half with 1 (no step)          6129x       791x
+count the 1s                               673x        36x
+next 1: one scan of the whole array        600x       124x
+ledit 1 for 1 (in place)                   536x        11x
+lreplace 10 for 10 (middle)                344x       7.3x
+linsert 1 at end                           158x       3.0x
+ledit 1 for 2 (shared: copies)              91x       4.7x
+fill every 3rd element with 1               85x       218x
+lreplace delete 100 in middle               75x       7.3x
+linsert 100 in middle                       54x       2.9x
+linsert 1 in middle                         54x       2.9x
+linsert 1 at front                          39x       3.2x
+lremove 3 elements                          30x       5.7x
+lsearch -exact (hit at 0, warm)            1.0x        n/a
+lset (middle, in place)                    1.0x       1.0x
+next 1: visit every 1 (every 7th)          1.0x       1.0x
+lmap over all elements                    0.99x      0.98x
+llength                                   0.98x      0.98x
+lsort -integer                            0.97x      0.98x
+lappend (one element)                     0.95x      0.97x
+join with a comma                         0.93x      0.91x
+foreach over all elements                 0.91x      0.98x
+lindex (middle)                           0.75x      0.56x
+create from text (parse / newfrom)        0.74x      0.74x
+lsearch -exact (miss, scans all)          0.70x      0.62x
+lrange 10..19                             0.68x      0.82x
+create (lrepeat / bitarray new)           0.03x     <0.01x
+lrange first half                         0.02x     <0.01x
+lassign 3 variables                      <0.01x     <0.01x
+ledit delete 1 at front (in place)       <0.01x     <0.01x
+lsearch -exact (hit at 0, cold)          <0.01x     <0.01x
+lreplace delete 100 at front             <0.01x     <0.01x
+lreverse                                 <0.01x     <0.01x
+
+(add -verbose for notes on how to read these numbers)
+elapsed 23 seconds
+calibration at the end: empty loop of 1,000,000 iterations 32.7 ms (best of 5)  (a big difference from the start means the machine was busy)

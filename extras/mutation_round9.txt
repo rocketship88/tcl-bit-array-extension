@@ -1,0 +1,165 @@
+already done: 0, to run: 162
+M01 CAUGHT 8 tests fail
+M02 CAUGHT 6 tests fail
+M03 CAUGHT 22 tests fail
+M04 CAUGHT 3 tests fail
+M33 MISSED 
+M34 MISSED 
+M35 MISSED 
+M36 MISSED 
+M37 CAUGHT 4 tests fail
+M39 CAUGHT crash rc=-4
+M40 CAUGHT crash rc=-4
+M41 CAUGHT crash rc=-11
+M38 MISSED 
+M42 MISSED 
+M05 CAUGHT 2 tests fail
+M06 MISSED 
+M07 MISSED 
+M08 MISSED 
+M09 CAUGHT 4 tests fail
+M10 CAUGHT 9 tests fail
+M11 CAUGHT 5 tests fail
+M12 CAUGHT 2 tests fail
+M13 CAUGHT 5 tests fail
+M15 CAUGHT 12 tests fail
+M14 CAUGHT 1 tests fail
+M16 CAUGHT 3 tests fail
+M17 CAUGHT 21 tests fail
+M18 CAUGHT 15 tests fail
+M19 CAUGHT 8 tests fail
+M20 CAUGHT 7 tests fail
+M21 CAUGHT 9 tests fail
+M22 CAUGHT 3 tests fail
+M23 CAUGHT 4 tests fail
+M24 CAUGHT crash rc=-11
+M25 CAUGHT 1 tests fail
+M26 CAUGHT 55 tests fail
+M28 CAUGHT crash rc=-4
+M27 CAUGHT 9 tests fail
+M29 CAUGHT 1 tests fail
+M30 CAUGHT 5 tests fail
+M31 MISSED 
+M32 CAUGHT 1 tests fail
+W01 CAUGHT 15 tests fail
+W02 CAUGHT 8 tests fail
+W03 CAUGHT 10 tests fail
+W05 CAUGHT crash rc=-11
+W04 CAUGHT 5 tests fail
+W06 CAUGHT 8 tests fail
+W07 CAUGHT 12 tests fail
+W08 MISSED 
+W09 CAUGHT 2 tests fail
+W10 CAUGHT 6 tests fail
+W12 CAUGHT 13 tests fail
+W11 CAUGHT 1 tests fail
+W13 CAUGHT 1 tests fail
+W14 MISSED 
+W15 CAUGHT crash rc=-11
+W16 CAUGHT crash rc=-11
+W18 CAUGHT crash rc=-11
+W19 CAUGHT crash rc=-11
+W17 CAUGHT 1 tests fail
+W20 CAUGHT 1 tests fail
+W21 CAUGHT 2 tests fail
+W22 CAUGHT 4 tests fail
+W23 CAUGHT 2 tests fail
+W24 MISSED 
+W25 CAUGHT 1 tests fail
+W26 MISSED 
+W27 CAUGHT 6 tests fail
+W28 CAUGHT 38 tests fail
+W29 CAUGHT 2 tests fail
+W30 CAUGHT 3 tests fail
+W31 CAUGHT 5 tests fail
+W32 CAUGHT 3 tests fail
+W33 CAUGHT 4 tests fail
+W34 CAUGHT 1 tests fail
+W35 CAUGHT 3 tests fail
+W36 CAUGHT 4 tests fail
+W37 CAUGHT 5 tests fail
+W38 CAUGHT 4 tests fail
+W39 CAUGHT 2 tests fail
+W40 CAUGHT 2 tests fail
+W41 CAUGHT 53 tests fail
+W42 CAUGHT 5 tests fail
+W43 CAUGHT 5 tests fail
+W44 CAUGHT 4 tests fail
+W45 CAUGHT 8 tests fail
+W47 CAUGHT crash rc=-11
+W46 CAUGHT 5 tests fail
+W48 CAUGHT 24 tests fail
+W49 CAUGHT crash rc=-11
+W50 CAUGHT 10 tests fail
+W51 CAUGHT 7 tests fail
+W52 CAUGHT crash rc=-11
+W53 CAUGHT 5 tests fail
+P01 CAUGHT 12 tests fail
+P02 CAUGHT 3 tests fail
+P03 CAUGHT 15 tests fail
+P04 CAUGHT 7 tests fail
+P05 CAUGHT 2 tests fail
+P06 CAUGHT 1 tests fail
+P07 CAUGHT 3 tests fail
+P08 CAUGHT 2 tests fail
+P09 CAUGHT 6 tests fail
+P10 CAUGHT 2 tests fail
+P11 CAUGHT 6 tests fail
+P12 CAUGHT 1 tests fail
+P13 CAUGHT 9 tests fail
+P14 CAUGHT 4 tests fail
+P15 CAUGHT 1 tests fail
+Q01 CAUGHT 8 tests fail
+Q02 CAUGHT 2 tests fail
+Q03 CAUGHT 5 tests fail
+Q04 CAUGHT 2 tests fail
+Q05 CAUGHT 2 tests fail
+Q06 CAUGHT 1 tests fail
+Q07 CAUGHT 1 tests fail
+Q08 CAUGHT 1 tests fail
+Q09 CAUGHT 1 tests fail
+Q10 CAUGHT 1 tests fail
+Q11 CAUGHT 5 tests fail
+Q12 CAUGHT 3 tests fail
+S01 CAUGHT 6 tests fail
+Q13 CAUGHT 2 tests fail
+S02 CAUGHT 6 tests fail
+S03 MISSED 
+S04 MISSED 
+S05 CAUGHT 12 tests fail
+S06 CAUGHT 5 tests fail
+S07 CAUGHT 4 tests fail
+S08 CAUGHT 4 tests fail
+S09 CAUGHT 5 tests fail
+S10 MISSED 
+S11 CAUGHT 7 tests fail
+S13 CAUGHT crash rc=-4
+S12 CAUGHT 8 tests fail
+S15 CAUGHT crash rc=-11
+S14 CAUGHT 8 tests fail
+B01 CAUGHT 8 tests fail
+B02 CAUGHT 1 tests fail
+B03 CAUGHT 7 tests fail
+B04 CAUGHT 1 tests fail
+B05 CAUGHT 7 tests fail
+B06 CAUGHT 1 tests fail
+B07 CAUGHT 6 tests fail
+B08 CAUGHT 1 tests fail
+B09 CAUGHT 7 tests fail
+B10 CAUGHT 10 tests fail
+B11 MISSED 
+B12 CAUGHT 2 tests fail
+B13 MISSED 
+B14 CAUGHT 1 tests fail
+B15 CAUGHT 2 tests fail
+B16 CAUGHT 4 tests fail
+B17 CAUGHT 3 tests fail
+B18 CAUGHT 1 tests fail
+B19 CAUGHT 1 tests fail
+B20 CAUGHT 4 tests fail
+B22 CAUGHT 2 tests fail
+B21 CAUGHT 2 tests fail
+B24 CAUGHT 2 tests fail
+B23 CAUGHT 3 tests fail
+comment column 75 ; mutated lines too wide for it (comment placed on the next line): 14
+wrote /tmp/claude-0/-home-claude/c65d3956-49cc-5b06-b086-4ca354d4bd07/scratchpad/repo/bitarray/extras

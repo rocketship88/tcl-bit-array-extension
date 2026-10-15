@@ -2,15 +2,15 @@
 
 Development material; none of it is needed to build or use the extension.
 
-* `mutate5.py` — mutation testing. Applies 95 deliberate bugs to `bitarray.c` one at a time, rebuilds, runs the test suite and
+* `mutate5.py` — mutation testing. Applies the deliberate bugs listed in it (162 in 0.6.0) to `bitarray.c` one at a time, rebuilds, runs the test suite and
   reports each as CAUGHT or MISSED. The environment variables it needs are listed at the top of the file. It takes 10–30
   minutes. The first four rounds' logs are kept for history; `mutation_round5.txt` is the 0.3 run
-  (95 mutants: 81 caught, 14 missed, reasons in `../RESULTS.txt`; `mutation_round6.txt` is the 0.4 run with 110 mutants, 96 caught, 14 missed, and `mutation_round7.txt` the 0.5 run with 123 mutants, 109 caught, 14 missed) and `mutation_round5_first_run.txt` is the run before the memory-growth
+  (95 mutants: 81 caught, 14 missed, reasons in `../RESULTS.txt`; `mutation_round6.txt` is the 0.4 run with 110 mutants, 96 caught, 14 missed, `mutation_round7.txt` the 0.5 run with 123 mutants, 109 caught, 14 missed, and `mutation_round8.txt` the 0.5.1 run with 138 mutants, 121 caught, 17 missed, and `mutation_round9.txt` the 0.6.0 run with 162 mutants, 143 caught, 19 missed) and `mutation_round5_first_run.txt` is the run before the memory-growth
   test was added (79 caught, 16 missed).
 * `mutation_round1.txt` … `mutation_round4.txt` — logs from the 0.1 and 0.2 versions of the code. They were produced by an
   earlier script (`mutate.py`, not included: `mutate5.py` contains all of its mutants, updated to the current code).
 
-* `mutate6.py` — the same 123 mutants (it reads the list from `mutate5.py`), but it keeps a full record and writes:
+* `mutate6.py` — the same 162 mutants (it reads the list from `mutate5.py`), but it keeps a full record and writes:
   * `bitarray.mutants` — `bitarray.c` with every mutant applied, each mutated line followed at the right by a comment:
     mutant id, kind (`deleted:clause`, `changed:operator`, ...), the result, and the **names of the tests that failed**
     (or the test that was running when the run crashed). Open it beside `bitarray.c` in a side-by-side compare tool; the
@@ -23,6 +23,17 @@ Development material; none of it is needed to build or use the extension.
 
   These files describe the `bitarray.c` in this repository; run `mutate6.py` again after changing it (about 35 minutes on two
   cores; an interrupted run resumes). The kind of each mutant is classified automatically from the text, so treat it as a rough label.
+
+* `listbench.tcl` — times the Tcl list commands (create, `llength`, `lindex`, `lset`, `lappend`, `lrange`, `lreverse`, `lreplace`,
+  `linsert`, `ledit`, `lremove`, `lassign`, `lsearch`, `lsort`, `foreach`, `lmap`, `join`, `in`) and the bitarray's own `fill`, `count`, `next` and bitwise commands (`and`, `or`, `xor`, `andnot`, `not`; their rows are named `bitop ...`, so `-only 'bitop*'` picks them, and the plain-list side is a one-line `lmap`) (against small helper procs written for a plain list: `ledit` with `lrepeat`, a `lset` loop for a step, `lsearch -all`, `lsearch -start`) on a plain list and on a 1-bit and
+  an 8-bit bitarray, with 1,000, 100,000 and 1,000,000 elements. `tclsh9.1 extras/listbench.tcl l` times plain lists only and needs
+  no extension, so anyone can try it on their machine; `b` times only the bitarray; `both` (the default) puts them side by side with
+  a ratio column. Each run starts and ends with a machine-speed calibration line, and checks first that every column gives the same
+  answers. `-only PATTERN` keeps just the operations whose name matches (plain text matches anywhere in the name, a pattern with `*` or `?` is a glob, and `-only` can be repeated), `-help` prints the usage (also shown after a mistake in the command line; an unambiguous start of an option such as `-ratio` is accepted), `-md` prints markdown tables, `-verbose` adds notes on how to read the numbers (lazy `lrange`/`lreverse`, cold rows, the memory estimate), `-ratios` shows only the two ratio columns, and `-sort best1` or `-sort best8` lists each table from the biggest bitarray win to the biggest loss. `listbench_output_linux.txt` is one run of it with `-verbose` (0.5.1, this Linux container).
+
+* `windows_0.6.0_run.txt` — the output of build, tests, sieve and a `listbench.tcl` ratios run (`-rat -sizes 1000000 -sort best1`) for 0.6.0 on one Windows machine, as the repository owner pasted it (line endings normalised).
+
+* `windows_0.6.0_listbench.txt` — `listbench.tcl -rat -sizes 2000000 -sort best1` on the same Windows machine with the repaired same-answer check.
 
 * `typeloss_*` — why core `lappend` / `linsert` sometimes turn a bitarray into an ordinary list: `typeloss_lstring_repro.tcl` (stock Tcl only;
   needs the `tcltest` shell), `typeloss_bitarray_repro.tcl` (the same with this extension), their `..._output.txt` files, and

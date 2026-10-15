@@ -11,7 +11,7 @@ Environment:
     BITARRAY_TCLSH     the tclsh to run the tests with
     CC                 compiler (default cc)
     LD_LIBRARY_PATH / TCL_LIBRARY are passed through if your tclsh needs them.
-With names given it runs only those mutants.  Takes about 10-30 minutes for all 123 (each runs the whole suite).
+With names given it runs only those mutants.  Takes about 10-30 minutes for all 138 (each runs the whole suite).
 """
 import subprocess, os, shutil, sys, re, tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -34,8 +34,8 @@ MUT = [
  ("M33 new: size check on narrowed value dropped", "if (w < 0 || w > BA_MAX_BITS / width) {", "if (w < 0) {"),
  ("M34 replace: growth limit dropped", "if (wideLen > BA_MAX_BITS / b->width) {", "if (0) {"),
  ("M35 capacity not doubled", "Tcl_Size newCap = b->capWords * 2,", "Tcl_Size newCap = 0,"),
- ("M36 shrink does not clear vacated bits", "for (i = newLen; i < oldLen; i++) CLRBIT(b, i);", ";"),
- ("M37 MoveElems direction reversed", "    if (to < from) {\n\tfor (i = 0; i < count; i++) {", "    if (to > from) {\n\tfor (i = 0; i < count; i++) {"),
+ ("M36 shrink does not clear vacated bits", "ClearBits(b, newLen, oldLen - newLen);", ";"),
+ ("M37 MoveElems direction reversed", "    if (to < from) {\n\tTcl_Size done = 0;", "    if (to > from) {\n\tTcl_Size done = 0;"),
  ("M38 new capacity not zeroed", "\tmemset(&b->words[oldCap], 0,\n\t\t(size_t)(newCap - oldCap) * sizeof(uint64_t));\n", ""),
  ("M39 rep pointer not updated after realloc", "\tlistObj->internalRep.twoPtrValue.ptr1 = b;\n    }\n", "\t;\n    }\n"),
  ("M40 word count not updated", "    b->nwords = needWords;\n    Tcl_InvalidateStringRep(listObj);", "    Tcl_InvalidateStringRep(listObj);"),
@@ -151,6 +151,47 @@ MUT = [
  ('Q11 tochars drops the last character', 'Tcl_NewUnicodeObj(buf, b->len)', 'Tcl_NewUnicodeObj(buf, b->len > 0 ? b->len - 1 : 0)'),
  ('Q12 tochars skips element 0', 'for (i = 0; i < b->len; i++) buf[i] = (Tcl_UniChar)GetElem(b, i);', 'for (i = 1; i < b->len; i++) buf[i] = (Tcl_UniChar)GetElem(b, i);'),
  ('Q13 fromchars error names the wrong index', 'ch, i, width));', 'ch, i + 1, width));'),
+ # ---- round 8 (0.5.1): the word-at-a-time shift for width-1 arrays ----
+ ("S01 GetBits: high word not merged", "if (s + n > 64) v |= b->words[k + 1] << (64 - s);", ";"),
+ ("S02 GetBits: wrong shift for the high word", "v |= b->words[k + 1] << (64 - s);", "v |= b->words[k + 1] << (63 - s);"),
+ ("S03 GetBits: result not masked to n bits", "return (n == 64) ? v : (v & (((uint64_t)1 << n) - 1));", "return v;"),
+ ("S04 PutBits: value not masked", "    v &= m;\n", ""),
+ ("S05 PutBits: other bits of the word not kept", "b->words[k] = (b->words[k] & ~(m << s)) | (v << s);", "b->words[k] = (v << s);"),
+ ("S06 PutBits: high word not written", "if (s + n > 64) {\n\tuint64_t mh", "if (0) {\n\tuint64_t mh"),
+ ("S07 PutBits: wrong high-word mask", "uint64_t mh = ((uint64_t)1 << (s + n - 64)) - 1;", "uint64_t mh = ((uint64_t)1 << (s + n - 63)) - 1;"),
+ ("S08 PutBits: high word keeps nothing", "b->words[k + 1] = (b->words[k + 1] & ~mh) | (v >> (64 - s));", "b->words[k + 1] = (v >> (64 - s));"),
+ ("S09 PutBits: wrong shift for the high part", "| (v >> (64 - s));", "| (v >> (63 - s));"),
+ ("S10 ClearBits: position not advanced", "\tPutBits(b, from, 0, n);\n\tfrom += n;", "\tPutBits(b, from, 0, n);\n\tfrom += 0;"),
+ ("S11 MoveElems left: source off by one", "PutBits(b, to + done, GetBits(b, from + done, n), n);", "PutBits(b, to + done, GetBits(b, from + done + 1, n), n);"),
+ ("S12 MoveElems right: destination off by one", "PutBits(b, to + left, GetBits(b, from + left, n), n);", "PutBits(b, to + left + 1, GetBits(b, from + left, n), n);"),
+ ("S13 MoveElems left: last chunk not shortened", "int n = (count - done >= 64) ? 64 : (int)(count - done);", "int n = 64;"),
+ ("S14 MoveElems right: last chunk not shortened", "int n = (left >= 64) ? 64 : (int)left;", "int n = 64;"),
+ ("S15 ClearBits: last chunk not shortened", "int n = (count >= 64) ? 64 : (int)count;", "int n = 64;"),
+ # ---- 0.6.0: and / or / xor / andnot / not ----
+ ("B01 and: uses OR on the common words", "BO_LOOP(0, m, y->words[k], xv & yv)", "BO_LOOP(0, m, y->words[k], xv | yv)"),
+ ("B02 and: words past the end of y keep x", "BO_LOOP(m, n, 0, xv & yv)", "BO_LOOP(m, n, 0, xv)"),
+ ("B03 or: uses XOR on the common words", "BO_LOOP(0, m, y->words[k], xv | yv)", "BO_LOOP(0, m, y->words[k], xv ^ yv)"),
+ ("B04 or: words past the end of y are cleared", "BO_LOOP(m, n, 0, xv | yv)", "BO_LOOP(m, n, 0, 0)"),
+ ("B05 xor: uses OR on the common words", "BO_LOOP(0, m, y->words[k], xv ^ yv)", "BO_LOOP(0, m, y->words[k], xv | yv)"),
+ ("B06 xor: words past the end of y become 0", "BO_LOOP(m, n, 0, xv ^ yv)", "BO_LOOP(m, n, 0, 0)"),
+ ("B07 andnot: the NOT is missing", "BO_LOOP(0, m, y->words[k], xv & ~yv)", "BO_LOOP(0, m, y->words[k], xv & yv)"),
+ ("B08 andnot: words past the end of y are cleared", "BO_LOOP(m, n, 0, xv & ~yv)", "BO_LOOP(m, n, 0, 0)"),
+ ("B09 not: does not flip", "dst->words[k] = ~x->words[k];", "dst->words[k] = x->words[k];"),
+ ("B10 common-word count wrong when y is longer", "m = (y->nwords < n) ? y->nwords : n;", "m = (y->nwords < n) ? y->nwords : n / 2;"),
+ ("B11 MaskTail width 1: mask removed", "if (r) b->words[b->nwords - 1] &= (((uint64_t)1 << r) - 1);", ";"),
+ ("B12 MaskTail width 1: wrong remainder", "int r = (int)(bits & 63);", "int r = (int)(bits & 31);"),
+ ("B13 MaskTail wide: unused bytes not cleared", "if (total > used) memset(BYTES(b) + used, 0, total - used);", ";"),
+ ("B14 width check dropped", "if (x->width != y->width) {", "if (0) {"),
+ ("B15 length check ignores -length zero", "if (!zero && x->len != y->len) {", "if (x->len != y->len) {"),
+ ("B16 length check inverted", "if (!zero && x->len != y->len) {", "if (zero && x->len != y->len) {"),
+ ("B17 in place: shared value not copied", "work = Tcl_IsShared(obj) ? Tcl_DuplicateObj(obj) : obj;\n\td = GETREP(work);\n\tBitOpWords", "work = obj;\n\td = GETREP(work);\n\tBitOpWords"),
+ ("B18 in place: string form not invalidated", "MaskTail(d);\n\tTouch(work);", "MaskTail(d);"),
+ ("B19 new result takes the length of the second array", "NewRep(interp, x->len, x->width)) == NULL) return TCL_ERROR;\n\tBitOpWords", "NewRep(interp, y ? y->len : x->len, x->width)) == NULL) return TCL_ERROR;\n\tBitOpWords"),
+ ("B20 arrow with four words not recognised", "(rest == 3 || rest == 4) && IsWord(objv[idx + 1], \"<-\")", "(rest == 3) && IsWord(objv[idx + 1], \"<-\")"),
+ ("B21 arrow: two sources swapped", "inPlace = 0; srcA = objv[idx + 2]; srcB = objv[idx + 3];", "inPlace = 0; srcA = objv[idx + 3]; srcB = objv[idx + 2];"),
+ ("B22 -length mode inverted", "zero = mode;", "zero = !mode;"),
+ ("B23 -length value not skipped", "zero = mode;\n\tidx += 2;", "zero = mode;\n\tidx += 1;"),
+ ("B24 arrow with one source: treated as not in place", "inPlace = 1; srcB = objv[idx + 2];", "inPlace = 0; srcA = objv[idx]; srcB = objv[idx + 2];"),
 ]
 only = sys.argv[1:]
 out=[]
