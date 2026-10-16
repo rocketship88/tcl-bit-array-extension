@@ -13,7 +13,7 @@
   --c: #fbe9c8;  --c-b: #b9770e;   /* Tcl core */
   --h: #d6efdc;  --h-b: #2f8a4a;   /* bitarray.c */
   --r: #eceff1;  --r-b: #aab4b8;   /* result */
-  --on: #fff3c4; --bit1: #cfe9ee; --chg: #ffe0a3;
+  --on: #fff3c4; --bit1: #cfe9ee; --chg: #ffe0a3; --vac: #fbd5d5; --vac-b: #b3261e;
   --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono: ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace;
 }
@@ -21,7 +21,7 @@
   --bg: #12191b; --panel: #1b2427; --fg: #e3eaec; --muted: #94a3a8; --line: #33434a;
   --accent: #4fc3d0; --accent-fg: #0a1a1d; --hot: #ff8a80;
   --s: #1d3354; --s-b: #6f9de6; --c: #4a3510; --c-b: #e5a53d; --h: #1b3d27; --h-b: #62c27d;
-  --r: #263135; --r-b: #55666c; --on: #4a4318; --bit1: #1d4650; --chg: #6a4a10; color-scheme: dark; } }
+  --r: #263135; --r-b: #55666c; --on: #4a4318; --bit1: #1d4650; --chg: #6a4a10; --vac: #5a2424; --vac-b: #ff8a80; color-scheme: dark; } }
 body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 16px; line-height: 1.5;
   padding: 20px 16px 40px; }
 main { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
@@ -109,6 +109,8 @@ tr.none.lit td { background: var(--on); color: var(--hot); }
 .cell small { display: block; font-size: .62rem; color: var(--muted); line-height: 1.3; }
 .cell.b1 { background: var(--bit1); }
 .cell.hl { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); background: var(--on); font-weight: 700; }
+#stmt mark { background: var(--chg); color: inherit; border-radius: 3px; padding: 0 3px; }
+.cell.vac { background: var(--vac); border-color: var(--vac-b); color: var(--vac-b); font-weight: 700; }
 .cell.chg { background: var(--chg); border-color: var(--c-b); font-weight: 700; }
 .cell.gone { opacity: .35; text-decoration: line-through; }
 .words { margin-top: 6px; font-family: var(--mono); font-size: .78rem; color: var(--muted); display: flex; flex-direction: column; gap: 1px; overflow-x: auto; }
@@ -134,6 +136,11 @@ ul { margin: 4px 0 0; padding-left: 1.2em; } li { margin-bottom: 3px; }
 .cmsg:not(:empty) { margin-bottom: 6px; }
 .ctabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
 .ctabs button { font: inherit; font-family: var(--mono); font-size: .8rem; padding: 3px 9px; border: 1px solid var(--line); background: var(--panel); color: var(--fg); border-radius: 12px; cursor: pointer; }
+.ctabs.seq { flex-direction: column; align-items: flex-start; gap: 4px; }
+.ctabs.seq button { text-align: left; }
+.ctabs.seq button.ind { margin-left: 30px; }
+pre.code .ln.ret { box-shadow: inset 3px 0 0 var(--accent); font-weight: 700; }
+.ctabs.seq button em { font-style: normal; font-family: var(--font); opacity: .8; margin-left: 8px; }
 .ctabs button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
 pre.code { position: relative; margin: 0; padding: 10px 0; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; font-family: var(--mono); font-size: .8rem; line-height: 1.45; overflow: auto; max-height: 70vh; tab-size: 8; }
 pre.code .ln { display: block; padding: 0 12px 0 0; white-space: pre; }
@@ -1962,7 +1969,7 @@ const SLOTS = [
 
 /* ---- helpers for building steps ---- */
 const F = (k, t, s) => ({ k, t, s: s || '' });
-const O = (id, vals, o) => Object.assign({ id, vals: vals.slice(), rc: 1, str: null, cache: false, hl: [], chg: [], gone: [], raw: false,
+const O = (id, vals, o) => Object.assign({ id, vals: vals.slice(), rc: 1, str: null, cache: false, hl: [], chg: [], gone: [], vac: [], raw: false,
   type: 'bitarray', who: '', words: null }, o || {});
 const ST = o => Object.assign({ frames: [], slot: null, heap: [], vars: [], res: null, resLbl: 'result', cmd: 0, h: '', p: '', src: '' }, o);
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
@@ -2025,12 +2032,12 @@ scene('new', 'new', W => [`set a [bitarray new 16 1${W === 8 ? ' -width 8' : ''}
 scene('llength', 'llength', () => ['llength $a'], noP, (W, P, S) => {
   const A = BASE[W], a = () => [O('1', A, { who: 'a' })];
   const vr = [{ n: 'a', id: '1' }];
-  const f1 = [F('s', 'llength $a', 'compiled: INST_LIST_LENGTH'), F('c', 'TclListObjLength', 'tclListObj.c: the object has a lengthProc, so ask it')];
+  const f1 = [F('s', 'llength $a', 'compiled: INST_LIST_LENGTH'), F('c', 'TclListObjLength', 'tclListObj.c: the object has a lengthProc hook, so ask it')];
   const f2 = [...f1, F('h', 'BALength', 'returns the len field')];
   return [
-    ST({ cmd: 0, h: 'llength asks the object', p: 'The value in <code>a</code> is not a Tcl list internally, but its type has a <code>lengthProc</code>, so the core calls it instead of converting the value to a list.', src: 'tclExecute.c: INST_LIST_LENGTH → tclListObj.c', frames: f1, slot: 'lengthProc', heap: a(), vars: vr }),
-    ST({ cmd: 0, h: 'BALength', p: 'The hook returns the stored length. No elements are looked at and no string is built, so the cost does not depend on the length.', src: 'bitarray.c: BALength', frames: f2, slot: 'lengthProc', heap: a(), vars: vr, res: '16', resLbl: 'llength' }),
-    ST({ cmd: 0, h: 'Nothing changed', p: 'The array is exactly as it was: same object, same refcount, still no string representation. Asking for the length does not convert or copy anything.', src: '', frames: [...f2, F('r', '16')], slot: null, heap: a(), vars: vr, res: '16', resLbl: 'llength' })
+    ST({ cmd: 0, h: 'llength asks the object', p: 'The value in <code>a</code> is not a Tcl list internally, but its type has a <code>lengthProc</code> hook, so the core calls it instead of converting the value to a list.', src: 'tclExecute.c: INST_LIST_LENGTH → tclListObj.c', frames: f1, slot: 'lengthProc', heap: a(), vars: vr }),
+    ST({ cmd: 0, h: 'BALength', p: 'The hook returns the stored length. No elements are looked at and no string is built, so the cost does not depend on the length.', src: 'bitarray.c: BALength', frames: f2, slot: 'lengthProc', heap: a(), vars: vr, res: '16', resLbl: 'BALength returns' }),
+    ST({ cmd: 0, h: 'Nothing changed', p: 'The array is exactly as it was: same object, same refcount, still no string representation. Asking for the length does not convert or copy anything.', src: '', frames: [...f2, F('r', '16')], slot: null, heap: a(), vars: vr, res: '16', resLbl: 'llength returns' })
   ];
 });
 
@@ -2039,11 +2046,11 @@ scene('lindex', 'lindex', (W, P) => [`lindex $a ${P.i}`], W => [{ k: 'i', label:
   const A = BASE[W], i = P.i, v = A[i], a = (hl) => [O('1', A, { who: 'a', hl: hl || [] })];
   const vr = [{ n: 'a', id: '1' }];
   const f3 = [F('s', `lindex $a ${i}`, 'compiled: INST_LIST_INDEX_IMM (literal index)'), F('c', 'TclObjTypeLength', 'to resolve end-relative indexes'), F('c', 'TclGetIntForIndexM', `index ${i}`)];
-  const f4 = [...f3, F('c', 'TclObjTypeIndex', 'tclExecute.c: the object has an indexProc'), F('h', `BAIndex(obj, ${i})`)];
+  const f4 = [...f3, F('c', 'TclObjTypeIndex', 'tclExecute.c: the object has an indexProc hook'), F('h', `BAIndex(obj, ${i})`)];
   return [
-    ST({ cmd: 0, h: `lindex $a ${i}: ask for one element`, p: 'The compiled lindex sees that the object has an <code>indexProc</code>. It asks for the length (to resolve <code>end</code>) and turns the index word into a number.', src: 'tclExecute.c: INST_LIST_INDEX_IMM', frames: f3, slot: 'indexProc', heap: a(), vars: vr }),
-    ST({ cmd: 0, h: 'BAIndex reads one element', p: W === 1 ? `Bit ${i} is bit ${i & 63} of word ${i >> 6}. The hook returns one of the two shared objects <code>0</code> and <code>1</code> that the array keeps, so nothing is allocated.` : `The element is a single byte. The hook reads it with GetElem and returns a shared 0 or 1 object, or makes a new integer object for any other value.`, src: 'bitarray.c: BAIndex, GetElem, ElemObj', frames: f4, slot: 'indexProc', heap: a([i]), vars: vr, res: String(v), resLbl: 'lindex' }),
-    ST({ cmd: 0, h: 'Nothing changed', p: 'The array is exactly as it was: same object, same refcount, still no string representation. Reading an element does not convert or copy anything.', src: '', frames: [...f4, F('r', `${v}`)], slot: null, heap: a([i]), vars: vr, res: String(v), resLbl: 'lindex' })
+    ST({ cmd: 0, h: `lindex $a ${i}: ask for one element`, p: 'The compiled lindex sees that the object has an <code>indexProc</code> hook. It asks for the length (to resolve <code>end</code>) and turns the index word into a number.', src: 'tclExecute.c: INST_LIST_INDEX_IMM', frames: f3, slot: 'indexProc', heap: a(), vars: vr }),
+    ST({ cmd: 0, h: 'BAIndex reads one element', p: W === 1 ? `Bit ${i} is bit ${i & 63} of word ${i >> 6}. The hook stores one of the two shared objects <code>0</code> and <code>1</code> that the array keeps into <code>*elemPtr</code> for the core to pick up, so nothing is allocated.` : `The element is a single byte. The hook reads it with GetElem and stores a shared 0 or 1 object into <code>*elemPtr</code>, or makes a new integer object for any other value.`, src: 'bitarray.c: BAIndex, GetElem, ElemObj', frames: f4, slot: 'indexProc', heap: a([i]), vars: vr, res: String(v), resLbl: 'BAIndex returns via *elemPtr' }),
+    ST({ cmd: 0, h: 'Nothing changed', p: 'The array is exactly as it was: same object, same refcount, still no string representation. Reading an element does not convert or copy anything.', src: '', frames: [...f4, F('r', `${v}`)], slot: null, heap: a([i]), vars: vr, res: String(v), resLbl: 'lindex returns' })
   ];
 });
 
@@ -2054,7 +2061,7 @@ scene('lset', 'lset', (W, P) => [`lset a ${P.i} ${P.v}`], W => [{ k: 'i', label:
   const gcap = app ? growCap(nwOf(16, W), nwOf(17, W)) : undefined;
   const w0 = S ? 'a, b' : 'a', rc0 = S ? 2 : 1;
   const vr0 = S ? [{ n: 'a', id: '1' }, { n: 'b', id: '1' }] : [{ n: 'a', id: '1' }];
-  const f1 = [F('s', `lset a ${i} ${v}`, 'compiled: INST_LSET_FLAT'), F('c', 'TclObjTypeSetElement', 'tclExecute.c: the object has a setElementProc')];
+  const f1 = [F('s', `lset a ${i} ${v}`, 'compiled: INST_LSET_FLAT'), F('c', 'TclObjTypeSetElement', 'tclExecute.c: the object has a setElementProc hook')];
   const f2 = [...f1, F('h', 'BASetElement(obj, {' + i + '}, ' + v + ')')];
   const f3 = S ? [...f2, F('c', 'Tcl_IsShared(obj) is true'), F('h', 'Tcl_DuplicateObj → BADup', 'a copy of the words')] : [...f2, F('h', 'Tcl_IsShared(obj) is false', 'edit in place')];
   const f4 = [...f3, F('h', app ? 'BAReplace(len, 0, 1, v)' : 'PutElem + Touch', app ? 'index = length means append' : 'drop the caches')];
@@ -2063,14 +2070,15 @@ scene('lset', 'lset', (W, P) => [`lset a ${P.i} ${P.v}`], W => [{ k: 'i', label:
   const f5 = [...f4, F('r', 'the changed array')];
   const done = S ? [O('1', A, { who: 'b', rc: 1 }), O('2', B, { who: 'a', rc: 1, chg: app ? [16] : [i], hl: [], cap: gcap })] : [O('1', B, { who: 'a', rc: 1, chg: app ? [16] : [i], cap: gcap })];
   const doneV = S ? [{ n: 'a', id: '2', ch: true }, { n: 'b', id: '1' }] : [{ n: 'a', id: '1' }];
+  const SEQ3 = [['BASetElement', 'calls both, then returns', 0, 0], ['PutElem', 'write the element', 1, 1], ['Touch', 'drop caches', 1, 2]];
   const steps = [
-    ST({ h: 'lset hands the whole job to the object', p: 'For a type with a <code>setElementProc</code> the core does not edit anything itself: it passes the index list and the new value to the hook and uses whatever object comes back.', src: 'tclExecute.c: INST_LSET_FLAT (Tcl_LsetObjCmd → TclLsetList takes the same route)', frames: f1, slot: 'setElementProc', heap: [orig()], vars: vr0 }),
+    ST({ h: 'lset hands the whole job to the object', p: 'For a type with a <code>setElementProc</code> hook the core does not edit anything itself: it passes the index list and the new value to the hook and uses whatever object comes back.', src: 'tclExecute.c: INST_LSET_FLAT (Tcl_LsetObjCmd → TclLsetList takes the same route)', frames: f1, slot: 'setElementProc', heap: [orig()], vars: vr0 }),
     ST({ h: 'BASetElement checks its input', p: `It accepts exactly one index (nested lists make no sense for plain numbers), turns it into a number (<code>end</code> and <code>end-1</code> work) and range-checks the value for width ${W}. An index of ${i === 16 ? '16 (the length)' : 'the length'} appends, like <code>lset</code> on a list. Nothing is changed until all of that passes.`, src: 'bitarray.c: BASetElement, ParseValue', frames: f2, slot: 'setElementProc', heap: [orig()], vars: vr0 })
   ];
-  if (S) steps.push(ST({ h: 'The array is shared, so copy it', p: 'Two variables hold the same object (refcount 2), so changing it in place would change <code>b</code> too. The hook duplicates the object first. <code>Tcl_DuplicateObj</code> calls the type\'s <code>dupIntRepProc</code> (BADup), which copies the words.', src: 'bitarray.c: BASetElement, BADup', frames: f3, slot: 'dup', heap: [orig(), cp()], vars: vr0 }));
+  if (S) steps.push(ST({ h: 'The array is shared, so copy it', p: 'Two variables hold the same object (refcount 2), so changing it in place would change <code>b</code> too. The hook duplicates the object first. <code>Tcl_DuplicateObj</code> calls the type\'s <code>dupIntRepProc</code> hook (BADup), which copies the words.', src: 'bitarray.c: BASetElement, BADup', frames: f3, slot: 'dup', heap: [orig(), cp()], vars: vr0 }));
   else steps.push(ST({ h: 'Not shared: edit in place', p: 'Only <code>a</code> holds the object (refcount 1), so the hook changes it where it is. No copy is made. This is why repeated <code>lset</code> in a loop is fast.', src: 'bitarray.c: BASetElement', frames: f3, slot: null, heap: [orig()], vars: vr0 }));
-  steps.push(ST({ h: app ? 'Append: BAReplace grows the array' : 'Write the element, drop the caches', p: app ? 'Appending goes through the same code as <code>lreplace</code>: the length becomes 17, the new element is written and the old string representation is invalidated.' : `PutElem writes ${W === 1 ? 'one bit into its word' : 'one byte'}. <code>Touch</code> then frees the element cache (if any was built) and invalidates the string representation, so the next <code>puts</code> shows the new value.`, src: 'bitarray.c: PutElem, Touch', frames: f4, slot: 'updateString', heap: S ? [orig(), cp({ vals: B, chg: app ? [16] : [i], cap: gcap })] : [orig({ vals: B, chg: app ? [16] : [i], cap: gcap })], vars: vr0 }));
-  steps.push(ST({ h: 'The core stores the returned object', p: S ? 'The hook returned the copy, so <code>a</code> now points to it. The original is unchanged and still held by <code>b</code>.' : 'The hook returned the same object, so <code>a</code> still points to it, now with the new element.', src: '', frames: f5, heap: done, vars: doneV, res: 'a = ' + fmtStr(B), resLbl: 'now' }));
+  steps.push(ST({ h: app ? 'Append: BAReplace grows the array' : 'Write the element, touch (drop caches)', p: app ? 'Appending goes through the same code as <code>lreplace</code>: the length becomes 17, the new element is written and the old string representation is invalidated.' : `<code>BASetElement</code> now makes two calls and then returns the object. <b>1</b> <code>PutElem</code> writes ${W === 1 ? 'one bit into its word' : 'one byte'}. <b>2</b> <code>Touch</code> frees the element cache (if any was built) and invalidates the string representation, so the next <code>puts</code> shows the new value.`, src: 'bitarray.c: PutElem, Touch', seq: app ? null : SEQ3, seqHit: 'calls', frames: f4, slot: 'updateString', heap: S ? [orig(), cp({ vals: B, chg: app ? [16] : [i], cap: gcap })] : [orig({ vals: B, chg: app ? [16] : [i], cap: gcap })], vars: vr0 }));
+  steps.push(ST({ h: 'The core stores the returned object', seq: app ? null : SEQ3, seqHit: 'ret', p: S ? 'The hook returned the copy, so <code>a</code> now points to it. The original is unchanged and still held by <code>b</code>.' : 'The hook returned the same object, so <code>a</code> still points to it, now with the new element.', src: '', frames: f5, heap: done, vars: doneV, res: 'a = ' + fmtStr(B), resLbl: 'now' }));
   return steps;
 }, SH);
 
@@ -2080,19 +2088,19 @@ scene('lrange', 'lrange', (W, P) => [`set r [lrange $a ${P.f} ${P.t}]`], W => [{
   for (let i = f; i <= t; i++) idx.push(i);
   const vr = [{ n: 'a', id: '1' }];
   const a = (hl) => O('1', A, { who: 'a', hl: hl || [] });
-  const f0 = [F('s', `lrange $a ${f} ${t}`, 'compiled: INST_LIST_RANGE_IMM'), F('c', 'Tcl_ListObjRange', 'tclListTypes.c'), F('c', 'TclListObjLength', '→ BALength: 16'), F('c', 'TclNormalizeRangeLimits', `${f}..${t} against length 16`)];
+  const f0 = [F('s', `lrange $a ${f} ${t}`, 'compiled: INST_LIST_RANGE_IMM'), F('c', 'Tcl_ListObjRange', `tclListTypes.c: length 16 from BALength, then ${f}..${t} is clamped`)];
   if (empty) {
     return [
-      ST({ h: 'The core normalises the range', p: 'Tcl_ListObjRange asks the hook for the length (BALength) and clamps the range itself. This range is empty (first is after last), so the core answers it by itself with an empty value and the slice hook is never called.', src: 'tclListTypes.c: Tcl_ListObjRange', frames: f0, slot: 'lengthProc', heap: [a()], vars: vr }),
+      ST({ h: 'The core normalises the range', p: 'Tcl_ListObjRange runs entirely in the core. It gets the length through TclListObjLength, which calls the <code>lengthProc</code> hook (BALength) and gets 16, then TclNormalizeRangeLimits clamps the range against it. This range is empty (first is after last), so the core answers it by itself with an empty value and the slice hook is never called.', src: 'tclListTypes.c: Tcl_ListObjRange', frames: f0, slot: 'lengthProc', heap: [a()], vars: vr }),
       ST({ h: 'An empty result', p: 'The result is an empty plain value. The array is untouched.', src: '', frames: [...f0, F('r', 'empty')], slot: null, heap: [a()], vars: vr, res: 'r = {}', resLbl: 'now' })
     ];
   }
-  const f1 = [...f0, F('c', 'TclObjTypeSlice', 'the object has a sliceProc'), F('h', `BASlice(obj, ${f}, ${t})`)];
+  const f1 = [...f0, F('c', 'TclObjTypeSlice', 'the object has a sliceProc hook'), F('h', `BASlice(obj, ${f}, ${t})`)];
   const f3 = [...f1, F('h', 'NewRep(' + R.length + ')', 'a new array of ' + R.length)];
   const f4 = [...f3, F('h', W === 1 ? ((f & 63) === 0 ? 'memcpy of the words' : 'GetBits(b, ' + f + ', ' + R.length + ')') : 'memcpy of ' + R.length + ' bytes', W === 1 ? 'one 64-bit read per output word' : 'a straight byte copy')];
   const f5 = [...f4, F('h', 'WrapRep'), F('r', 'a new array (the old one is untouched)')];
   return [
-    ST({ h: 'The core normalises the range, then asks the object', p: 'Tcl_ListObjRange gets the length from the hook (BALength) and clamps the range itself. Because the object has a <code>sliceProc</code>, the request then goes to the hook, which returns a new object.', src: 'tclExecute.c: INST_LIST_RANGE_IMM; tclListTypes.c: Tcl_ListObjRange', frames: f0, slot: 'lengthProc', heap: [a()], vars: vr }),
+    ST({ h: 'The core normalises the range, then asks the object', p: 'Tcl_ListObjRange runs in the core. It gets the length through TclListObjLength, which calls the <code>lengthProc</code> hook (BALength) and gets 16, then TclNormalizeRangeLimits clamps the range against it. Because the object has a <code>sliceProc</code> hook, the request then goes to the hook, which returns a new object.', src: 'tclExecute.c: INST_LIST_RANGE_IMM; tclListTypes.c: Tcl_ListObjRange', frames: f0, slot: 'lengthProc', heap: [a()], vars: vr }),
     ST({ h: 'BASlice', p: `The hook is called with the first and last index (${f} and ${t}), a range of ${R.length} element${R.length === 1 ? '' : 's'}. (It clamps them again, to be safe on its own.)`, src: 'bitarray.c: BASlice', frames: f1, slot: 'sliceProc', heap: [a(idx)], vars: vr }),
     ST({ h: 'Allocate the result', p: 'A fresh array of the right size is allocated, zeroed. The source is only read.', src: 'bitarray.c: NewRep', frames: f3, slot: 'sliceProc', heap: [a(idx), O('2', R.map(() => 0), { raw: true, rc: 0 })], vars: vr }),
     ST({ h: 'Copy the bits or bytes', p: W === 1 ? ((f & 63) === 0 ? 'The range starts on a word boundary, so whole words are copied and the unused bits in the last word are masked off.' : 'The range does not start on a word boundary, so each output word is assembled from a 64-bit read at the right bit offset (GetBits). That is one step per 64 elements, not one per element.') : 'Elements are whole bytes, so the range is one block copy.', src: 'bitarray.c: BASlice, GetBits', frames: f4, slot: 'sliceProc', heap: [a(idx), O('2', R, { raw: true, rc: 0, chg: R.map((_, i) => i) })], vars: vr }),
@@ -2105,12 +2113,12 @@ scene('lreverse', 'lreverse', () => ['set r [lreverse $a]'], noP, (W, P, S) => {
   const A = BASE[W], R = A.slice().reverse(), vr = [{ n: 'a', id: '1' }];
   const a = (o) => O('1', A, Object.assign({ who: 'a' }, o || {}));
   const f1 = [F('s', 'lreverse $a', 'Tcl_LreverseObjCmd'), F('c', 'Tcl_ListObjReverse', 'tclListTypes.c')];
-  const f2 = [...f1, F('c', 'TclObjTypeReverse', 'the object has a reverseProc'), F('h', 'BAReverse(obj)')];
+  const f2 = [...f1, F('c', 'TclObjTypeReverse', 'the object has a reverseProc hook'), F('h', 'BAReverse(obj)')];
   const f3 = [...f2, F('h', 'NewRep(16, ' + W + ')')];
   const f4 = [...f3, F('h', W === 1 ? 'Rev64(GetBits(...))' : 'dst[i] = src[len-1-i]', W === 1 ? 'reverse a whole word at once' : 'a byte copy in reverse order')];
   const f5 = [...f4, F('h', 'WrapRep'), F('r', 'a new, reversed array'), F('c', 'TclMakeResultObj', 'the core wraps the result')];
   return [
-    ST({ h: 'lreverse asks the object first', p: 'The core checks for a <code>reverseProc</code> before doing its own generic reversal. If the hook is there, it is used.', src: 'tclCmdIL.c: Tcl_LreverseObjCmd, tclListTypes.c: Tcl_ListObjReverse', frames: f1, slot: 'reverseProc', heap: [a()], vars: vr }),
+    ST({ h: 'lreverse asks the object first', p: 'The core checks for a <code>reverseProc</code> hook before doing its own generic reversal. If the hook is there, it is used.', src: 'tclCmdIL.c: Tcl_LreverseObjCmd, tclListTypes.c: Tcl_ListObjReverse', frames: f1, slot: 'reverseProc', heap: [a()], vars: vr }),
     ST({ h: 'BAReverse allocates a result', p: 'The hook makes a new array of the same length and width, so the source stays as it is.', src: 'bitarray.c: BAReverse, NewRep', frames: f3, slot: 'reverseProc', heap: [a(), O('2', A.map(() => 0), { raw: true, rc: 0 })], vars: vr }),
     ST({ h: W === 1 ? 'Reverse 64 bits at a time' : 'Copy the elements in reverse', p: W === 1 ? 'Result bits are the source bits in the opposite order. For each output word the hook reads the matching run of source bits (GetBits), reverses all 64 bits of it with a few shift-and-mask rounds (<code>Rev64</code>), and shifts the unused low end away. For 16 bits that is one pass. This is why a long 1-bit reverse is cheap.' : 'For bytes the hook simply copies element <code>len-1-i</code> to element <code>i</code> with a loop. (Wider widths use memcpy per element in the same way.)', src: 'bitarray.c: BAReverse, Rev64', frames: f4, slot: 'reverseProc', heap: [a({ hl: A.map((_, i) => i) }), O('2', R, { raw: true, rc: 0, chg: R.map((_, i) => i) })], vars: vr }),
     ST({ h: 'The reversed array is a new value', p: 'WrapRep makes it a Tcl value and the core wraps it as the command result. The original is untouched.', src: 'bitarray.c: WrapRep', frames: f5, heap: [a(), O('2', R, { who: 'r', rc: 1, fresh: true })], vars: [{ n: 'a', id: '1' }, { n: 'r', id: '2', ch: true }], res: 'r = ' + fmtStr(R), resLbl: 'now' })
@@ -2128,20 +2136,24 @@ scene('lreplace', 'lreplace', (W, P) => [`set r [lreplace $a ${P.f} ${P.l} ${P.v
   const mk = (id, vals, o) => O(id, vals, o);
   const f1 = [F('s', `lreplace $a ${f} ${l} …`, 'compiled: INST_LREPLACE'), F('c', 'Tcl_ListObjLength', '→ BALength')];
   const f2 = [...f1, F('c', 'Tcl_IsShared(obj) is true here', 'the variable and the stack both hold it'), F('h', 'Tcl_DuplicateObj → BADup', 'a copy of the words')];
-  const f3 = [...f2, F('c', 'Tcl_ListObjReplace', 'tclListObj.c'), F('c', 'TclObjTypeReplace', 'the object has a replaceProc'), F('h', `BAReplace(copy, ${f}, delete ${del}, insert 3)`)];
+  const f3 = [...f2, F('c', 'Tcl_ListObjReplace', 'tclListObj.c'), F('c', 'TclObjTypeReplace', 'the object has a replaceProc hook'), F('h', `BAReplace(copy, ${f}, delete ${del}, insert 3)`)];
   const f4 = [...f3, F('h', 'ParseValue ×3', 'every new value is checked before anything changes')];
   const f5 = [...f4, F('h', 'MoveElems(tail)', `slide ${tail.length} element${tail.length === 1 ? '' : 's'} ${ins.length > del ? 'right' : ins.length < del ? 'left' : 'not at all'}`)];
   const f6 = [...f5, F('h', 'PutElem ×3, clear the vacated end, set len'), F('r', 'the changed copy')];
   const orig = (o) => mk('1', A, Object.assign({ who: S ? 'a, b' : 'a', rc: S ? 2 : 1 }, o || {}));
   const cp = (vals, o) => mk('2', vals, Object.assign({ rc: 0, who: '(the copy)', fresh: true }, o || {}));
   const gap = A.slice(0, f).concat(Array(ins.length).fill(0), tail);
+  /* A shrinking replace: the slide only reads the vacated end, so those elements still hold their old values until the clear step */
+  const vac = R.length < A.length ? A.length - R.length : 0;
+  const gapOld = vac ? gap.concat(A.slice(R.length)) : gap;
+  const vacIdx = []; for (let i = R.length; i < R.length + vac; i++) vacIdx.push(i);
   const capR = growCap(nwOf(16, W), nwOf(R.length, W));
   return [
     ST({ h: 'lreplace works on a copy', p: 'The variable <code>a</code> and the evaluation stack both hold the array, so it counts as shared and the compiled instruction duplicates it before changing anything. For a bitarray the copy is the words, copied by <code>BADup</code> (a plain list copies pointers instead).', src: 'tclExecute.c: INST_LREPLACE; bitarray.c: BADup', frames: f2, slot: 'dup', heap: [orig(), cp(A)], vars: vr }),
     ST({ h: 'BAReplace: delete some, insert some', p: `The core asks the replace hook to delete ${del} element${del === 1 ? '' : 's'} at ${f} and insert 3 values. One hook handles <code>lreplace</code>, <code>linsert</code> (except at the end) and <code>lremove</code>; this extension\'s own <code>lset</code> at the end calls it too.`, src: 'tclListObj.c: Tcl_ListObjReplace; bitarray.c: BAReplace', frames: f3, slot: 'replaceProc', heap: [orig(), cp(A, { hl: delIdx })], vars: vr }),
     ST({ h: 'Check the values first', p: `All three new values are parsed and range-checked for width ${W} before any change. A bad value leaves the array exactly as it was. The new length is also checked against the size limit, and the storage grows (doubling) if it no longer fits.`, src: 'bitarray.c: BAReplace, ParseValue', frames: f4, slot: 'replaceProc', heap: [orig(), cp(A, { hl: delIdx })], vars: vr }),
-    ST({ h: 'Slide the tail', p: `The elements after the deleted range move to their new position. For 1-bit arrays <code>MoveElems</code> does this a whole word at a time (each output word is built from two input words with a shift). The new length is ${R.length}, so the tail moves ${ins.length > del ? 'right' : ins.length < del ? 'left' : 'by zero'}.`, src: 'bitarray.c: MoveElems', frames: f5, slot: 'replaceProc', heap: [orig(), cp(gap, { chg: tail.map((_, i) => f + ins.length + i), cap: capR })], vars: vr }),
-    ST({ h: 'Write the new values, fix the length', p: 'The inserted values are written, anything vacated at the end is cleared (the unused bits must stay zero, because <code>count</code> and equality rely on that), the length is updated and the string representation is invalidated.', src: 'bitarray.c: BAReplace, ClearBits', frames: f6, slot: 'updateString', heap: [orig(), cp(R, { chg: insIdx, cap: capR })], vars: vr }),
+    ST({ h: 'Slide the tail', p: `The elements after the deleted range move to their new position. For 1-bit arrays <code>MoveElems</code> does this a whole word at a time (each output word is built from two input words with a shift). The new length is ${R.length}, so the tail moves ${ins.length > del ? 'right' : ins.length < del ? 'left' : 'by zero'}.${vac ? ` The ${vac} element${vac === 1 ? '' : 's'} at the end (shown in red) ${vac === 1 ? 'is' : 'are'} only read, not changed, so ${vac === 1 ? 'it still holds its' : 'they still hold their'} old value${vac === 1 ? '' : 's'} for now; the length has not changed yet.` : ''}`, src: 'bitarray.c: MoveElems', frames: f5, slot: 'replaceProc', heap: [orig(), cp(gapOld, { chg: tail.map((_, i) => f + ins.length + i), vac: vacIdx, cap: capR })], vars: vr }),
+    ST({ h: 'Write the new values, fix the length', p: 'The inserted values are written, anything vacated at the end is zeroed (the unused bits must stay zero, because <code>count</code> and equality rely on that), the length is set to the new, shorter value so those elements are no longer part of the array, and the string representation is invalidated.', src: 'bitarray.c: BAReplace, ClearBits', frames: f6, slot: 'updateString', heap: [orig(), cp(R, { chg: insIdx, cap: capR })], vars: vr }),
     ST({ h: 'The command result', p: 'The copy is the result. The original array is unchanged, so <code>a</code> still has its old contents; assign the result back (<code>set a [lreplace …]</code>) to keep it.', src: '', frames: f6, heap: [orig(), mk('2', R, { who: 'r', rc: 1, cap: capR })], vars: [...vr, { n: 'r', id: '2', ch: true }], res: 'r = ' + fmtStr(R), resLbl: 'now' })
   ];
 }, SH);
@@ -2153,11 +2165,12 @@ scene('foreach', 'foreach', () => ['foreach e $a { … }'], noP, (W, P, S) => {
   const it = (i) => [F('s', 'INST_FOREACH_STEP', 'iteration ' + i), F('c', 'Tcl_ListObjIndex', 'no element array was made'), F('h', `BAIndex(obj, ${i})`)];
   const ch = (i) => [{ n: 'a', id: '1' }, { n: 'e', id: '1', txt: 'e = ' + A[i], ch: true }];
   return [
-    ST({ h: 'The loop does not expand the list', p: 'When the list has an <code>indexProc</code> the compiled <code>foreach</code> asks for the length once and does not ask for all elements. It remembers there is no element array and fetches elements one at a time.', src: 'tclExecute.c: INST_FOREACH_START / STEP', frames: f1, slot: 'lengthProc', heap: [a()], vars: vr }),
-    ST({ h: 'Iteration 0', p: 'One call to BAIndex gives the first element (a shared 0 or 1 object for bits). The loop variable <code>e</code> is set to it.', src: 'bitarray.c: BAIndex', frames: it(0), slot: 'indexProc', heap: [a([0])], vars: ch(0), res: 'e = ' + A[0], resLbl: 'body sees' }),
-    ST({ h: 'Iteration 1', p: 'The next call asks for index 1. Each iteration is one hook call, and no per-element memory is kept.', src: '', frames: it(1), slot: 'indexProc', heap: [a([1])], vars: ch(1), res: 'e = ' + A[1], resLbl: 'body sees' }),
-    ST({ h: 'Iteration 2, and so on', p: 'This continues up to index 15. Compare <code>join</code> in the next menu entry, which does build an element array.', src: '', frames: it(2), slot: 'indexProc', heap: [a([2])], vars: ch(2), res: 'e = ' + A[2], resLbl: 'body sees' }),
-    ST({ h: 'After the loop', p: 'The array is untouched: no element cache, no string, same refcount. A loop over a bitarray therefore costs one cheap hook call per element.', src: '', frames: [F('r', 'loop finished after 16 hook calls')], slot: null, heap: [a()], vars: vr })
+    ST({ h: 'The loop does not expand the list', p: 'When the list has an <code>indexProc</code> hook the compiled <code>foreach</code> asks for the length once and does not ask for all elements. It remembers there is no element array and fetches elements one at a time.', src: 'tclExecute.c: INST_FOREACH_START / STEP', frames: f1, slot: 'lengthProc', heap: [a()], vars: vr }),
+    ST({ h: 'Iteration 0', p: 'One call to BAIndex gives the first element (a shared 0 or 1 object for bits). The loop variable <code>e</code> is set to it.', src: 'bitarray.c: BAIndex', frames: it(0), slot: 'indexProc', heap: [a([0])], vars: ch(0), res: 'e = ' + A[0], resLbl: 'the loop body sees' }),
+    ST({ h: 'Iteration 1', p: 'The next call asks for index 1. Each iteration is one hook call, and no per-element memory is kept.', src: '', frames: it(1), slot: 'indexProc', heap: [a([1])], vars: ch(1), res: 'e = ' + A[1], resLbl: 'the loop body sees' }),
+    ST({ h: 'Iteration 2', p: 'The same again for index 2.', src: '', frames: it(2), slot: 'indexProc', heap: [a([2])], vars: ch(2), res: 'e = ' + A[2], resLbl: 'the loop body sees' }),
+    ST({ h: 'And so on, to the last element', p: `The loop goes on like this for every index (skipping ahead to the last one, index ${A.length - 1}, for brevity). Compare <code>join</code> in the next menu entry, which does build an element array.`, src: '', frames: it(A.length - 1), slot: 'indexProc', heap: [a([A.length - 1])], vars: ch(A.length - 1), res: 'e = ' + A[A.length - 1], resLbl: 'the loop body sees' }),
+    ST({ h: 'After the loop', p: 'The array is untouched: no element cache, no string, same refcount. A loop over a bitarray therefore costs one cheap hook call per element.', src: '', frames: [F('r', `loop finished after ${A.length} BAIndex hook calls`)], slot: null, heap: [a()], vars: vr })
   ];
 });
 
@@ -2166,14 +2179,14 @@ scene('in', 'in', (W, P) => [`expr {${P.v} in $a}`], W => [valP(W, W === 1 ? 1 :
   const A = BASE[W], v = P.v, hit = A.indexOf(v), found = hit >= 0, vr = [{ n: 'a', id: '1' }];
   const a = (hl) => O('1', A, { who: 'a', hl: hl || [] });
   const f1 = [F('s', `${v} in $a`, 'compiled: INST_LIST_IN'), F('c', 'TclGetStringFromObj(value)', 'only the value\'s string, not the array\'s')];
-  const f2 = [...f1, F('c', 'TclObjTypeInOperator', 'the object has an inOperProc'), F('h', 'BAInOper')];
+  const f2 = [...f1, F('c', 'TclObjTypeInOperator', 'the object has an inOperProc hook'), F('h', 'BAInOper')];
   const f3 = [...f2, F('h', W === 1 ? 'CountRange(0, len-1)' : 'NextWide(b, 0, 0, value)', W === 1 ? 'count the set bits a word at a time' : 'scan the bytes for the value')];
   const res = found ? '1 (true)' : '0 (false)';
   return [
-    ST({ h: 'in checks for the hook first', p: 'A normal list would be searched by converting it to a string or elements. The core checks for an <code>inOperProc</code>; this type has one.', src: 'tclExecute.c: INST_LIST_IN', frames: f1, slot: 'inOperProc', heap: [a()], vars: vr }),
+    ST({ h: 'in checks for the hook first', p: 'A normal list would be searched by converting it to a string or elements. The core checks for an <code>inOperProc</code> hook; this type has one.', src: 'tclExecute.c: INST_LIST_IN', frames: f1, slot: 'inOperProc', heap: [a()], vars: vr }),
     ST({ h: 'BAInOper', p: W === 1 ? `For 1-bit arrays the answer needs no scan of elements: is ${v} present? A 1 is present if the population count of the words is above 0; a 0 is present if the count is below the length. The value must be exactly the text <code>0</code> or <code>1</code>.` : 'The value is parsed for the width and written back in its canonical decimal spelling; it matches only if that spelling equals the text you gave (so <code>007</code> does not match 7, as with a list).', src: 'bitarray.c: BAInOper', frames: f2, slot: 'inOperProc', heap: [a()], vars: vr }),
-    ST({ h: W === 1 ? 'Count the bits' : 'Scan for the value', p: W === 1 ? `The words are counted with a popcount (CountRange): ${A.filter(x => x === 1).length} of 16 bits are 1.` : (found ? `NextWide scans for ${v} and finds it at index ${hit}.` : `NextWide scans all 16 bytes and does not find ${v}.`), src: 'bitarray.c: CountRange / NextWide', frames: f3, slot: 'inOperProc', heap: [a(W === 1 ? A.map((x, i) => i) : (found ? [hit] : []))], vars: vr }),
-    ST({ h: 'Result', p: 'The hook stores 0 or 1 in the result. The array was not changed and no string was made.', src: '', frames: [...f3, F('r', res)], slot: null, heap: [a(found && W !== 1 ? [hit] : [])], vars: vr, res: res, resLbl: `${v} in $a` })
+    ST({ h: W === 1 ? 'Count the bits' : 'Scan for the value', p: W === 1 ? `The words are counted with a popcount (CountRange): ${A.filter(x => x === 1).length} of 16 bits are 1.` : (found ? `NextWide scans for ${v} and finds it at index ${hit}.` : `NextWide scans all 16 bytes and does not find ${v}.`), src: 'bitarray.c: CountRange / NextWide', frames: f3, slot: 'inOperProc', heap: [a(W === 1 ? A.map((x, i) => i) : (found ? [hit] : []))], vars: vr, res: res, resLbl: 'BAInOper returns via *resPtr' }),
+    ST({ h: 'Result', p: 'The hook stored 0 or 1 through <code>*resPtr</code>, and the core pushes that as the value of <code>in</code>. The array was not changed and no string was made.', src: '', frames: [...f3, F('r', res)], slot: null, heap: [a(found && W !== 1 ? [hit] : [])], vars: vr, res: res, resLbl: `${v} in $a returns` })
   ];
 });
 
@@ -2181,15 +2194,15 @@ scene('in', 'in', (W, P) => [`expr {${P.v} in $a}`], W => [valP(W, W === 1 ? 1 :
 scene('join', 'join', () => ['join $a ,'], noP, (W, P, S) => {
   const A = BASE[W], vr = [{ n: 'a', id: '1' }];
   const a = (o) => O('1', A, Object.assign({ who: 'a' }, o || {}));
-  const f1 = [F('s', 'join $a ,', 'Tcl_JoinObjCmd'), F('c', 'TclObjTypeGetElements', 'tclCmdIL.c: the object has a getElementsProc'), F('h', 'BAGetElements')];
-  const f2 = [...f1, F('h', 'Tcl_AttemptAlloc(16 pointers)', 'the element cache')];
+  const f1 = [F('s', 'join $a ,', 'Tcl_JoinObjCmd'), F('c', 'TclObjTypeGetElements', 'tclCmdIL.c: the object has a getElementsProc hook'), F('h', 'BAGetElements')];
+  const f2 = [...f1, F('h', `Tcl_AttemptAlloc(${A.length} pointers)`, 'the element cache: one pointer per element, however long the array is')];
   const f3 = [...f2, F('h', W === 1 ? 'GETBIT(b, i) ? b->one : b->zero' : 'ElemObj(b, GetElem(b, i))', W === 1 ? 'every entry is the shared 0 or 1 object: no allocation per element' : 'a new integer object for each value other than 0 and 1')];
-  const f4 = [...f3, F('r', 'objc = 16, objv = the cache'), F('c', 'join builds its result string')];
+  const f4 = [...f3, F('r', `objc = ${A.length}, objv = the cache`), F('c', 'join builds its result string')];
   return [
-    ST({ h: 'Some commands need every element at once', p: '<code>join</code>, <code>lsort</code>, <code>{*}$a</code>, a command call with the list expanded and a few others want a C array of all the element objects. Those use the <code>getElementsProc</code>.', src: 'tclCmdIL.c: Tcl_JoinObjCmd; tclListObj.c: Tcl_ListObjGetElements', frames: f1, slot: 'getElementsProc', heap: [a()], vars: vr }),
-    ST({ h: 'Build the element array once', p: 'The hook allocates an array of 16 object pointers, which it keeps inside the array value as a cache. This costs memory proportional to the length (8 bytes per element, plus the objects).', src: 'bitarray.c: BAGetElements', frames: f2, slot: 'getElementsProc', heap: [a({ cache: true })], vars: vr }),
+    ST({ h: 'Some commands need every element at once', p: '<code>join</code>, <code>lsort</code>, <code>{*}$a</code>, a command call with the list expanded and a few others want a C array of all the element objects. Those use the <code>getElementsProc</code> hook.', src: 'tclCmdIL.c: Tcl_JoinObjCmd; tclListObj.c: Tcl_ListObjGetElements', frames: f1, slot: 'getElementsProc', heap: [a()], vars: vr }),
+    ST({ h: 'Build the element array once', p: `The hook allocates an array with one object pointer per element (${A.length} here; a 1,000,000-element array would get 1,000,000 pointers) and keeps it inside the array value as a cache. That is 8 bytes per element on a 64-bit machine${W === 1 ? ', and nothing more, because every entry will point to one of two shared objects' : ', plus one integer object for every element other than 0 and 1'}.`, src: 'bitarray.c: BAGetElements', frames: f2, slot: 'getElementsProc', heap: [a({ cache: true })], vars: vr }),
     ST({ h: 'Fill it', p: W === 1 ? 'For bits every pointer is one of the two shared objects, so nothing is allocated per element.' : 'For wider elements each value other than 0 and 1 becomes its own integer object, held by the cache.', src: 'bitarray.c: BAGetElements, ElemObj', frames: f3, slot: 'getElementsProc', heap: [a({ cache: true, hl: A.map((_, i) => i) })], vars: vr }),
-    ST({ h: 'The cache stays until the array changes', p: 'A second <code>join</code> reuses the cache. Any change (<code>lset</code>, <code>fill</code>, a bitwise operation) calls Touch, which frees the cache and invalidates the string.', src: 'bitarray.c: Touch, FreeElems', frames: f4, slot: null, heap: [a({ cache: true })], vars: vr, res: fmtStr(A).split(' ').join(','), resLbl: 'join' })
+    ST({ h: 'The cache stays until the array changes', p: 'A second <code>join</code> reuses the cache. Any change (<code>lset</code>, <code>fill</code>, a bitwise operation) calls Touch, which frees the cache and invalidates the string.', src: 'bitarray.c: Touch, FreeElems', frames: f4, slot: null, heap: [a({ cache: true })], vars: vr, res: fmtStr(A).split(' ').join(','), resLbl: 'join returns' })
   ];
 });
 
@@ -2202,10 +2215,10 @@ scene('puts', 'puts (string)', () => ['puts $a', 'lset a 4 …'], noP, (W, P, S)
   const f2 = [...f1, F('c', 'type->updateStringProc'), F('h', 'BAUpdateString')];
   const f3 = [...f2, F('r', `"${str.slice(0, 22)}…"`)];
   return [
-    ST({ cmd: 0, h: 'A string is built only when someone asks', p: 'The array has no string representation. When a command needs text, the core calls the type\'s <code>updateStringProc</code>. The array stays a bitarray: this is a cache, not a conversion.', src: 'tclObj.c: Tcl_GetString', frames: f1, slot: 'updateString', heap: [a()], vars: vr }),
+    ST({ cmd: 0, h: 'A string is built only when someone asks', p: 'The array has no string representation. When a command needs text, the core calls the type\'s <code>updateStringProc</code> hook. The array stays a bitarray: this is a cache, not a conversion.', src: 'tclObj.c: Tcl_GetString', frames: f1, slot: 'updateString', heap: [a()], vars: vr }),
     ST({ cmd: 0, h: 'BAUpdateString', p: W === 1 ? 'For bits the text is built directly: a 0 or 1 and a space per element, 2 × length − 1 bytes.' : 'For wider elements each value is formatted as decimal and joined with spaces.', src: 'bitarray.c: BAUpdateString', frames: f2, slot: 'updateString', heap: [a({ hl: A.map((_, i) => i) })], vars: vr }),
-    ST({ cmd: 0, h: 'The string is cached', p: 'The text is stored on the object. A second <code>puts</code> costs nothing. Note that a long array makes a long string (about 2 bytes per bit-element), which is one reason to avoid asking for it needlessly.', src: '', frames: f3, slot: null, heap: [a({ str })], vars: vr, res: str, resLbl: 'puts' }),
-    ST({ cmd: 1, h: 'A change throws the string away', p: '<code>lset</code> calls Touch, which invalidates the string (and the element cache). The next <code>puts</code> builds the string again from the changed words.', src: 'bitarray.c: BASetElement, Touch', frames: [F('s', 'lset a 4 …'), F('h', 'BASetElement → Touch', 'Tcl_InvalidateStringRep')], slot: 'updateString', heap: [a({ vals: B, chg: [4], str: null })], vars: vr })
+    ST({ cmd: 0, h: 'The string is cached', p: 'The text is stored on the object. A second <code>puts</code> costs nothing. Note that a long array makes a long string (about 2 bytes per bit-element), which is one reason to avoid asking for it needlessly.', src: '', frames: f3, slot: null, heap: [a({ str })], vars: vr, res: str, resLbl: 'puts prints' }),
+    ST({ cmd: 1, h: 'A change throws the string away', p: '<code>lset</code> calls <code>BASetElement</code> (the <code>setElementProc</code> hook), which calls <code>Touch</code>. <code>Touch</code> invalidates the string (and frees the element cache). The next <code>puts</code> builds the string again from the changed words.', src: 'bitarray.c: BASetElement, Touch', frames: [F('s', 'lset a 4 …'), F('h', 'BASetElement → Touch', 'Tcl_InvalidateStringRep')], slot: 'updateString', heap: [a({ vals: B, chg: [4], str: null })], vars: vr })
   ];
 });
 
@@ -2274,7 +2287,7 @@ scene('queue', 'a queue of bits', (W, P) => [`lset q end+1 ${P.v}`, 'lindex $q 0
   return [
     ST({ cmd: 0, h: 'Enqueue: lset q end+1', p: `A queue of ${W === 1 ? 'bits' : 'small numbers'} adds at the back and removes at the front. Adding with <code>lset q end+1 ${v}</code> is an <code>lset</code> whose index equals the length, which the set-element hook treats as an append.`, src: 'bitarray.c: BASetElement', frames: f1, slot: 'setElementProc', heap: [q(Q0)], vars: vr }),
     ST({ cmd: 0, h: 'The append is done in place', p: 'The array is not shared, so BAReplace appends to the same storage: the new element is written after the last one. It grows the allocation (doubling) only when the words are full, so over many appends the cost per enqueue is small and constant. A 64-element bit queue needs one word.', src: 'bitarray.c: BAReplace', frames: f2, slot: 'replaceProc', heap: [q(Q1, { chg: [Q1.length - 1] })], vars: vr }),
-    ST({ cmd: 1, h: 'Peek at the front', p: 'Reading the first element is one BAIndex call, as in the earlier entries. It does not remove anything.', src: 'bitarray.c: BAIndex', frames: f3, slot: 'indexProc', heap: [q(Q1, { hl: [0] })], vars: vr, res: String(Q1[0]), resLbl: 'front' }),
+    ST({ cmd: 1, h: 'Peek at the front', p: 'Reading the first element is one BAIndex call, as in the earlier entries. It does not remove anything.', src: 'bitarray.c: BAIndex', frames: f3, slot: 'indexProc', heap: [q(Q1, { hl: [0] })], vars: vr, res: String(Q1[0]), resLbl: 'lindex returns' }),
     ST({ cmd: 2, h: 'Dequeue: lrange q 1 end', p: 'Removing the front element is done by slicing from index 1. For a bitarray that is a new array, so the hook allocates one and copies everything after the first element.', src: 'tclExecute.c: INST_LIST_RANGE_IMM; bitarray.c: BASlice', frames: f4, slot: 'sliceProc', heap: [q(Q1, { hl: Q1.map((_, i) => i).slice(1), gone: [0] })], vars: vr }),
     ST({ cmd: 2, h: 'Every remaining element is copied', p: W === 1 ? `The slice starts at bit 1, which is not on a word boundary, so each result word is built from a 64-bit read at that offset. It is one step per 64 elements, but it is still proportional to the queue length.` : 'The slice is one block copy of the remaining bytes. It is proportional to the queue length.', src: 'bitarray.c: BASlice, GetBits', frames: f5, slot: 'sliceProc', heap: [q(Q1, { gone: [0] }), O('2', Q2, { raw: true, rc: 0, chg: Q2.map((_, i) => i) })], vars: vr }),
     ST({ cmd: 2, h: 'The new array replaces the old one', p: 'q now points to the new array and the old object\'s refcount drops to 0, so the core frees it (BAFree). A plain Tcl list does the same dequeue by moving a start pointer, without copying, which is why a plain list is faster for a long queue (see <code>performance_analysis.md</code>, section 6). The bitarray is 64 times smaller for bits and its enqueue stays fast, so it wins where memory matters or the queue stays short.', src: 'bitarray.c: BAFree', frames: f6, slot: 'free', heap: [q(Q2, { chg: [] })], vars: [{ n: 'q', id: '1', ch: true }], res: 'q = ' + fmtStr(Q2), resLbl: 'now' })
@@ -2312,8 +2325,8 @@ function current() {
   built.forEach(t => {
     const hold = o => ST(Object.assign({ cmd: t.cmd, heap: prevState.heap, vars: prevState.vars, res: prevState.res, resLbl: prevState.resLbl, lead: true }, o));
     if (t.cmd !== lastCmd) {
-      out.push(hold(lastCmd === -1 ? { cmd: t.cmd, frames: [], h: 'The script line', p: 'This is the line to run: <code>' + esc(tcl[t.cmd]) + '</code>. The next step compiles it to bytecode.' }
-        : { frames: [], h: 'Next script line', p: 'The script moves on to the next line: <code>' + esc(tcl[t.cmd]) + '</code>. It is added to the call history.' }));
+      /* only the first command gets a step of its own; for a later one the 'script calls it' step already shows the new statement */
+      if (lastCmd === -1) out.push(hold({ cmd: t.cmd, frames: [], h: 'The script line', p: 'This is the line to run: <code>' + esc(tcl[t.cmd]) + '</code>. The next step compiles it to bytecode.' }));
       prevFrames = []; lastCmd = t.cmd;
     }
     let p = 0;
@@ -2333,7 +2346,8 @@ function history(steps, upto, tcl) {
   let prev = [], lastCmd = -1, n = 1;
   for (let i = 0; i <= upto; i++) {
     const t = steps[i];
-    if (!t.start && t.cmd !== lastCmd) { ent.push({ n: n++, k: 's', t: tcl[t.cmd], s: 'the script line', i }); lastCmd = t.cmd; prev = []; }
+    /* a later command has no step of its own, its 's' frame is the entry */
+    if (!t.start && t.cmd !== lastCmd) { if (lastCmd === -1) ent.push({ n: n++, k: 's', t: tcl[t.cmd], s: 'the script line', i }); lastCmd = t.cmd; prev = []; }
     let p = 0;
     while (p < prev.length && p < t.frames.length && sameFrame(prev[p], t.frames[p])) p++;
     for (let j = p; j < t.frames.length; j++) ent.push(Object.assign({ n: n++, i }, t.frames[j]));
@@ -2354,6 +2368,7 @@ function renderHeap(o) {
     if (o.hl.includes(i)) c.push('hl');
     if (o.chg.includes(i)) c.push('chg');
     if (o.gone.includes(i)) c.push('gone');
+    if (o.vac.includes(i)) c.push('vac');
     cellArr.push(`<div class="${c.join(' ')}"><small>${i}</small>${x}</div>`);
   });
   let cells = cellArr.join('');
@@ -2375,7 +2390,7 @@ function renderHeap(o) {
     let words = ws.map((x, k) => `<span>word ${k} = <b>${hex(x)}</b></span>`).join('');
     for (let k = ws.length; k < cap; k++) words += `<span>word ${k} = <b>${hex(0n)}</b> <span>(spare capacity, always 0)</span></span>`;
     body = `<div class="alloc">` +
-      `<div class="ablock">${hdr}<div class="bdata"><div class="atag">one block from one allocation: the header, then the words, side by side (no separate pointer to the data). Element i is bit (i mod 64), counted from the least significant bit, of word (i / 64). The hex is the word as a number, so it reads the same on big- and little-endian machines; only the byte order in memory differs, and the code never depends on it.</div>${W === 1 ? cells : `<div class="cells">${cells}</div>`}<div class="words">${words}</div></div></div></div>`;
+      `<div class="ablock">${hdr}<div class="bdata"><div class="atag">one block from one allocation: the header, then the words, side by side (no separate pointer to the data). ${W === 1 ? 'Element i is bit (i mod 64), counted from the least significant bit, of word (i / 64).' : 'Element i is byte (i mod 8), counted from the least significant byte, of word (i / 8): eight 8-bit elements to a word.'} The hex is the word as a number, so it reads the same on big- and little-endian machines; only the byte order in memory differs, and the code never depends on it.</div>${W === 1 ? cells : `<div class="cells">${cells}</div>`}<div class="words">${words}</div></div></div></div>`;
   } else {
     body = `<div class="cells">${cells}</div><div class="words"><span>a plain list: ${o.vals.length} separate element objects, 8 bytes each in the list plus the objects themselves</span></div>`;
   }
@@ -2411,10 +2426,11 @@ function render() {
   /* memory */
   $('vars').innerHTML = t.vars.length ? t.vars.map(v => `<span class="var${v.ch ? ' ch' : ''}">${v.txt ? esc(v.txt) : v.n + ' → #' + v.id}</span>`).join('') : '<span class="var" style="opacity:.6">no variables yet</span>';
   $('heap').innerHTML = t.heap.length ? t.heap.map(renderHeap).join('') : '<div class="oh">nothing allocated yet</div>';
-  const stmt = t.cmd >= 0 ? tcl[t.cmd] : tcl[0];
-  $('stmt').innerHTML = `<small>${t.cmd >= 0 ? 'statement being run' : 'statement to run'}</small>${esc(stmt)}`;
+  /* several commands are shown as one script line, the one being run marked */
+  const stmt = tcl.length > 1 ? tcl.map((l, i) => i === t.cmd ? `<mark>${esc(l)}</mark>` : esc(l)).join(' ; ') : esc(tcl[0]);
+  $('stmt').innerHTML = `<small>${t.cmd >= 0 ? 'statement being run' : 'statement to run'}</small>${stmt}`;
   $('res').className = 'res' + (t.res ? ' got' : '');
-  $('res').innerHTML = t.res ? `<small>${esc(t.resLbl)}</small>${esc(t.res)}` : '<small>result</small>—';
+  $('res').innerHTML = t.res ? `<small>${esc(t.resLbl)}:</small>${esc(t.res)}` : '<small>result</small>—';
   /* caption */
   $('cap-h').textContent = t.h; $('cap-p').innerHTML = t.p; $('cap-s').textContent = t.src ? 'Source: ' + t.src : '';
   const lastStep = step === steps.length - 1, moreCmds = sc < SCENES.length - 1;
@@ -2532,15 +2548,18 @@ function renderCode() {
   let { names, focus, core } = fnsForStep(t);
   if (codeForce) { names = codeForce.filter(n => FUNCS[n]); focus = []; core = null; }
   { const key = sc + ':' + step; if (key !== stackKey) { codeStack = []; stackKey = key; codeHit = null; codeMark = null; } }
+  const seq = (!codeForce && t.seq) ? t.seq.filter(x => FUNCS[x[0]]) : null;
+  if (seq && seq.length > 1) names = seq.map(x => x[0]);
   lastNames = names.slice();
   lastTitle = codeForce ? codeForceTitle : (step === 0 ? 'Code for the start' : 'Code for step ' + step) + ': ' + t.h;
   $('code-h').textContent = codeForce ? codeForceTitle : (step === 0 ? 'Code for the start' : 'Code for step ' + step) + ': ' + t.h;
-  if (!names.length) { $('ctabs').innerHTML = ''; $('codepre').innerHTML = core ? `<span class="ln com"><i></i>The newest history entry, "${esc(core.t)}"${core.s ? ' (' + esc(core.s) + ')' : ''}, runs in Tcl itself (the script or the core), not in this extension, so there is no bitarray.c code to show for it. Press Next step to continue.</span>` : '<span class="ln com"><i></i>There is no bitarray.c code for this step.</span>'; }
+  if (!names.length) { $('ctabs').classList.remove('seq'); $('ctabs').innerHTML = ''; $('codepre').innerHTML = core ? `<span class="ln com"><i></i>The newest history entry, "${esc(core.t)}"${core.s ? ' (' + esc(core.s) + ')' : ''}, runs in Tcl itself (the script or the core), not in this extension, so there is no bitarray.c code to show for it. Press Next step to continue.</span>` : '<span class="ln com"><i></i>There is no bitarray.c code for this step.</span>'; }
   else {
     if (codeStep !== step + (codeForce ? 0.5 : 0) || !names.includes(codeTab)) codeTab = names[0];
     codeStep = step + (codeForce ? 0.5 : 0);
     if (codeWant && names.includes(codeWant)) codeTab = codeWant; codeWant = null;
-    $('ctabs').innerHTML = names.map(n => `<button data-n="${n}" aria-pressed="${n === codeTab}">${n}</button>`).join('');
+    $('ctabs').classList.toggle('seq', !!(seq && seq.length > 1));
+    $('ctabs').innerHTML = (seq && seq.length > 1) ? seq.map(x => `<button class="${x[2] ? 'ind' : ''}" data-n="${x[0]}" aria-pressed="${x[0] === codeTab}">${x[3] ? '<b>' + x[3] + ':</b> ' : ''}${x[0]} <em>${x[1]}</em></button>`).join('') : names.map(n => `<button data-n="${n}" aria-pressed="${n === codeTab}">${n}</button>`).join('');
     const f = FUNCS[codeTab];
     /* One line is highlighted: the first line that calls (or defines) the step's function; failing that, the first line that mentions one of its names. */
     const wordRe = n => new RegExp('\\b' + n + '\\b'), callRe = n => new RegExp('\\b' + n + '\\(');
@@ -2548,12 +2567,20 @@ function renderCode() {
     for (const n of focus) { hitK = f.lines.findIndex(l => callRe(n).test(l)); if (hitK >= 0) break; }
     if (hitK < 0) for (const n of focus) { hitK = f.lines.findIndex(l => wordRe(n).test(l)); if (hitK >= 0) break; }
     if (codeHit && codeHit.tab === codeTab && codeHit.k >= 0) hitK = codeHit.k;
+    /* a combined step: the parent function is shown with the calls it is about to make, and its return */
+    let hitSet = null, retK = -1;
+    if (seq && seq.length > 2 && !codeHit && codeTab === seq[0][0]) {
+      const kids = seq.slice(1).map(x => f.lines.findIndex(l => new RegExp('^\\s*' + x[0] + '\\(').test(l)));
+      let r = -1; f.lines.forEach((l, k) => { if (/^\s*return\b/.test(l)) r = k; });
+      if (kids.every(k => k >= 0) && r > Math.max(...kids)) { const ret = t.seqHit === 'ret'; hitSet = ret ? [r] : kids; retK = ret ? r : -1; hitK = kids[0]; }
+    }
     let inCom = false;
     $('codepre').innerHTML = f.lines.map((l, k) => {
       let cls = 'ln';
       if (/^\s*\/?\*/.test(l) || inCom) cls += ' com';
       if (/\/\*/.test(l) && !/\*\//.test(l)) inCom = true; if (/\*\//.test(l)) inCom = false;
-      if (k === hitK) cls += ' hit';
+      if (hitSet ? hitSet.includes(k) : k === hitK) cls += ' hit';
+      if (k === retK) cls += ' ret';
       const mk = codeMark && codeMark.tab === codeTab && codeMark.k === k ? codeMark : null;
       const body = mk ? esc(l.slice(0, mk.col)) + '<mark class="clicked">' + esc(l.slice(mk.col, mk.col + mk.len)) + '</mark>' + esc(l.slice(mk.col + mk.len)) : esc(l);
       return `<span class="${cls}" data-k="${k}"><i>${f.a + k}</i>${body}</span>`;
@@ -2561,7 +2588,8 @@ function renderCode() {
     const pre = $('codepre');
     const mEl = pre.querySelector('mark.clicked');
     if (mEl) pre.scrollTop = Math.max(0, mEl.parentElement.offsetTop - pre.clientHeight / 3);
-    else if (hitK >= 0) { const el = pre.querySelector(`[data-k="${hitK}"]`); pre.scrollTop = Math.max(0, el.offsetTop - 4); } else pre.scrollTop = 0;
+    else if (hitK > 14) { const el = pre.querySelector(`[data-k="${hitK}"]`); pre.scrollTop = Math.max(0, el.offsetTop - 4); }   /* a hit near the top: show the whole start, so the comment above the function is seen */
+    else pre.scrollTop = 0;
   }
   $('b-back').textContent = codeStack.length ? '← Back (' + codeStack.length + ')' : '← Back';
   $('b-back').title = codeStack.length ? 'return to the previous code (Backspace)' : 'nothing to go back to: resume the simulator (Backspace)';
@@ -2572,7 +2600,8 @@ function setCode(on) {
   codeOpen = on; if (!on) { codeForce = null; codeStack = []; codeHit = null; codeMark = null; }
   $('codeview').hidden = !on; $('sim').style.display = on ? 'none' : 'flex';
   $('b-code').textContent = on ? 'Resume' : 'Show code';
-  if (on) renderCode(); else toMemory();
+  /* on resume render again, so the button turns green if this step has code to show */
+  if (on) renderCode(); else { render(); toMemory(); }
 }
 $('b-code').onclick = () => setCode(!codeOpen);
 $('heap').addEventListener('click', e => { if (!e.target.closest('.showstruct')) return; stop(); codeStack = []; codeHit = null; codeForce = ['BitArr', 'NewRep', 'WrapRep']; codeForceTitle = 'Code: the BitArr block, its allocation and its wrapper'; setCode(true); $('codeview').scrollIntoView({ block: 'nearest' }); });
