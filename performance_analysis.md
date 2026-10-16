@@ -118,7 +118,7 @@ All five rows at the three sizes are in the saved benchmark output, and the benc
 | `0 in $X` (miss: every element is 1) | 4,084 | 9.58 | 20.6 | 426x | 199x |
 | `2 in $X` (a value the array cannot hold) | 2,996 | 0.34 | 20.8 | no ratio | no ratio |
 
-The last row has no ratio on purpose: a 1-bit array answers at once for a value it cannot hold, so the comparison would only measure that shortcut (the 8-bit column does scan). On Windows, 2,000,000 elements, the same rows gave 12x for the two early hits and 312x and 306x for the two full scans (`extras/windows_0.7.0_run.txt`).
+The last row has no ratio on purpose: a 1-bit array answers at once for a value it cannot hold, so the comparison would only measure that shortcut (the 8-bit column does scan). On Windows, 2,000,000 elements, the same rows gave 9x and 13x for the two early hits and 277x and 318x for the two full scans (`extras/windows_0.7.0_run.txt`).
 
 ## 5. What it does differently from a list
 

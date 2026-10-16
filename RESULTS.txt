@@ -500,4 +500,6 @@ arrays only it is still true of the 1-bit code, which 0.3 keeps (the 66 old test
    columns of "lsearch -exact (hit at 0, warm)": the benchmark's first timed call built the element list, so the repeat count came out as 1 or 2
    and the 1 us clock read 0 or 0.5.  listbench.tcl now makes one untimed call before estimating and before each timed run (that row reads about
    0.22 us on Linux, like a plain list); the other rows keep their values.  performance_analysis.md has the new `in` rows and says 0.7.0.
+   The owner then reran everything on Windows with the final files (extras/windows_0.7.0_run.txt, replacing the first run): 282 tests, 281 passed,
+   1 skipped, 0 failed; sieve PASS; the warm lsearch row reads 0.21 us in every column (ratio 0.99x).
    No change to bitarray.c, so the 206-mutant run stands.

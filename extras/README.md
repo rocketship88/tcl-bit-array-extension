@@ -34,7 +34,7 @@ Development material; none of it is needed to build or use the extension.
 
 * `windows_0.6.0_run.txt` — the output of build, tests, sieve and a `listbench.tcl` ratios run (`-rat -sizes 1000000 -sort best1`) for 0.6.0 on one Windows machine, as the repository owner pasted it (line endings normalised).
 
-* `windows_0.7.0_run.txt` — build, tests (282, 281 passed, 1 skipped), sieve and `listbench.tcl -sort best1 -sizes 2000000 -v` for 0.7.0 on the same Windows machine (Visual Studio 2022, Tcl 9.1.1), as the repository owner pasted it. In it the row `lsearch -exact (hit at 0, warm)` reads 0.0 for the bitarray columns: a measuring flaw in that version of `listbench.tcl` (the first call, which builds the element list, made the repeat count tiny, and the clock has 1 us ticks); it is fixed in the `listbench.tcl` that comes with this file.
+* `windows_0.7.0_run.txt` — build, tests (282, 281 passed, 1 skipped), sieve and `listbench.tcl -sort best1 -sizes 2000000 -v` for 0.7.0 on the same Windows machine (Visual Studio 2022, Tcl 9.1.1), as the repository owner pasted it (the second run, with the final `listbench.tcl`: an earlier run with the first 0.7.0 `listbench.tcl` showed 0.0 for the bitarray columns of `lsearch -exact (hit at 0, warm)`, a measuring flaw described in `RESULTS.txt`, section 18; here that row reads 0.21).
 
 * `windows_0.6.0_listbench.txt` — `listbench.tcl -rat -sizes 2000000 -sort best1` on the same Windows machine with the repaired same-answer check.
 
