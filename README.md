@@ -84,9 +84,8 @@ Expected last line of the tests: `bitarray.test:	Total	282	Passed	282	Skipped	0	
 
 ### On Windows (Visual Studio 2022)
 
-`build.bat`, `run_tests.bat` and `run_sieves.bat` do the same three jobs with Microsoft Visual C. They have been run, by
-the repository owner, on two 64-bit Windows 10 machines (versions 1903 and 22H2) with Visual Studio 2022 and a Tcl 9.1.1 built from trunk: the build gave no warnings,
-the tests passed (version 0.3: 133 passed, 1 skipped; version 0.4, on both: 183 passed, 1 skipped; version 0.5, which adds the byte and character conversions: 221 passed, 1 skipped, on both) and the sieve passed. Version 0.5.1 also passed the tests and the sieve on Windows (reported by the repository owner; the output was not saved). Version 0.6.0 also passed on Windows (one 64-bit machine, Visual Studio 2022, Tcl 9.1.1): no build warnings, `Total 259  Passed 258  Skipped 1  Failed 0`, the sieve passed, and `listbench.tcl` ran (its same-answer check was incomplete in that version and has since been repaired, see `RESULTS.txt` section 17; the repaired one also passed there, 37 operations compared); the outputs are saved in `extras/windows_0.6.0_run.txt` and `extras/windows_0.6.0_listbench.txt`. A 32-bit build and other Visual Studio versions are untried.
+`build.bat`, `run_tests.bat` and `run_sieves.bat` do the same three jobs with Microsoft Visual C. Version 0.7.0 has been built and run on Windows by the repository owner (a 64-bit machine, Visual Studio 2022, Tcl 9.1.1 built from trunk): no build warnings, `Total 282  Passed 281  Skipped 1  Failed 0`, the sieve passed, and `listbench.tcl` ran; the output is saved in `extras/windows_0.7.0_run.txt`. Earlier versions were also run on Windows (see `RESULTS.txt`). A 32-bit build and other Visual Studio versions are untried.
+
 Unpack the ZIP anywhere and, from a Command Prompt, go into the unpacked folder and run the three scripts:
 
 ```bat

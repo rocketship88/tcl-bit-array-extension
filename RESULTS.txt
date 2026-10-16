@@ -503,3 +503,8 @@ arrays only it is still true of the 1-bit code, which 0.3 keeps (the 66 old test
    The owner then reran everything on Windows with the final files (extras/windows_0.7.0_run.txt, replacing the first run): 282 tests, 281 passed,
    1 skipped, 0 failed; sieve PASS; the warm lsearch row reads 0.21 us in every column (ratio 0.99x).
    No change to bitarray.c, so the 206-mutant run stands.
+   Windows history (moved here from the README): two 64-bit Windows 10 machines (1903 and 22H2), Visual Studio 2022, Tcl 9.1.1 from trunk: 0.3: 133 passed,
+   1 skipped; 0.4: 183 passed, 1 skipped; 0.5: 221 passed, 1 skipped; all three with no build warnings and the sieve passing.  0.5.1 passed the tests and the
+   sieve (reported by the owner; output not saved).  0.6.0 on one machine: no warnings, Total 251 Passed 250 Skipped 1 (as saved in extras/windows_0.6.0_run.txt; the README had said 259/258, which was wrong), sieve passed, listbench.tcl ran
+   (its same-answer check was incomplete in that version; the repaired one also passed, 37 operations; extras/windows_0.6.0_run.txt and
+   extras/windows_0.6.0_listbench.txt).  0.7.0: as above.
