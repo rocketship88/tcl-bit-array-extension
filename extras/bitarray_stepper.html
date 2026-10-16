@@ -2314,7 +2314,7 @@ function current() {
   const has = f.heap.length > 0;
   const start = ST({ start: true, cmd: -1, heap: f.heap, vars: f.vars, h: 'Ready',
     p: 'Entry 0 is the library load: <code>load ./libbitarray.so Bitarray</code> ran Bitarray_Init, which created the command <code>bitarray</code>. Nothing else has happened yet.' +
-       (has ? ' The variable <code>a</code> already holds the array drawn above, made earlier.' : '') +
+       (has ? ` The variable <code>${esc(f.vars[0].n)}</code> already holds the array drawn above. It was made earlier with:<br><b><code>set ${esc(f.vars[0].n)} [bitarray newfrom {${esc(f.heap[0].vals.join(' '))}}${W === 8 ? ' -width 8' : ''}]</code></b>${f.vars.length > 1 ? `<br>and then <b><code>set ${esc(f.vars[1].n)} $${esc(f.vars[0].n)}</code></b> made a second name for the same object.` : ''}` : '') +
        '<br><br><b>To run:</b> ' + tcl.map(l => '<code>' + esc(l) + '</code>').join(', then ') + '<br><br>Press <b>Next step</b> (or the right arrow key): the first step shows the script line to run (entry 1), the next compiles it, and every step after that adds one entry at the top of the call history.',
     src: 'bitarray.c: Bitarray_Init' });
   /* One history entry per step: a step that adds several entries is split, so the step number
