@@ -3,15 +3,15 @@
 Development material; none of it is needed to build or use the extension.
 
 * `bitarray_stepper.html` — an interactive page (open it in a browser; no network needed). Pick a command (`lset`, `lrange`, `lreplace`, a queue of bits, the bitwise operations and others), then step through what the Tcl core and `bitarray.c` do with it: the call stack, which `Tcl_ObjType` hook is reached, and the bits and 64-bit words as they change. "Show code" brings up the `bitarray.c` code for the step and "Resume" returns. `bitarray.c` is embedded in the page by `embed_source.py` (a browser page cannot read other files); run `python3 extras/embed_source.py` after changing `bitarray.c`, and `python3 extras/embed_source.py --check` to see whether the page is current (it also fails if the page names a `bitarray.c` function that no longer exists). The explanations and the drawings in the page are written by hand: when the behavior of a command changes, the matching scene in the page has to be updated too. The page has a button to load a different `bitarray.c`.
-* `mutate5.py` — mutation testing. Applies the deliberate bugs listed in it (164 in 0.6.0) to `bitarray.c` one at a time, rebuilds, runs the test suite and
+* `mutate5.py` — mutation testing. Applies the deliberate bugs listed in it (172 in 0.6.0) to `bitarray.c` one at a time, rebuilds, runs the test suite and
   reports each as CAUGHT or MISSED. The environment variables it needs are listed at the top of the file. It takes 10–30
   minutes. The first four rounds' logs are kept for history; `mutation_round5.txt` is the 0.3 run
-  (95 mutants: 81 caught, 14 missed, reasons in `../RESULTS.txt`; `mutation_round6.txt` is the 0.4 run with 110 mutants, 96 caught, 14 missed, `mutation_round7.txt` the 0.5 run with 123 mutants, 109 caught, 14 missed, and `mutation_round8.txt` the 0.5.1 run with 138 mutants, 121 caught, 17 missed, and `mutation_round9.txt` the 0.6.0 run with 162 mutants, 143 caught, 19 missed) and `mutation_round5_first_run.txt` is the run before the memory-growth
+  (95 mutants: 81 caught, 14 missed, reasons in `../RESULTS.txt`; `mutation_round6.txt` is the 0.4 run with 110 mutants, 96 caught, 14 missed, `mutation_round7.txt` the 0.5 run with 123 mutants, 109 caught, 14 missed, and `mutation_round8.txt` the 0.5.1 run with 138 mutants, 121 caught, 17 missed, and `mutation_round9.txt` the first 0.6.0 run with 164 mutants, 145 caught, 19 missed, and `mutation_round10.txt` the run after the speed changes (lrange, lreverse, lreplace, ledit) with 172 mutants, 151 caught, 21 missed) and `mutation_round5_first_run.txt` is the run before the memory-growth
   test was added (79 caught, 16 missed).
 * `mutation_round1.txt` … `mutation_round4.txt` — logs from the 0.1 and 0.2 versions of the code. They were produced by an
   earlier script (`mutate.py`, not included: `mutate5.py` contains all of its mutants, updated to the current code).
 
-* `mutate6.py` — the same 164 mutants (it reads the list from `mutate5.py`), but it keeps a full record and writes:
+* `mutate6.py` — the same 172 mutants (it reads the list from `mutate5.py`), but it keeps a full record and writes:
   * `bitarray.mutants` — `bitarray.c` with every mutant applied, each mutated line followed at the right by a comment:
     mutant id, kind (`deleted:clause`, `changed:operator`, ...), the result, and the **names of the tests that failed**
     (or the test that was running when the run crashed). Open it beside `bitarray.c` in a side-by-side compare tool; the

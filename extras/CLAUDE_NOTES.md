@@ -30,7 +30,7 @@ Garage "Primes" drag race, included unchanged. Say so plainly when asked who wro
 | The tests (259) | `tests/bitarray.test`; random comparisons against plain lists: `tests/diff_*.tcl`; memory growth: `tests/leak_check.tcl` |
 | All measured results, with the commands that produced them | `RESULTS.txt` |
 | The sieve variants A-F and Frank's file | `sieve/` (`sieve/README.md`) |
-| Mutation testing: the 164 deliberate bugs | `extras/mutate5.py` (the list), `extras/mutate6.py` (runner and report) |
+| Mutation testing: the 172 deliberate bugs | `extras/mutate5.py` (the list), `extras/mutate6.py` (runner and report) |
 | Which test caught which bug | `extras/mutants.json`, `extras/bitarray.mutants`, `extras/mutation_summary.txt` |
 | The `lappend`/`linsert` type loss: cause, reproductions, ticket text | `extras/typeloss_*`, `RESULTS.txt` section 13a |
 
@@ -113,7 +113,7 @@ and what happens when a bitarray is shared (`Tcl_IsShared` then `Tcl_DuplicateOb
 ## Mutation testing, and how to trace one
 
 Each mutant is one deliberate change to `bitarray.c`. The suite is run against it. **CAUGHT** means at least one test fails or
-the run crashes; **MISSED** means every test passed. Current numbers: 164 mutants, 145 caught, 19 missed.
+the run crashes; **MISSED** means every test passed. Current numbers: 172 mutants, 151 caught, 21 missed.
 
 Worked example, M04. `BA_MAX_BITS`, the largest array allowed counted in total bits (elements times width), is
 `1 << 40`; M04 changes it to `1 << 41`. It is caught by exactly three tests, each asking for an array one element over the
@@ -124,11 +124,11 @@ elements, at three widths. (The `x` in `range-x` is only a label for extra range
 To trace any mutant: find its id in `extras/mutants.json` (its `tests` list) or in `extras/bitarray.mutants` (the changed
 line with a comment at the right), then read those tests in `tests/bitarray.test`.
 
-The 19 missed, and why (full reasons in `RESULTS.txt`, sections 10, 16 and 17): M06, M08, M42 are unreachable because the Tcl core clamps
+The 21 missed, and why (full reasons in `RESULTS.txt`, sections 10, 16 and 17): M06, M08, M42 are unreachable because the Tcl core clamps The two added after the 0.6.0 speed changes: S13 (the first partial chunk of the left move in `MoveElems` not shortened) and R05 (the last unaligned `lrange` chunk not shortened) only change bits past the moved range or the unused bits of the last word, which nothing can read, the same kind as M36 and B11; the other new ones, R01 to R04 and R06 to R08, are caught.
 the indexes first; M07, M31, M36, M38, W26 leave stray bits or bytes beyond the end of the array, which nothing can read;
 M33, M34, W14 repeat a size check that an earlier check already makes on a 64-bit build; M35 (capacity doubling) is invisible
 at test sizes; W08 is an equivalent mutant; W24 changes `memmove` to `memcpy`, undefined for overlapping data in standard C but
-identical on glibc. The three added in 0.5.1: S03 and S04 remove the mask on the value read (`GetBits`) or on the value stored (`PutBits`), and each mask makes the other redundant, so either one alone is an equivalent mutant; S10 stops `ClearBits` advancing, which only leaves stray bits beyond the end, like M36. The two added in 0.6.0: B11 and B13 remove the clearing of the unused bits after the end of the data in the last word (a bit mask for 1-bit arrays, a `memset` of the unused bytes for wider ones); nothing reads those bits, so no test can see the difference, the same kind as M36. 58 of the 251 tests failed on none of the 162 mutants; that list is in `mutation_summary.txt`. It is not by
+identical on glibc. The three added in 0.5.1: S03 and S04 remove the mask on the value read (`GetBits`) or on the value stored (`PutBits`), and each mask makes the other redundant, so either one alone is an equivalent mutant; S10 stops `ClearBits` advancing, which only leaves stray bits beyond the end, like M36. The two added in 0.6.0: B11 and B13 remove the clearing of the unused bits after the end of the data in the last word (a bit mask for 1-bit arrays, a `memset` of the unused bytes for wider ones); nothing reads those bits, so no test can see the difference, the same kind as M36. 60 of the 259 tests failed on none of the 172 mutants; that list is in `mutation_summary.txt`. It is not by
 itself a defect, since the mutants cover only part of the code, and a crashing mutant stops the run before later tests.
 
 The "kind" label on each mutant (`deleted:clause`, `changed:operator`, ...) is worked out automatically from the text; treat

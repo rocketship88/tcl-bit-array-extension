@@ -327,7 +327,7 @@ arrays only it is still true of the 1-bit code, which 0.3 keeps (the 66 old test
    Then "bitarray version" was added (the version string is now the macro BA_VERSION in bitarray.c, used by Tcl_PkgProvide and the new
    subcommand; pkgIndex.tcl still has its own copy), tests version-1.1 and 1.2 (255 tests), and the test run and extras/listbench.tcl now
    print the version and the modification date and time of the library they loaded.  The 255 tests pass natively (no compiler warnings).
-   NOT redone after this last change: the mutation run (164 mutants, 145 caught, 19 missed was measured with 253 tests on the code before this change, so the
+   NOT redone after this last change (it was redone later, see the entry after the Windows paragraph): the mutation run (164 mutants, 145 caught, 19 missed was measured with 253 tests on the code before this change, so the
    line numbers in extras/bitarray.mutants and mutants.json are now off by up to 10 lines until it is rerun), valgrind, and the Windows run.
    Redone: the two alternative builds (255 pass each) and the random test (seed 7, 3,000 cases, 0 mismatches).
    Speed change after that (ET asked for lrange, lreverse, lreplace and ledit): BASlice for 1-bit arrays with an unaligned start now reads
@@ -347,8 +347,7 @@ arrays only it is still true of the 1-bit code, which 0.3 keeps (the 66 old test
    added (R01 to R08).  Run one by one, not as part of a full run: all caught except S13 (the first partial chunk of the left move not
    shortened: it only changes bits past the moved range, which are vacated or zero, and are unobservable from Tcl) and R05 (the last
    unaligned lrange chunk not shortened: only the unused bits of the last word, same kind as B11 and B13), which are the same kind of
-   miss as M36.  The full mutate6 run (now 172 mutants) has NOT been redone; extras/bitarray.mutants, mutants.json and
-   mutation_summary.txt are from the earlier code.  listbench lassign rows: the one row "lassign 3 variables" (lassign $X a b c, whose rest is returned because it is the last command of
+   miss as M36.  The full mutate6 run (172 mutants) was redone afterwards: see the entry after the Windows paragraph below.  listbench lassign rows: the one row "lassign 3 variables" (lassign $X a b c, whose rest is returned because it is the last command of
    the script) was misleading: when the result is unused, as in a loop or proc body, the core skips building the rest (comment in
    tclExecute.c at INST_LIST_RANGE_IMM), and I measured 1.2 us for a bitarray and 1.1 us for a plain list at 1,000,000 elements.  It is
    now two rows: "lassign 3 variables (of lrange)" (lassign [lrange $X @MID @MID+2] a b c: 0.47 us against 0.40 us at 1,000,000 elements)
@@ -378,6 +377,12 @@ arrays only it is still true of the 1-bit code, which 0.3 keeps (the 66 old test
    fill first half 6,129x / 791x, count 673x / 36x, next (one scan) 600x / 124x.  One cell, lsearch -exact (hit at 0, warm) list/bit8, is
    n/a: the 8-bit time was too small to divide by.  The rows where the bitarray is slower are the same as on Linux (lreverse, large
    lrange, lassign, deleting at the front, cold lsearch, creating).
+   Mutation testing redone (2026-10-16, extras/mutate6.py, output extras/mutation_round10.txt, 259 tests, the code of the entry above): 172
+   mutants, 151 caught, 21 missed.  The 19 missed before are missed again, for the same reasons (M06, M07, M08, M31, M33 to M36, M38, M42,
+   W08, W14, W24, W26, S03, S04, S10, B11, B13), and nothing caught before is missed now except S13, whose code was rewritten (see above:
+   unobservable from Tcl).  Of the eight new ones R01 to R08, seven are caught and R05 is missed (see above).  So the 21 missed are the
+   old 19 plus S13 and R05.  60 of the 259 tests failed on none of the 172 mutants (the list is in mutation_summary.txt).  extras/bitarray.mutants, bitarray.mutants.stacked, mutants.json and mutation_summary.txt were regenerated, and
+   the line numbers in them are current.
 
 1. Test suite
    tests/bitarray.test: Total 66, Passed 66, Failed 0 (also with -DBA_NO_BUILTINS, the portable bit-count code).  Includes 2 randomized differential tests:

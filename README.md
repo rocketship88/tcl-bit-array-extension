@@ -305,9 +305,9 @@ Whether an extension like this counts as a "faithful" entry in Dave's Garage rul
 * **valgrind** on the whole suite: 0 invalid accesses, 0 definite leaks.
 * **Memory:** `unset` returns the memory (a 953 MiB array: 960 MB → 6.6 MB resident); building and dropping wide arrays in a
   loop leaves memory flat.
-* **Mutation testing** (`extras/mutate5.py`): 164 deliberate bugs inserted into the C code, 145 caught by the tests; the 19
+* **Mutation testing** (`extras/mutate5.py`): 172 deliberate bugs inserted into the C code, 151 caught by the tests; the 21
   missed are explained in `RESULTS.txt` (mostly unreachable code, stray bits nobody can read, or checks that are repeated
-  elsewhere on a 64-bit build). `extras/bitarray.mutants` is `bitarray.c` with every one of the 164 bugs applied and, beside
+  elsewhere on a 64-bit build). `extras/bitarray.mutants` is `bitarray.c` with every one of the 172 bugs applied and, beside
   each, the tests that caught it, for reading in a side-by-side compare tool (see `extras/README.md`).
 * The same 259 tests also pass with `-DBA_NO_BUILTINS` (portable popcount code) and `-DBA_FORCE_32BIT_LIMITS`.
 
