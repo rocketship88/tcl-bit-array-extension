@@ -1,11 +1,12 @@
-# Differential for element widths 8, 16, 32 and 64: bitarray vs a plain Tcl list under random operations.
+# Differential for element widths 8, 16, 32 and 64 and the signed -8, -16, -32 and -64: bitarray vs a plain Tcl list under random operations.
 # Uses the globals argv (seed iterations width) and fails (count of mismatches).
 expr {srand([lindex $argv 0])}
 set N [lindex $argv 1]
 set W [lindex $argv 2]
-if {$W == 64} { set lo -9223372036854775808; set hi 9223372036854775807 } else { set lo 0; set hi [expr {(1<<$W)-1}] }
+set A [expr {abs($W)}]
+if {$A == 64} { set lo -9223372036854775808; set hi 9223372036854775807 } elseif {$W < 0} { set lo [expr {-(1<<($A-1))}]; set hi [expr {(1<<($A-1))-1}] } else { set lo 0; set hi [expr {(1<<$W)-1}] }
 proc rval {} {
-    global lo hi W
+    global lo hi W A
     switch [expr {int(rand()*8)}] {
         0 { return 0 }
         1 { return 1 }
@@ -15,8 +16,8 @@ proc rval {} {
         5 { return [expr {$lo + 1}] }
         6 { return [expr {min($hi, int(rand()*100))}] }
         default {
-            if {$W == 64} { return [expr {(int(rand()*4294967296) << 31 | int(rand()*2147483648)) * (rand()<0.5 ? 1 : -1)}] }
-            return [expr {int(rand()*($hi+1))}]
+            if {$A == 64} { return [expr {(int(rand()*4294967296) << 31 | int(rand()*2147483648)) * (rand()<0.5 ? 1 : -1)}] }
+            return [expr {$lo + int(rand()*($hi-$lo+1))}]
         }
     }
 }

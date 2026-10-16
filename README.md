@@ -5,6 +5,8 @@ Packed arrays of small integers for Tcl 9.1 that look and behave like ordinary T
 > **If you are an AI assistant** that was handed this repository (for example as a ZIP in a chat): read
 > [`CLAUDE.md`](CLAUDE.md) first. It says how to get a Tcl 9.1 if there is none, how to build and test this package,
 > and how to walk through the code (there is an interactive page, `extras/bitarray_stepper.html`, that steps through the commands). You do not need to be asked to do any of that before you answer questions about it.
+>
+> If you cannot clone from github.com or cannot run commands or create files, a person using claude.ai may have two settings off (Settings > Capabilities): **Code execution and file creation**, and **Allow network egress** (GitHub is on the allowed list; on a Team or Enterprise plan an organization owner sets these under Organization settings > Capabilities). Free accounts have both, with lower usage limits. Say which one is needed; do not just report that the build failed.
 
 ```tcl
 load ./libbitarray.so Bitarray
@@ -34,17 +36,20 @@ Because an AI wrote it, independent review matters. See [Reviewing it, with or w
 
 ## Element widths
 
-The width is chosen when the array is created and cannot change afterwards.
+The width is chosen when the array is created and cannot change afterwards. **A minus sign in the width means signed**; without it the elements are unsigned (64 is the exception: it is always signed).
 
 | `-width` | Element | Values |
 |---|---|---|
 | `1` (default) | 1 bit | `0` and `1` |
 | `8` | 8 bits | `0` … `255` (unsigned) |
+| `-8` | 8 bits | `-128` … `127` (signed) |
 | `16` | 16 bits | `0` … `65535` (unsigned) |
+| `-16` | 16 bits | `-32768` … `32767` (signed) |
 | `32` | 32 bits | `0` … `4294967295` (unsigned) |
-| `64` | 64 bits | `-9223372036854775808` … `9223372036854775807` (signed) |
+| `-32` | 32 bits | `-2147483648` … `2147483647` (signed) |
+| `64` or `-64` | 64 bits | `-9223372036854775808` … `9223372036854775807` (signed; `-64` is accepted as a reminder, and is the same) |
 
-A value outside the range is an error; nothing is wrapped or truncated.
+A value outside the range is an error; nothing is wrapped or truncated. The signed and unsigned versions of a width store the same bits (`-1` in a signed 8-bit array is the byte `0xFF`, which is `255` in an unsigned one); the sign only decides how a value is read and written. The bitwise commands work on the bits, so they behave the same for both, but they need both arrays to have the same width **and** sign. `tobytes`, `tochars` and `fromchars` work on unsigned arrays only.
 
 ## Requirements
 
@@ -73,7 +78,7 @@ sh ./run_tests.sh --tclsh /path/to/tcl9.1/bin/tclsh9.1
 sh ./run_sieves.sh --tclsh /path/to/tcl9.1/bin/tclsh9.1   # optional: the prime-sieve benchmark, see below
 ```
 
-Expected last line of the tests: `bitarray.test:	Total	259	Passed	259	Skipped	0	Failed	0`
+Expected last line of the tests: `bitarray.test:	Total	282	Passed	282	Skipped	0	Failed	0`
 
 (`sh ./script` works even if unpacking lost the executable bit, which happens when a ZIP is made or unpacked on Windows.)
 
@@ -93,7 +98,7 @@ run_sieves.bat --tclsh C:\path\to\tcl9.1\bin\tclsh91.exe     rem optional: the p
 
 `build.bat` finds the headers and the stubs library (`include\tcl.h`, `lib\tclstub.lib`) from the shell you name, or from
 `--tcl-prefix DIR`, finds Visual Studio itself with `vswhere` if `cl` is not already on your `PATH` (so a plain `cmd` window works; it was run that way on 2026-10-13 and set up `vcvars64.bat` itself), and builds the 64-bit or
-32-bit DLL to match the shell. `run_tests.bat` should end with `Total 259  Passed 258  Skipped 1  Failed 0`: one test, which
+32-bit DLL to match the shell. `run_tests.bat` should end with `Total 282  Passed 281  Skipped 1  Failed 0`: one test, which
 reads `/proc`, is skipped on Windows. `--help` on each prints the options.
 
 ### Telling `build.sh` where Tcl is
@@ -176,18 +181,18 @@ that do not mention `$a` or `$w` create their own arrays. With no `value` given,
 |---|---|
 | `bitarray new size ?value? ?-width w?` | **Returns** a new bitarray of `size` elements, all `value` (default 0). `-width` may come before or after `value`.<br>`bitarray new 4` => `0 0 0 0`<br>`bitarray new 4 7 -width 8` => `7 7 7 7`<br>`bitarray new 3 -width 16 500` => `500 500 500` |
 | `bitarray newfrom list ?-width w?` | **Returns** a new bitarray packed from a list of integers.<br>`bitarray newfrom {200 5 255} -width 8` => `200 5 255` |
-| `bitarray width array` | **Returns** the element width in bits: `1`, `8`, `16`, `32` or `64`.<br>`bitarray width [bitarray new 3]` => `1`<br>`bitarray width [bitarray new 3 -width 16]` => `16` |
-| `bitarray version` | **Returns** the version of the extension, for example `0.6.0` (the same string `package require bitarray` returns). Takes no arguments.<br>`bitarray version` => `0.6.0` |
+| `bitarray width array` | **Returns** the element width in bits, as it was given when the array was created: `1`, `8`, `16`, `32`, `64`, or `-8`, `-16`, `-32`, `-64` for the signed ones.<br>`bitarray width [bitarray new 3]` => `1`<br>`bitarray width [bitarray new 3 -width -16]` => `-16` |
+| `bitarray version` | **Returns** the version of the extension, for example `0.7.0` (the same string `package require bitarray` returns). Takes no arguments.<br>`bitarray version` => `0.7.0` |
 | `bitarray is value` | **Returns** `1` if `value` currently has the bitarray representation, `0` if not (any value is accepted).<br>`a` -> `{1 0 1 1 0 1 1 1}`<br>`bitarray is $a` => `1`<br>`bitarray is {1 0 1}` => `0` |
 | `bitarray count array ?first ?to? last ?with? ?value??` | **Returns** the number of elements equal to `value`, or the number of non-zero elements if no `value`; whole array or an index range (`end-N` allowed). `value` needs a range. For 1-bit arrays without `value` this is a popcount.<br>`a` -> `{1 0 1 1 0 1 1 1}`<br>`bitarray count $a` => `6`<br>`bitarray count $a 0 3 1` => `3`<br>`bitarray count $a 4 end 0` => `1`<br>`bitarray count $a 2 end-1 1` => `4`<br>`bitarray count $a 0 to 3 with 1` => `3`<br>`bitarray count $a 4 .. end with 0` => `1`<br>`w` -> `{0 7 0 9}`<br>`bitarray count $w` => `2` (value omitted means != 0) |
 | `bitarray next array start ?with? ?value?` | **Returns** the index of the first element **at or after** `start` equal to `value` (non-zero if omitted), or `-1` if there is none.<br>`a` -> `{1 0 1 1 0 1 1 1}`<br>`bitarray next $a 0 0` => `1`<br>`bitarray next $a 2 0` => `4`<br>`bitarray next $a 5 0` => `-1`<br>`bitarray next $a 2 with 0` => `4`<br>`w` -> `{0 7 0 9}`<br>`bitarray next $w 0` => `1` (value omitted means != 0)<br>`bitarray next $w 0 0` => `0` (element 0 is itself 0) |
 | `bitarray fill varName first ?to? last ?with? value ?by? ?step?` | Sets every element from `first` to `last` to `value`, or only every `step`-th one if `step` is given, in the array stored in variable `varName`. **Returns** the empty string; the result is the changed array in `varName`.<br>`set b [bitarray new 10 1]` => `1 1 1 1 1 1 1 1 1 1`<br>`bitarray fill b 0 end 0 2` -> `0 1 0 1 0 1 0 1 0 1`<br>`set b [bitarray new 10 1]` => `1 1 1 1 1 1 1 1 1 1`<br>`bitarray fill b 0 to end with 0 by 2` -> `0 1 0 1 0 1 0 1 0 1`<br>`set c [bitarray new 10 5 -width 8]` => `5 5 5 5 5 5 5 5 5 5`<br>`bitarray fill c 2 5 0` -> `5 5 0 0 0 0 5 5 5 5`<br>`bitarray fill c 2 .. 5 with 0` -> same result |
-| `bitarray and`<br>`bitarray or`<br>`bitarray xor`<br>`bitarray andnot`<br>`  ?-length strict\|zero? varName ?<-? array ?array?` | Bitwise operation between two arrays of the same width, 64 bits at a time (any width: the bits of the packed data are combined, so for 8-bit arrays each byte is combined with the matching byte). `andnot` is "first AND NOT second": it removes the second array's 1 bits from the first. The arrays are values; only `varName` is a name. **Returns** the empty string.<br>`bitarray and varName array` and `bitarray and varName <- array`: `varName` becomes `varName AND array` (changed in place).<br>`bitarray and varName <- array1 array2`: `varName` becomes `array1 AND array2` and neither input changes (`varName` is created if it does not exist).<br>The result has the length of the first array. The widths must be equal. The lengths must be equal too unless `-length zero` is given: then missing elements of the second array count as 0 and extra ones are ignored. `-length strict` (the default) makes a different length an error.<br>The word `<-` cannot be used as the variable name (`bitarray and <- $x` is an error), and `bitarray and a <-` with nothing after the arrow is a wrong # args error.<br>`a` -> `{1 0 1 1 0 1 1 1}`, `m` -> `{1 1 0 0 1 1 0 0}`<br>`set c $a; bitarray and c $m` -> `1 0 0 0 0 1 0 0`<br>`set c $a; bitarray or c <- $m` -> `1 1 1 1 1 1 1 1`<br>`bitarray xor d <- $a $m` -> `d` is `0 1 1 1 1 0 1 1`, `a` unchanged<br>`set c $a; bitarray andnot c $m` -> `0 0 1 1 0 0 1 1`<br>`set c $a; bitarray and c {1 1 1}` => error: `not a bitarray: "1 1 1"`<br>`set s [bitarray newfrom {1 1 1}]; set c $a; bitarray and c $s` => error: `bitarray and: arrays differ in length (8 vs 3); use -length zero to allow it`<br>`set c $a; bitarray and -length zero c $s` -> `1 0 1 0 0 0 0 0`<br>`set c $a; bitarray or -length zero c $s` -> `1 1 1 1 0 1 1 1` |
+| `bitarray and`<br>`bitarray or`<br>`bitarray xor`<br>`bitarray andnot`<br>`  ?-length strict\|zero? varName ?<-? array ?array?` | Bitwise operation between two arrays of the same width (and the same sign), 64 bits at a time (any width: the bits of the packed data are combined, so for 8-bit arrays each byte is combined with the matching byte). `andnot` is "first AND NOT second": it removes the second array's 1 bits from the first. The arrays are values; only `varName` is a name. **Returns** the empty string.<br>`bitarray and varName array` and `bitarray and varName <- array`: `varName` becomes `varName AND array` (changed in place).<br>`bitarray and varName <- array1 array2`: `varName` becomes `array1 AND array2` and neither input changes (`varName` is created if it does not exist).<br>The result has the length of the first array. The widths must be equal. The lengths must be equal too unless `-length zero` is given: then missing elements of the second array count as 0 and extra ones are ignored. `-length strict` (the default) makes a different length an error.<br>The word `<-` cannot be used as the variable name (`bitarray and <- $x` is an error), and `bitarray and a <-` with nothing after the arrow is a wrong # args error.<br>`a` -> `{1 0 1 1 0 1 1 1}`, `m` -> `{1 1 0 0 1 1 0 0}`<br>`set c $a; bitarray and c $m` -> `1 0 0 0 0 1 0 0`<br>`set c $a; bitarray or c <- $m` -> `1 1 1 1 1 1 1 1`<br>`bitarray xor d <- $a $m` -> `d` is `0 1 1 1 1 0 1 1`, `a` unchanged<br>`set c $a; bitarray andnot c $m` -> `0 0 1 1 0 0 1 1`<br>`set c $a; bitarray and c {1 1 1}` => error: `not a bitarray: "1 1 1"`<br>`set s [bitarray newfrom {1 1 1}]; set c $a; bitarray and c $s` => error: `bitarray and: arrays differ in length (8 vs 3); use -length zero to allow it`<br>`set c $a; bitarray and -length zero c $s` -> `1 0 1 0 0 0 0 0`<br>`set c $a; bitarray or -length zero c $s` -> `1 1 1 1 0 1 1 1` |
 | `bitarray not varName ?<- array?` | Flips every bit. `bitarray not varName` changes the array in `varName` in place; `bitarray not varName <- array` stores the flipped copy of `array` in `varName` and leaves `array` alone. **Returns** the empty string. For arrays wider than 1 bit it flips all the bits of every element, so an 8-bit element 0 becomes 255.<br>`set c $a; bitarray not c` -> `0 1 0 0 1 0 0 0`<br>`bitarray not n <- $a` -> `n` is `0 1 0 0 1 0 0 0`<br>`set x $w; bitarray not x` -> `255 248 255 246` (`w` is `{0 7 0 9}` 8-bit) |
 | `bitarray frombytes data` | **Returns** a new 8-bit array with one element per byte of `data`, without making a temporary list. Characters 0 to 255 are taken as bytes (read a file with `open ... rb`); a character above 255 is an error.<br>`bitarray frombytes "Hi!"` => `72 105 33` |
-| `bitarray tobytes array` | **Returns** the elements of an 8-bit `array` as binary data (a byte array), the reverse of `frombytes`. Any other width is an error.<br>`bitarray tobytes [bitarray frombytes "Hi!"]` => `Hi!` |
+| `bitarray tobytes array` | **Returns** the elements of an 8-bit `array` as binary data (a byte array), the reverse of `frombytes`. Any other width, and a signed one (`-8`), is an error.<br>`bitarray tobytes [bitarray frombytes "Hi!"]` => `Hi!` |
 | `bitarray fromchars string ?-width w?` | **Returns** a new array with one element per character of `string`, holding its code point. `w` is 8 (the default), 16 or 32; a character that does not fit is an error that names it (`character U+20AC at index 1 does not fit in width 8`).<br>`bitarray fromchars "Hi"` => `72 105`<br>`bitarray fromchars "A\u20ac" -width 16` => `65 8364` |
-| `bitarray tochars array` | **Returns** the string whose characters have the code points held in a width 8, 16 or 32 `array`, the reverse of `fromchars`. Width 1 and 64 arrays, surrogate codes and values above 0x10FFFF are errors.<br>`bitarray tochars [bitarray newfrom {72 105 8364} -width 16]` => `Hi€` |
+| `bitarray tochars array` | **Returns** the string whose characters have the code points held in a width 8, 16 or 32 `array`, the reverse of `fromchars`. Width 1 and 64 arrays, signed arrays, surrogate codes and values above 0x10FFFF are errors.<br>`bitarray tochars [bitarray newfrom {72 105 8364} -width 16]` => `Hi€` |
 
 To work on a file byte by byte, read it in binary mode and convert it in one step; `lset`, `fill`, `count` and `next` then work on the bytes, and `tobytes` turns the result back into data to write:
 
@@ -207,7 +212,7 @@ built library on `auto_path`, and then `package require bitarray` finds and load
 
 ```tcl
 lappend auto_path /full/path/to/bitarray     ;# the folder with pkgIndex.tcl and libbitarray.so (bitarray.dll on Windows)
-package require bitarray                     ;# returns 0.6.0
+package require bitarray                     ;# returns 0.7.0
 ```
 
 You can also set the environment variable `TCLLIBPATH` to that folder before starting `tclsh`. The two files do not have to stay where
@@ -298,18 +303,18 @@ Whether an extension like this counts as a "faithful" entry in Dave's Garage rul
 
 ## Quality checks
 
-* **259 tests** (`tests/bitarray.test`): option parsing, ranges and error messages at every width, every list command on
+* **282 tests** (`tests/bitarray.test`): option parsing, ranges and error messages at every width, every list command on
   every width, copy-on-write, `fill`/`count`/`next`, the bitwise commands, word-boundary cases, memory growth.
 * **Random comparison against plain Tcl lists** (`tests/diff_*.tcl`): thousands of random operations per run, values and error
-  messages compared. Last big run: 5 widths × 10 seeds × 100 iterations × 40 steps, 0 differences. The bitwise commands have their own (`tests/diff_bitops.tcl`: 15,000 random cases over all widths, lengths, forms and both `-length` modes, 0 differences).
+  messages compared. Last big run: 5 widths × 10 seeds × 100 iterations × 40 steps, 0 differences (the signed widths `-8`, `-16`, `-32` and `-64` were added afterwards: 3 seeds × 150 iterations each, 0 differences). The bitwise commands have their own (`tests/diff_bitops.tcl`: 15,000 random cases over all widths, lengths, forms and both `-length` modes, 0 differences).
 * **valgrind** on the whole suite: 0 invalid accesses, 0 definite leaks.
 * **Memory:** `unset` returns the memory (a 953 MiB array: 960 MB → 6.6 MB resident); building and dropping wide arrays in a
   loop leaves memory flat.
-* **Mutation testing** (`extras/mutate5.py`): 172 deliberate bugs inserted into the C code, 151 caught by the tests; the 21
+* **Mutation testing** (`extras/mutate5.py`): 206 deliberate bugs inserted into the C code, 184 caught by the tests (one full run of all 206, on 0.7.0); the 22
   missed are explained in `RESULTS.txt` (mostly unreachable code, stray bits nobody can read, or checks that are repeated
-  elsewhere on a 64-bit build). `extras/bitarray.mutants` is `bitarray.c` with every one of the 172 bugs applied and, beside
+  elsewhere on a 64-bit build). `extras/bitarray.mutants` is `bitarray.c` with every one of the 206 bugs applied (from the full run on 0.7.0) and, beside
   each, the tests that caught it, for reading in a side-by-side compare tool (see `extras/README.md`).
-* The same 259 tests also pass with `-DBA_NO_BUILTINS` (portable popcount code) and `-DBA_FORCE_32BIT_LIMITS`.
+* The same 282 tests also pass with `-DBA_NO_BUILTINS` (portable popcount code) and `-DBA_FORCE_32BIT_LIMITS`.
 
 Details and numbers: `RESULTS.txt`.
 

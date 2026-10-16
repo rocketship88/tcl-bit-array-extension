@@ -1,4 +1,4 @@
-RESULTS -- bitarray 0.6.0 (sections 8-13a are the 0.3 results; section 14 is 0.4; section 15 is 0.5; section 16 is 0.5.1; section 17 is 0.6.0) (run 2026-10-13, Linux container, gcc -O2, Tcl trunk 3d77be8951)
+RESULTS -- bitarray 0.7.0 (sections 8-13a are the 0.3 results; section 14 is 0.4; section 15 is 0.5; section 16 is 0.5.1; section 17 is 0.6.0) (run 2026-10-13, Linux container, gcc -O2, Tcl trunk 3d77be8951)
 
 Sections 8-13 are new in 0.3.  Sections 1-7 are the 0.2 results, kept for history; where a number there was for 1-bit
 arrays only it is still true of the 1-bit code, which 0.3 keeps (the 66 old tests pass unchanged apart from "from" ->
@@ -383,6 +383,23 @@ arrays only it is still true of the 1-bit code, which 0.3 keeps (the 66 old test
    unobservable from Tcl).  Of the eight new ones R01 to R08, seven are caught and R05 is missed (see above).  So the 21 missed are the
    old 19 plus S13 and R05.  60 of the 259 tests failed on none of the 172 mutants (the list is in mutation_summary.txt).  extras/bitarray.mutants, bitarray.mutants.stacked, mutants.json and mutation_summary.txt were regenerated, and
    the line numbers in them are current.
+   Signed widths (2026-10-16, ET's request): -width -8, -16 and -32 now make arrays of signed 8, 16 and 32 bit elements (-64 is accepted and
+   means the same as 64, which was already signed; a plain 8, 16 or 32 stays unsigned; so a minus sign means signed).  The storage is the
+   same; BitArr gained a one-byte flag isSigned next to width (both are now unsigned char, in the same 4 bytes: the header is still 64 bytes).
+   ParseValue range-checks the signed range and stores the low bits, ElemWide sign-extends when an element is read (lindex, foreach, join,
+   string form, "in", next), NewRep takes the flag so every copy, slice, reverse and bitwise result keeps it, "bitarray width" returns -8 and
+   the like, the bitwise commands refuse a signed with an unsigned array (and and or are otherwise unchanged, they work on the bits),
+   tobytes, tochars and fromchars refuse signed.  The error for a bad -width now lists the nine widths.  New tests signed-1.1 to 1.21
+   (280 tests, all pass natively and with -DBA_NO_BUILTINS and -DBA_FORCE_32BIT_LIMITS, no compiler warnings with -Wall -Wextra -Wconversion);
+   tests/diff_width.tcl now also takes the signed widths: 3 seeds x 150 iterations at each of 8, 16, 32, 64, -8, -16, -32, -64, 0 differences.
+   valgrind --leak-check=full on the whole suite: Total 280 Passed 280, ERROR SUMMARY 0 errors, definitely lost 0, indirectly lost 0,
+   possibly lost 65,554,800 bytes in 1,825 blocks (Tcl's own allocator records, as before; no frame in bitarray.c).
+   Mutants G01 to G25 were added for the new code and run one by one (extras/mutation_round11.txt): 24 caught, G03 missed (the signed parse
+   does not mask a negative value to its width: every user of the value truncates it anyway, an equivalent mutant).  G12 was first missed
+   (the arrow form makes the result with NewRep) and test signed-1.21 was added; it is caught.  The full mutate6 run was NOT redone after this
+   change: the 172 of the entry above are from the code before it, and extras/bitarray.mutants, mutants.json and mutation_summary.txt are
+   from that run, so their line numbers are now off by up to 45 lines.  Not run: Windows and a 32-bit build with this change; the version
+   is still 0.6.0.  The stepper page only shows the new isSigned field (always 0: it has no signed width yet).
 
 1. Test suite
    tests/bitarray.test: Total 66, Passed 66, Failed 0 (also with -DBA_NO_BUILTINS, the portable bit-count code).  Includes 2 randomized differential tests:
@@ -464,3 +481,23 @@ arrays only it is still true of the 1-bit code, which 0.3 keeps (the 66 old test
                   because realloc usually extends in place.  The doubling is by design; I did not find a test that
                   distinguishes it without running for a long time.
    These are my judgements, not proof.
+
+18. Version 0.7.0: early-exit word test for `in` on 1-bit arrays (2026-10-16, Linux container, gcc -O2, Tcl 9.1.1)
+   BAInOper used CountRange (a popcount of every word) for a 1-bit array.  It now calls HasBit, which tests whole words and stops at
+   the first word that settles the answer: a word that is not 0 holds a 1, a word that is not all ones holds a 0, and the last word is
+   padded with ones for the unused bits so they never count as zeros.  The answers are the same; it never reads more words than before.
+   Tests in-1.3 (every length 1 to 200 around the word boundaries, every bit position, compared with a plain list) and in-1.4 (padding
+   and shrunk arrays) were added: 282 tests, all pass, also with -DBA_NO_BUILTINS and -DBA_FORCE_32BIT_LIMITS, no warnings; valgrind clean
+   on the in, bitop and count tests.  The stepper's `in` scene was reworded (HasBit instead of "population count").
+   extras/listbench.tcl: four new rows with ratios (1 in hit at 0, 0 in hit at 1, 1 in hit at the last element, 0 in miss with all ones;
+   new data mode `ones`).  The "2 in" row still has no ratio on purpose: a 1-bit array cannot hold a 2 and answers at once.
+   Mutation (extras/mutation_round12.txt): the full run of 206 mutants: 184 caught, 22 missed.  H01 to H10 added (H05 equivalent); M16 retired;
+   12 mutants that had stopped matching the source after the signed-width change were rewritten, and are caught.  The extras/ mutant files
+   (mutants.json, bitarray.mutants, mutation_summary.txt) are now from this run, line numbers current.
+   Not run: Windows and a 32-bit build with the signed widths and this change.  Version bumped to 0.7.0 (bitarray.c, pkgIndex.tcl).
+   Afterwards (2026-10-16): the owner ran build, tests, sieve and listbench on Windows with 0.7.0 (extras/windows_0.7.0_run.txt): 282 tests, 281 passed,
+   1 skipped (procfs), 0 failed; sieve PASS at every limit; the benchmark check agrees on 42 operations.  That run showed 0.0 for the bitarray
+   columns of "lsearch -exact (hit at 0, warm)": the benchmark's first timed call built the element list, so the repeat count came out as 1 or 2
+   and the 1 us clock read 0 or 0.5.  listbench.tcl now makes one untimed call before estimating and before each timed run (that row reads about
+   0.22 us on Linux, like a plain list); the other rows keep their values.  performance_analysis.md has the new `in` rows and says 0.7.0.
+   No change to bitarray.c, so the 206-mutant run stands.

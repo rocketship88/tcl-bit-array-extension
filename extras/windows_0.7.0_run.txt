@@ -1,0 +1,128 @@
+
+A:\testit\bitarray>build.bat --tclsh A:\aaa\tcltk-merged-release\bin\tclsh91.exe && run_tests.bat --tclsh A:\aaa\tcltk-merged-release\bin\tclsh91.exe && run_sieves.bat --tclsh A:\aaa\tcltk-merged-release\bin\tclsh91.exe
+tclsh:   A:\aaa\tcltk-merged-release\bin\tclsh91.exe   (Tcl 9.1.1, x64)
+headers: A:\aaa\tcltk-merged-release\include
+stubs:   A:\aaa\tcltk-merged-release\lib\tclstub.lib
+compiler: setting up with C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat
+bitarray.c
+   Creating library A:\temp\bitarray_build_20329\bitarray.lib and object A:\temp\bitarray_build_20329\bitarray.exp
+built A:\testit\bitarray\bitarray.dll
+tclsh: A:\aaa\tcltk-merged-release\bin\tclsh91.exe   (Tcl 9.1.1)
+lib:   A:\testit\bitarray\bitarray.dll
+------------------------------ test: 0.7.0 2026-10-16 11:11:10 ---------------
+bitarray.test:  Total   282     Passed  281     Skipped 1       Failed  0
+Number of tests skipped for each constraint:
+        1       procfs
+sieve file: A:\testit\bitarray\sieve\frank_sieve.tcl
+tclsh:  A:/aaa/tcltk-merged-release/bin/tclsh91.exe   Tcl 9.1.1
+
+CORRECTNESS: number of primes found (expected count from the known table); all variants must also
+             produce exactly the same list of primes as variant A
+    limit  expected         A       B       C       D       E       F   same list as A
+       11         5         5       5       5       5       5       5   yes
+      100        25        25      25      25      25      25      25   yes
+     1000       168       168     168     168     168     168     168   yes
+    10000      1229      1229    1229    1229    1229    1229    1229   yes
+   100000      9592      9592    9592    9592    9592    9592    9592   yes
+  1000000     78498     78498   78498   78498   78498   78498   78498   yes
+
+TIMING: one full sieve pass at limit 1000000, best of 3 (each timed for 1.5 s), microseconds
+variant                                 us per pass   passes/sec       vs A
+A  Frank's sieve, unchanged                648702.5         1.54       1.0x
+B  bit proc inlined, no extension          206925.1         4.83       3.1x
+C  bitarray, lindex/lset                    83912.8        11.92       7.7x
+D  bitarray, fill step + next                1174.4       851.48     552.4x
+E  bitarray 8-bit, lindex/lset              86071.8        11.62       7.5x
+F  bitarray 8-bit, fill step + next          1194.9       836.89     542.9x
+
+RESULT: PASS -- every variant found the right number of primes, and the same primes, at every limit
+
+A:\testit\bitarray>A:\aaa\tcltk-merged-release\bin\tclsh91.exe a:\testit\bitarray\extras\listbench.tcl   -sort best1 -sizes 2000000
+check: 42 operations compared, same answers in every column (2 not comparable: creation and parsing)
+listbench (both): Tcl 9.1.1, bitarray 0.7.0, amd64 Windows NT, 2026-10-16
+------------------------------ bench: 0.7.0 2026-10-16 11:11:10 ---------------
+library A:/testit/bitarray/bitarray.dll
+calibration: empty loop of 1,000,000 iterations 33.6 ms (best of 5)
+
+2000000 elements: us per call, best of 3, sorted by bit1; memory 64x/8x less
+operation                               list us    bit1 us    bit8 us  list/bit1  list/bit8
+^C
+A:\testit\bitarray>A:\aaa\tcltk-merged-release\bin\tclsh91.exe a:\testit\bitarray\extras\listbench.tcl   -sort best1 -sizes 2000000 -v
+check: 42 operations compared, same answers in every column (2 not comparable: creation and parsing)
+listbench (both): Tcl 9.1.1, bitarray 0.7.0, amd64 Windows NT, 2026-10-16
+------------------------------ bench: 0.7.0 2026-10-16 11:11:10 ---------------
+library A:/testit/bitarray/bitarray.dll
+calibration: empty loop of 1,000,000 iterations 32.8 ms (best of 5)
+
+2000000 elements: us per call, best of 3, sorted by bit1; memory 64x/8x less
+operation                               list us    bit1 us    bit8 us  list/bit1  list/bit8
+bitop not (flip every bit)              128,918       11.6       93.4     11119x      1350x
+bitop andnot (a AND NOT b)              177,841       17.0        135     10451x      1319x
+bitop xor (a XOR b)                     152,031       16.3        129      9331x      1178x
+bitop and (a AND b)                     153,543       16.5        127      9316x      1207x
+bitop or (a OR b)                       151,146       17.5        146      8637x      1036x
+fill first half with 1 (no step)         20,954        3.6       28.2      5824x       743x
+count the 1s                             25,143       38.6        698       652x        36x
+next 1: one scan of the whole array      11,572       19.5       94.2       593x       123x
+ledit 1 for 1 (in place)                 10,037       17.7        838       567x        12x
+lreplace 10 for 10 (middle)               6,021       15.8        673       380x       8.9x
+0 in $X (miss: all elements are 1)        5,543       17.7        136       312x        41x
+1 in $X (hit at the last element)         5,991       19.6        130       306x        46x
+linsert 1 at end                          5,827       36.8      1,829       158x       3.2x
+lreplace delete 100 in middle             5,648       40.5        753       140x       7.5x
+ledit 1 for 2 (shared: copies)            9,416        103      2,007        92x       4.7x
+fill every 3rd element with 1            63,269        719        276        88x       229x
+lremove 3 elements                        5,808       90.9      1,009        64x       5.8x
+linsert 100 in middle                     5,801        102      1,917        57x       3.0x
+linsert 1 in middle                       5,783        104      1,958        56x       3.0x
+linsert 1 at front                        5,810        182      2,324        32x       2.5x
+1 in $X (hit at 0)                         5.96       0.48       1.34        12x       4.4x
+0 in $X (hit at 1)                         5.76        0.5       1.52        12x       3.8x
+lappend (one element)                      0.22       0.22       0.22       1.0x       1.0x
+next 1: visit every 1 (every 7th)        71,675     55,967     56,486       1.0x       1.0x
+foreach over all elements               338,614    342,384    350,759      0.99x      0.97x
+lmap over all elements                  472,173    478,552    488,791      0.99x      0.97x
+lset (middle, in place)                    0.21       0.21       0.21      0.99x       1.0x
+llength                                    0.12       0.12       0.12      0.98x      0.98x
+lsort -integer                          196,211    200,335    203,543      0.98x      0.96x
+lindex (middle)                            0.12       0.12       0.14      0.96x      0.85x
+join with a comma                        62,358     66,150     67,892      0.94x      0.92x
+lassign 3 variables (of lrange)            0.43       0.49       0.49      0.89x      0.88x
+lrange 10..19                              0.18       0.22       0.31      0.83x      0.59x
+create from text (parse / newfrom)       72,475     95,597     94,597      0.76x      0.77x
+lsearch -exact (miss, scans all)         11,639     16,864     18,623      0.69x      0.62x
+lassign first 3 (rest returned)            8.06       64.6        805      0.12x      0.01x
+create (lrepeat / bitarray new)            0.17       7.02        600      0.02x     <0.01x
+lrange first half                          0.16       7.32       68.2      0.02x     <0.01x
+ledit delete 1 at front (in place)         0.27       68.8      1,037     <0.01x     <0.01x
+lreplace delete 100 at front               0.17       66.5        928     <0.01x     <0.01x
+lsearch -exact (hit at 0, cold)            7.44      4,809      6,727     <0.01x     <0.01x
+lreverse                                   0.19        124      1,396     <0.01x     <0.01x
+lsearch -exact (hit at 0, warm)            0.21        0.0        0.0        n/a        n/a
+2 in $X (miss)                            5,530        0.5        131        n/a        n/a
+
+notes:
+ * 'memory 64x/8x less' in each title (bit1 first, then bit8) is an estimate for the array itself, list size divided by bitarray size: a list holds
+   an 8-byte pointer per element (this test data shares one object each for 0 and 1), a 1-bit array 1 bit, an 8-bit array 1 byte.
+   A list of distinct numbers also needs one 48-byte object per element, about 56 bytes each, so the saving would be larger.
+ * One machine, one run of the program; the same command often varies by 30% between runs.  Treat differences under about 2x as noise.
+ * lrange and lreverse on a plain list are lazy in Tcl 9.1 (a shared slice, a reversed view), so they cost almost nothing until the
+   result is used; a bitarray makes a real copy.  See performance_analysis.md section 2.
+ * 'cold' rows start from a fresh array for every call and time only the call.  For a bitarray they include building the list of
+   element objects that the core asks for when a command treats it as an ordinary list; that list is kept until the array is next
+   changed, so a second call on the same unchanged array is faster ('warm').
+ * '2 in $X (miss)' has no ratio (n/a): a 1-bit array answers at once for a value it cannot hold, so the comparison would only measure that shortcut; a plain list has to look at every element.
+ * The other 'in' rows have ratios: a 1-bit array tests whole words and stops at the first one that settles the answer (hit at 0 stops at once, hit at the last element and the all-1s miss read every word).
+ * 'ledit (shared: copies)' is what a loop sees when another variable holds the same value; 'in place' is the unshared case.
+ * lappend, lset and the in-place ledit rows work on a private copy and repeat the call; lappend is amortised (the array doubles).
+ * 'create from text': both start from the same fresh string of values.  The plain list is made by parsing it (llength forces the
+   string to become a list); newfrom parses it the same way and then also range-checks and packs every element.  Assigning an
+   existing list (set a $L) just shares it and costs almost nothing, so that is not a fair comparison.
+ * lassign: the first row is the usual use (take a few elements, here from the middle, into variables). The second names three
+   variables for the first three elements of the whole array and returns the rest as its result; the core skips building that
+   rest when the result is unused (a loop or proc body), so the row shows only the cost when it is used, which is rare.
+ * lrepeat is also lazy in Tcl 9.1 (a repeated-list view), which is why plain 'create' is so cheap.
+elapsed 27 seconds
+calibration at the end: empty loop of 1,000,000 iterations 31.4 ms (best of 5)  (a big difference from the start means the machine was busy)
+
+A:\testit\bitarray>

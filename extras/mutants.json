@@ -5,9 +5,9 @@
   "old": "#define GETBIT(b,i)\t(((b)->words[(i) >> 6] >> ((i) & 63)) & 1)",
   "new": "#define GETBIT(b,i)\t(((b)->words[(i) >> 6] >> ((i) & 31)) & 1)",
   "cls": "changed:constant",
-  "line1": 123,
-  "line2": 123,
-  "total": 259,
+  "line1": 127,
+  "line2": 127,
+  "total": 282,
   "result": "CAUGHT",
   "how": "12 tests fail",
   "tests": [
@@ -24,7 +24,7 @@
    "diff-2.1",
    "diff-4.2"
   ],
-  "secs": 18.7
+  "secs": 17.8
  },
  {
   "id": "M02",
@@ -32,9 +32,9 @@
   "old": "#define SETBIT(b,i)\t((b)->words[(i) >> 6] |= (uint64_t)1 << ((i) & 63))",
   "new": "#define SETBIT(b,i)\t((b)->words[(i) >> 6] ^= (uint64_t)1 << ((i) & 63))",
   "cls": "changed:operator",
-  "line1": 124,
-  "line2": 124,
-  "total": 259,
+  "line1": 128,
+  "line2": 128,
+  "total": 282,
   "result": "CAUGHT",
   "how": "6 tests fail",
   "tests": [
@@ -45,7 +45,7 @@
    "diff-2.1",
    "diff-4.2"
   ],
-  "secs": 18.9
+  "secs": 18.8
  },
  {
   "id": "M03",
@@ -53,11 +53,11 @@
   "old": "&= ~((uint64_t)1 << ((i) & 63)))",
   "new": "&= ((uint64_t)1 << ((i) & 63)))",
   "cls": "deleted:clause",
-  "line1": 125,
-  "line2": 125,
-  "total": 259,
+  "line1": 129,
+  "line2": 129,
+  "total": 282,
   "result": "CAUGHT",
-  "how": "24 tests fail",
+  "how": "25 tests fail",
   "tests": [
    "set-1.4",
    "set-1.11",
@@ -67,6 +67,7 @@
    "shift-1.2",
    "rev-2.1",
    "shift-2.1",
+   "in-1.3",
    "iter-1.2",
    "fill-w.4",
    "fill-w.5",
@@ -84,7 +85,7 @@
    "diff-2.1",
    "diff-4.2"
   ],
-  "secs": 16.1
+  "secs": 19.1
  },
  {
   "id": "M04",
@@ -92,9 +93,9 @@
   "old": "#   define BA_MAX_BITS\t((Tcl_WideInt)1 << 40)",
   "new": "#   define BA_MAX_BITS\t((Tcl_WideInt)1 << 41)",
   "cls": "changed:constant",
-  "line1": 48,
-  "line2": 48,
-  "total": 259,
+  "line1": 50,
+  "line2": 50,
+  "total": 282,
   "result": "CAUGHT",
   "how": "3 tests fail",
   "tests": [
@@ -102,7 +103,7 @@
    "range-x.2",
    "range-x.3"
   ],
-  "secs": 17.5
+  "secs": 20.8
  },
  {
   "id": "M33",
@@ -110,13 +111,13 @@
   "old": "if (w < 0 || w > BA_MAX_BITS / width) {",
   "new": "if (w < 0) {",
   "cls": "deleted:clause",
-  "line1": 1310,
-  "line2": 1310,
-  "total": 259,
+  "line1": 1380,
+  "line2": 1380,
+  "total": 282,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 17.6
+  "secs": 27.5
  },
  {
   "id": "M34",
@@ -124,13 +125,13 @@
   "old": "if (wideLen > BA_MAX_BITS / b->width) {",
   "new": "if (0) {",
   "cls": "changed:expression",
-  "line1": 875,
-  "line2": 875,
-  "total": 259,
+  "line1": 922,
+  "line2": 922,
+  "total": 282,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 18.1
+  "secs": 27.2
  },
  {
   "id": "M35",
@@ -138,13 +139,13 @@
   "old": "Tcl_Size newCap = b->capWords * 2,",
   "new": "Tcl_Size newCap = 0,",
   "cls": "changed:expression",
-  "line1": 889,
-  "line2": 889,
-  "total": 259,
+  "line1": 936,
+  "line2": 936,
+  "total": 282,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 20.7
+  "secs": 33.8
  },
  {
   "id": "M36",
@@ -152,13 +153,13 @@
   "old": "ClearBits(b, newLen, oldLen - newLen);",
   "new": ";",
   "cls": "deleted:clause",
-  "line1": 928,
-  "line2": 928,
-  "total": 259,
+  "line1": 975,
+  "line2": 975,
+  "total": 282,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 20.0
+  "secs": 34.9
  },
  {
   "id": "M37",
@@ -166,9 +167,9 @@
   "old": "    if (to < from) {\n\t/*\n\t * Moving left.",
   "new": "    if (to > from) {\n\t/*\n\t * Moving left.",
   "cls": "changed:operator",
-  "line1": 814,
-  "line2": 816,
-  "total": 259,
+  "line1": 861,
+  "line2": 863,
+  "total": 282,
   "result": "CAUGHT",
   "how": "6 tests fail",
   "tests": [
@@ -179,7 +180,7 @@
    "diff-3.1",
    "diff-4.2"
   ],
-  "secs": 16.4
+  "secs": 36.2
  },
  {
   "id": "M38",
@@ -187,13 +188,13 @@
   "old": "\tmemset(&b->words[oldCap], 0,\n\t\t(size_t)(newCap - oldCap) * sizeof(uint64_t));\n",
   "new": "",
   "cls": "deleted:statement",
-  "line1": 910,
-  "line2": 911,
-  "total": 259,
+  "line1": 957,
+  "line2": 958,
+  "total": 282,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 18.1
+  "secs": 35.8
  },
  {
   "id": "M39",
@@ -201,14 +202,14 @@
   "old": "\tlistObj->internalRep.twoPtrValue.ptr1 = b;\n    }\n",
   "new": "\t;\n    }\n",
   "cls": "deleted:clause",
-  "line1": 913,
-  "line2": 914,
+  "line1": 960,
+  "line2": 961,
   "total": null,
   "result": "CAUGHT",
   "how": "crash rc=-4",
   "tests": [],
   "running": "shift-1.1",
-  "secs": 0.6
+  "secs": 1.1
  },
  {
   "id": "M40",
@@ -216,8 +217,8 @@
   "old": "    b->nwords = needWords;\n    Tcl_InvalidateStringRep(listObj);",
   "new": "    Tcl_InvalidateStringRep(listObj);",
   "cls": "deleted:clause",
-  "line1": 935,
-  "line2": 936,
+  "line1": 982,
+  "line2": 983,
   "total": null,
   "result": "CAUGHT",
   "how": "crash rc=-4",
@@ -226,7 +227,7 @@
    "diff-3.1"
   ],
   "running": "diff-2.1",
-  "secs": 1.7
+  "secs": 3.6
  },
  {
   "id": "M41",
@@ -234,14 +235,14 @@
   "old": "    /* The element cache refers to the old contents; drop it first. */\n    FreeElems(b);\n",
   "new": "",
   "cls": "deleted:statement",
-  "line1": 916,
-  "line2": 917,
+  "line1": 963,
+  "line2": 964,
   "total": null,
   "result": "CAUGHT",
   "how": "crash rc=-11",
   "tests": [],
   "running": "diff-1.1",
-  "secs": 0.9
+  "secs": 1.1
  },
  {
   "id": "M42",
@@ -249,13 +250,13 @@
   "old": "    if (first > oldLen) first = oldLen;\n",
   "new": "",
   "cls": "deleted:statement",
-  "line1": 866,
-  "line2": 866,
-  "total": 259,
+  "line1": 913,
+  "line2": 913,
+  "total": 282,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 17.4
+  "secs": 25.8
  },
  {
   "id": "M05",
@@ -263,16 +264,16 @@
   "old": "if (index < 0 || index >= b->len) {\n\t*elemPtr = NULL;",
   "new": "if (index < 0 || index > b->len) {\n\t*elemPtr = NULL;",
   "cls": "changed:operator",
-  "line1": 554,
-  "line2": 555,
-  "total": 259,
+  "line1": 601,
+  "line2": 602,
+  "total": 282,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "diff-1.1",
    "elem-1.1"
   ],
-  "secs": 17.3
+  "secs": 25.2
  },
  {
   "id": "M06",
@@ -280,13 +281,13 @@
   "old": "if (to >= b->len) to = b->len - 1;",
   "new": "if (to > b->len) to = b->len - 1;",
   "cls": "changed:operator",
-  "line1": 586,
-  "line2": 586,
-  "total": 259,
+  "line1": 633,
+  "line2": 633,
+  "total": 282,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 16.9
+  "secs": 26.6
  },
  {
   "id": "M07",
@@ -294,13 +295,13 @@
   "old": "\t    n->words[n->nwords - 1] &= ~(~(uint64_t)0 << (len & 63));",
   "new": "\t    ;",
   "cls": "deleted:clause",
-  "line1": 600,
-  "line2": 600,
-  "total": 259,
+  "line1": 647,
+  "line2": 647,
+  "total": 282,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 17.2
+  "secs": 25.9
  },
  {
   "id": "M08",
@@ -308,13 +309,13 @@
   "old": "if (from < 0) from = 0;\n    if (to >= b->len)",
   "new": "if (to >= b->len)",
   "cls": "deleted:clause",
-  "line1": 585,
-  "line2": 586,
-  "total": 259,
+  "line1": 632,
+  "line2": 633,
+  "total": 282,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 17.6
+  "secs": 24.1
  },
  {
   "id": "M09",
@@ -322,9 +323,9 @@
   "old": ">> (64 - m);",
   "new": ">> (63 - m);",
   "cls": "changed:constant",
-  "line1": 629,
-  "line2": 629,
-  "total": 259,
+  "line1": 676,
+  "line2": 676,
+  "total": 282,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
@@ -334,7 +335,7 @@
    "diff-1.1",
    "diff-4.2"
   ],
-  "secs": 17.7
+  "secs": 24.9
  },
  {
   "id": "M10",
@@ -342,9 +343,9 @@
   "old": "if (idx < 0 || idx > b->len) {\n\tIndexError(interp, indexArray[0]);",
   "new": "if (idx < 0 || idx >= b->len) {\n\tIndexError(interp, indexArray[0]);",
   "cls": "changed:operator",
-  "line1": 727,
-  "line2": 728,
-  "total": 259,
+  "line1": 774,
+  "line2": 775,
+  "total": 282,
   "result": "CAUGHT",
   "how": "9 tests fail",
   "tests": [
@@ -358,7 +359,7 @@
    "diff-4.1",
    "diff-4.2"
   ],
-  "secs": 13.7
+  "secs": 18.9
  },
  {
   "id": "M11",
@@ -366,19 +367,20 @@
   "old": "if (Tcl_IsShared(obj)) {\n\tobj = Tcl_DuplicateObj(obj);\n    }\n    if (idx ==",
   "new": "if (0) {\n\tobj = Tcl_DuplicateObj(obj);\n    }\n    if (idx ==",
   "cls": "changed:expression",
-  "line1": 732,
-  "line2": 735,
-  "total": 259,
+  "line1": 779,
+  "line2": 782,
+  "total": 282,
   "result": "CAUGHT",
-  "how": "5 tests fail",
+  "how": "6 tests fail",
   "tests": [
    "set-1.1",
    "set-1.2",
    "set-1.3",
    "diff-1.1",
-   "elem-1.9"
+   "elem-1.9",
+   "signed-1.14"
   ],
-  "secs": 17.2
+  "secs": 23.9
  },
  {
   "id": "M12",
@@ -386,16 +388,16 @@
   "old": "    FreeElems(GETREP(obj));\n    Tcl_InvalidateStringRep(obj);",
   "new": "    FreeElems(GETREP(obj));",
   "cls": "deleted:clause",
-  "line1": 256,
-  "line2": 257,
-  "total": 259,
+  "line1": 262,
+  "line2": 263,
+  "total": 282,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "bitop-2.6",
    "diff-1.1"
   ],
-  "secs": 18.7
+  "secs": 23.0
  },
  {
   "id": "M13",
@@ -403,9 +405,9 @@
   "old": "    FreeElems(GETREP(obj));\n    Tcl_InvalidateStringRep(obj);",
   "new": "    Tcl_InvalidateStringRep(obj);",
   "cls": "deleted:clause",
-  "line1": 256,
-  "line2": 257,
-  "total": 259,
+  "line1": 262,
+  "line2": 263,
+  "total": 282,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
@@ -415,7 +417,7 @@
    "diff-4.1",
    "diff-4.2"
   ],
-  "secs": 13.6
+  "secs": 17.1
  },
  {
   "id": "M14",
@@ -423,16 +425,16 @@
   "old": "if (numToDelete > oldLen - first) numToDelete = oldLen - first;",
   "new": "",
   "cls": "deleted:statement",
-  "line1": 868,
-  "line2": 868,
-  "total": 259,
+  "line1": 915,
+  "line2": 915,
+  "total": 282,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "repl-1.1",
    "shift-2.1"
   ],
-  "secs": 16.9
+  "secs": 24.2
  },
  {
   "id": "M15",
@@ -440,11 +442,11 @@
   "old": "oldLen - (first + numToDelete));",
   "new": "oldLen - (first + numToDelete) - 1);",
   "cls": "changed:+tokens",
-  "line1": 921,
-  "line2": 921,
-  "total": 259,
+  "line1": 968,
+  "line2": 968,
+  "total": 282,
   "result": "CAUGHT",
-  "how": "14 tests fail",
+  "how": "16 tests fail",
   "tests": [
    "repl-1.1",
    "ledit-1.1",
@@ -459,27 +461,11 @@
    "diff-3.1",
    "elem-1.12",
    "diff-4.1",
-   "diff-4.2"
+   "diff-4.2",
+   "signed-1.6",
+   "signed-1.14"
   ],
-  "secs": 13.7
- },
- {
-  "id": "M16",
-  "name": "M16 in-operator zero test",
-  "old": "(ones < b->len)",
-  "new": "(ones <= b->len)",
-  "cls": "changed:operator",
-  "line1": 952,
-  "line2": 952,
-  "total": 259,
-  "result": "CAUGHT",
-  "how": "3 tests fail",
-  "tests": [
-   "in-1.2",
-   "diff-1.1",
-   "diff-4.2"
-  ],
-  "secs": 16.6
+  "secs": 20.8
  },
  {
   "id": "M17",
@@ -487,11 +473,11 @@
   "old": "    fm = ~(uint64_t)0 << (first & 63);\n    lm = ~(uint64_t)0 >> (63 - (last & 63));\n    if (fw == lw) {\n\treturn",
   "new": "    fm = ~(uint64_t)0 << ((first + 1) & 63);\n    lm = ~(uint64_t)0 >> (63 - (last & 63));\n    if (fw == lw) {\n\treturn",
   "cls": "changed:+tokens",
-  "line1": 297,
-  "line2": 300,
-  "total": 259,
+  "line1": 333,
+  "line2": 336,
+  "total": 282,
   "result": "CAUGHT",
-  "how": "24 tests fail",
+  "how": "23 tests fail",
   "tests": [
    "new-1.7",
    "set-1.10",
@@ -503,7 +489,6 @@
    "range-2.1",
    "rev-2.1",
    "shift-2.1",
-   "in-1.2",
    "count-1.1",
    "count-w.1",
    "count-w.3",
@@ -518,7 +503,7 @@
    "bulk-1.9",
    "diff-4.2"
   ],
-  "secs": 15.7
+  "secs": 21.5
  },
  {
   "id": "M18",
@@ -526,9 +511,9 @@
   "old": "lm = ~(uint64_t)0 >> (63 - (last & 63));\n    if (fw == lw) {\n\treturn",
   "new": "lm = ~(uint64_t)0 >> (62 - (last & 63));\n    if (fw == lw) {\n\treturn",
   "cls": "changed:constant",
-  "line1": 298,
-  "line2": 300,
-  "total": 259,
+  "line1": 334,
+  "line2": 336,
+  "total": 282,
   "result": "CAUGHT",
   "how": "16 tests fail",
   "tests": [
@@ -549,7 +534,7 @@
    "bulk-1.9",
    "diff-4.2"
   ],
-  "secs": 16.7
+  "secs": 22.1
  },
  {
   "id": "M19",
@@ -557,9 +542,9 @@
   "old": "& (~(uint64_t)0 << (start & 63));",
   "new": "& ~(uint64_t)0;",
   "cls": "deleted:clause",
-  "line1": 318,
-  "line2": 318,
-  "total": 259,
+  "line1": 354,
+  "line2": 354,
+  "total": 282,
   "result": "CAUGHT",
   "how": "8 tests fail",
   "tests": [
@@ -572,7 +557,7 @@
    "diff-2.1",
    "diff-4.2"
   ],
-  "secs": 17.2
+  "secs": 21.3
  },
  {
   "id": "M20",
@@ -580,9 +565,9 @@
   "old": "return idx < b->len ? idx : -1;",
   "new": "return idx;",
   "cls": "deleted:clause",
-  "line1": 322,
-  "line2": 322,
-  "total": 259,
+  "line1": 358,
+  "line2": 358,
+  "total": 282,
   "result": "CAUGHT",
   "how": "7 tests fail",
   "tests": [
@@ -594,7 +579,7 @@
    "diff-2.1",
    "diff-4.2"
   ],
-  "secs": 17.8
+  "secs": 21.5
  },
  {
   "id": "M21",
@@ -602,9 +587,9 @@
   "old": "if (val) b->words[fw] |= (fm & lm); else b->words[fw] &= ~(fm & lm);",
   "new": "if (val) b->words[fw] |= fm; else b->words[fw] &= ~fm;",
   "cls": "deleted:clause",
-  "line1": 278,
-  "line2": 278,
-  "total": 259,
+  "line1": 314,
+  "line2": 314,
+  "total": 282,
   "result": "CAUGHT",
   "how": "9 tests fail",
   "tests": [
@@ -618,7 +603,7 @@
    "diff-2.1",
    "diff-4.2"
   ],
-  "secs": 18.0
+  "secs": 40.3
  },
  {
   "id": "M22",
@@ -626,9 +611,9 @@
   "old": "for (i = fw + 1; i < lw; i++) {\n\tb->words[i] = val",
   "new": "for (i = fw + 1; i <= lw; i++) {\n\tb->words[i] = val",
   "cls": "changed:operator",
-  "line1": 282,
-  "line2": 283,
-  "total": 259,
+  "line1": 318,
+  "line2": 319,
+  "total": 282,
   "result": "CAUGHT",
   "how": "3 tests fail",
   "tests": [
@@ -636,7 +621,7 @@
    "diff-2.1",
    "diff-4.2"
   ],
-  "secs": 16.9
+  "secs": 42.9
  },
  {
   "id": "M23",
@@ -644,9 +629,9 @@
   "old": "if (bit) SETBIT(b, i); else CLRBIT(b, i);\n\t\t    if (last - i < step) break;",
   "new": "if (bit) SETBIT(b, i); else CLRBIT(b, i);\n\t\t    if (last - i <= step) break;",
   "cls": "changed:operator",
-  "line1": 1623,
-  "line2": 1624,
-  "total": 259,
+  "line1": 1693,
+  "line2": 1694,
+  "total": 282,
   "result": "CAUGHT",
   "how": "4 tests fail",
   "tests": [
@@ -655,7 +640,7 @@
    "diff-2.1",
    "diff-4.2"
   ],
-  "secs": 17.7
+  "secs": 35.9
  },
  {
   "id": "M24",
@@ -663,8 +648,8 @@
   "old": "\tif (first > last) return TCL_OK;\n",
   "new": "",
   "cls": "deleted:statement",
-  "line1": 1607,
-  "line2": 1607,
+  "line1": 1677,
+  "line2": 1677,
   "total": null,
   "result": "CAUGHT",
   "how": "crash rc=-11",
@@ -673,7 +658,7 @@
    "fill-w.25"
   ],
   "running": "diff-2.1",
-  "secs": 2.9
+  "secs": 5.7
  },
  {
   "id": "M25",
@@ -681,15 +666,15 @@
   "old": "obj->length == 1\n\t    && (obj->bytes[0]",
   "new": "obj->length >= 1\n\t    && (obj->bytes[0]",
   "cls": "changed:operator",
-  "line1": 406,
-  "line2": 407,
-  "total": 259,
+  "line1": 442,
+  "line2": 443,
+  "total": 282,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "set-1.11"
   ],
-  "secs": 18.0
+  "secs": 30.6
  },
  {
   "id": "M26",
@@ -697,9 +682,9 @@
   "old": "if (i + 1 < b->len) *p++ = ' ';",
   "new": "if (i + 1 < b->len) *p++ = ',';",
   "cls": "changed:token",
-  "line1": 517,
-  "line2": 517,
-  "total": 259,
+  "line1": 568,
+  "line2": 568,
+  "total": 282,
   "result": "CAUGHT",
   "how": "60 tests fail",
   "tests": [
@@ -764,7 +749,7 @@
    "diff-1.1",
    "grow-1.2"
   ],
-  "secs": 17.1
+  "secs": 23.0
  },
  {
   "id": "M27",
@@ -772,11 +757,11 @@
   "old": "memcpy(d->words, s->words, (size_t)s->nwords * sizeof(uint64_t));",
   "new": "memcpy(d->words, s->words, (size_t)(s->nwords > 1 ? s->nwords - 1 : s->nwords) * sizeof(uint64_t));",
   "cls": "changed:+tokens",
-  "line1": 495,
-  "line2": 495,
-  "total": 259,
+  "line1": 546,
+  "line2": 546,
+  "total": 282,
   "result": "CAUGHT",
-  "how": "12 tests fail",
+  "how": "13 tests fail",
   "tests": [
    "shift-1.1",
    "shift-1.2",
@@ -789,9 +774,10 @@
    "elem-1.9",
    "elem-1.19",
    "diff-4.1",
-   "diff-4.2"
+   "diff-4.2",
+   "signed-1.14"
   ],
-  "secs": 13.8
+  "secs": 19.6
  },
  {
   "id": "M28",
@@ -799,8 +785,8 @@
   "old": "    memset(b, 0, bytes);\n",
   "new": "",
   "cls": "deleted:statement",
-  "line1": 199,
-  "line2": 199,
+  "line1": 204,
+  "line2": 204,
   "total": null,
   "result": "CAUGHT",
   "how": "crash rc=-4",
@@ -808,7 +794,7 @@
    "new-1.1"
   ],
   "running": "new-1.2",
-  "secs": 0.7
+  "secs": 0.6
  },
  {
   "id": "M29",
@@ -816,15 +802,15 @@
   "old": "if (last >= b->len) last = b->len - 1;\n\t}\n\tval = 1;",
   "new": "if (last > b->len) last = b->len - 1;\n\t}\n\tval = 1;",
   "cls": "changed:operator",
-  "line1": 1397,
-  "line2": 1399,
-  "total": 259,
+  "line1": 1467,
+  "line2": 1469,
+  "total": 282,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "diff-2.1"
   ],
-  "secs": 17.7
+  "secs": 20.7
  },
  {
   "id": "M30",
@@ -832,9 +818,9 @@
   "old": "b->elems[i] = GETBIT(b, i) ? b->one : b->zero;",
   "new": "b->elems[i] = GETBIT(b, i) ? b->zero : b->one;",
   "cls": "changed:2 tokens",
-  "line1": 686,
-  "line2": 686,
-  "total": 259,
+  "line1": 733,
+  "line2": 733,
+  "total": 282,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
@@ -844,7 +830,7 @@
    "diff-2.1",
    "diff-4.2"
   ],
-  "secs": 15.7
+  "secs": 19.3
  },
  {
   "id": "M31",
@@ -852,13 +838,13 @@
   "old": "SetRangeOnes(n, 0, n->len - 1, 1);",
   "new": "memset(n->words, 0xff, (size_t)n->nwords * 8);",
   "cls": "changed:expression",
-  "line1": 1319,
-  "line2": 1319,
-  "total": 259,
+  "line1": 1389,
+  "line2": 1389,
+  "total": 282,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 16.6
+  "secs": 21.7
  },
  {
   "id": "M32",
@@ -866,15 +852,15 @@
   "old": "    b->nwords = needWords;\n    Tcl_InvalidateStringRep(listObj);",
   "new": "    b->nwords = needWords;",
   "cls": "deleted:clause",
-  "line1": 935,
-  "line2": 936,
-  "total": 259,
+  "line1": 982,
+  "line2": 983,
+  "total": 282,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "diff-1.1"
   ],
-  "secs": 17.8
+  "secs": 21.3
  },
  {
   "id": "W01",
@@ -882,11 +868,11 @@
   "old": "memcpy(&v, p + 2 * (size_t)i, 2); return v;",
   "new": "memcpy(&v, p + 3 * (size_t)i, 2); return v;",
   "cls": "changed:constant",
-  "line1": 149,
-  "line2": 149,
-  "total": 259,
+  "line1": 154,
+  "line2": 154,
+  "total": 282,
   "result": "CAUGHT",
-  "how": "17 tests fail",
+  "how": "20 tests fail",
   "tests": [
    "bitop-1.3",
    "bitop-1.4",
@@ -904,9 +890,12 @@
    "bulk-16.1",
    "bulk-16.2",
    "bulk-w.2",
-   "diff-4.1"
+   "diff-4.1",
+   "signed-1.2",
+   "signed-1.6",
+   "signed-1.14"
   ],
-  "secs": 17.3
+  "secs": 21.6
  },
  {
   "id": "W02",
@@ -914,11 +903,11 @@
   "old": "memcpy(&v, p + 4 * (size_t)i, 4); return v;",
   "new": "memcpy(&v, p + 2 * (size_t)i, 4); return v;",
   "cls": "changed:constant",
-  "line1": 150,
-  "line2": 150,
-  "total": 259,
+  "line1": 155,
+  "line2": 155,
+  "total": 282,
   "result": "CAUGHT",
-  "how": "10 tests fail",
+  "how": "13 tests fail",
   "tests": [
    "bitop-1.3",
    "range-2.1",
@@ -929,9 +918,12 @@
    "elem-1.4",
    "elem-1.9",
    "bulk-32.1",
-   "diff-4.1"
+   "diff-4.1",
+   "signed-1.2",
+   "signed-1.10",
+   "signed-1.16"
   ],
-  "secs": 17.3
+  "secs": 21.9
  },
  {
   "id": "W03",
@@ -939,98 +931,9 @@
   "old": "memcpy(&v, p + 8 * (size_t)i, 8); return v;",
   "new": "memcpy(&v, p + 4 * (size_t)i, 8); return v;",
   "cls": "changed:constant",
-  "line1": 151,
-  "line2": 151,
-  "total": 259,
-  "result": "CAUGHT",
-  "how": "12 tests fail",
-  "tests": [
-   "bitop-1.3",
-   "bitop-1.4",
-   "range-2.1",
-   "rev-2.1",
-   "fill-w.11",
-   "range-64.1",
-   "elem-1.4",
-   "elem-1.15",
-   "elem-1.19",
-   "bulk-64.1",
-   "bulk-64.2",
-   "diff-4.1"
-  ],
-  "secs": 18.0
- },
- {
-  "id": "W04",
-  "name": "W04 PutElem 8 ORs instead of assigns",
-  "old": "case 8:  p[i] = (unsigned char)val; break;",
-  "new": "case 8:  p[i] |= (unsigned char)val; break;",
-  "cls": "changed:+tokens",
-  "line1": 166,
-  "line2": 166,
-  "total": 259,
-  "result": "CAUGHT",
-  "how": "5 tests fail",
-  "tests": [
-   "lcmd-w8",
-   "conv-2.4",
-   "conv-5.2",
-   "elem-1.12",
-   "diff-4.1"
-  ],
-  "secs": 16.8
- },
- {
-  "id": "W05",
-  "name": "W05 PutElem 16 wrong offset",
-  "old": "memcpy(p + 2 * (size_t)i, &v, 2); break; }",
-  "new": "memcpy(p + 3 * (size_t)i, &v, 2); break; }",
-  "cls": "changed:constant",
-  "line1": 167,
-  "line2": 167,
-  "total": null,
-  "result": "CAUGHT",
-  "how": "crash rc=-11",
-  "tests": [
-   "bitop-1.3"
-  ],
-  "running": "bitop-1.4",
-  "secs": 0.6
- },
- {
-  "id": "W06",
-  "name": "W06 PutElem 32 wrong offset",
-  "old": "memcpy(p + 4 * (size_t)i, &v, 4); break; }",
-  "new": "memcpy(p + 2 * (size_t)i, &v, 4); break; }",
-  "cls": "changed:constant",
-  "line1": 168,
-  "line2": 168,
-  "total": 259,
-  "result": "CAUGHT",
-  "how": "10 tests fail",
-  "tests": [
-   "bitop-1.3",
-   "range-2.1",
-   "rev-2.1",
-   "conv-3.3",
-   "conv-4.1",
-   "range-32.1",
-   "elem-1.4",
-   "elem-1.9",
-   "bulk-32.1",
-   "diff-4.1"
-  ],
-  "secs": 16.1
- },
- {
-  "id": "W07",
-  "name": "W07 PutElem 64 wrong offset",
-  "old": "case 64: memcpy(p + 8 * (size_t)i, &val, 8); break;",
-  "new": "case 64: memcpy(p + 4 * (size_t)i, &val, 8); break;",
-  "cls": "changed:constant",
-  "line1": 169,
-  "line2": 169,
-  "total": 259,
+  "line1": 156,
+  "line2": 156,
+  "total": 282,
   "result": "CAUGHT",
   "how": "14 tests fail",
   "tests": [
@@ -1040,96 +943,93 @@
    "rev-2.1",
    "fill-w.11",
    "range-64.1",
-   "elem-1.2",
    "elem-1.4",
    "elem-1.15",
-   "elem-1.18",
    "elem-1.19",
    "bulk-64.1",
    "bulk-64.2",
+   "diff-4.1",
+   "signed-1.2",
+   "signed-1.13"
+  ],
+  "secs": 20.3
+ },
+ {
+  "id": "W04",
+  "name": "W04 PutElem 8 ORs instead of assigns",
+  "old": "case 8:  p[i] = (unsigned char)val; break;",
+  "new": "case 8:  p[i] |= (unsigned char)val; break;",
+  "cls": "changed:+tokens",
+  "line1": 171,
+  "line2": 171,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "5 tests fail",
+  "tests": [
+   "lcmd-w8",
+   "conv-2.4",
+   "conv-5.2",
+   "elem-1.12",
    "diff-4.1"
   ],
-  "secs": 16.4
+  "secs": 20.4
  },
  {
-  "id": "W08",
-  "name": "W08 ElemObj sign only for 32",
-  "old": "b->width == 64 ? (Tcl_WideInt)(int64_t)val",
-  "new": "b->width == 32 ? (Tcl_WideInt)(int64_t)val",
+  "id": "W05",
+  "name": "W05 PutElem 16 wrong offset",
+  "old": "memcpy(p + 2 * (size_t)i, &v, 2); break; }",
+  "new": "memcpy(p + 3 * (size_t)i, &v, 2); break; }",
   "cls": "changed:constant",
-  "line1": 266,
-  "line2": 266,
-  "total": 259,
-  "result": "MISSED",
-  "how": "",
-  "tests": [],
-  "secs": 16.9
- },
- {
-  "id": "W09",
-  "name": "W09 ElemObj 1 returns zero",
-  "old": "if (val == 1) return b->one;",
-  "new": "if (val == 1) return b->zero;",
-  "cls": "changed:name/variable",
-  "line1": 265,
-  "line2": 265,
-  "total": 259,
+  "line1": 172,
+  "line2": 172,
+  "total": null,
   "result": "CAUGHT",
-  "how": "2 tests fail",
+  "how": "crash rc=-11",
   "tests": [
-   "elem-1.1",
-   "diff-4.1"
+   "bitop-1.3"
   ],
-  "secs": 14.9
+  "running": "bitop-1.4",
+  "secs": 0.7
  },
  {
-  "id": "W10",
-  "name": "W10 ParseValue upper bound off by one",
-  "old": "v <= (Tcl_WideInt)(((uint64_t)1 << width) - 1)) {",
-  "new": "v <= (Tcl_WideInt)(((uint64_t)1 << width))) {",
-  "cls": "deleted:clause",
-  "line1": 449,
-  "line2": 449,
-  "total": 259,
-  "result": "CAUGHT",
-  "how": "6 tests fail",
-  "tests": [
-   "range-8.2",
-   "range-16.2",
-   "range-32.2",
-   "elem-1.5",
-   "elem-1.13",
-   "bulk-8.3"
-  ],
-  "secs": 16.7
- },
- {
-  "id": "W11",
-  "name": "W11 ParseValue accepts -1",
-  "old": "if (v >= 0 && v <= (Tcl_WideInt)",
-  "new": "if (v >= -1 && v <= (Tcl_WideInt)",
-  "cls": "changed:expression",
-  "line1": 449,
-  "line2": 449,
-  "total": 259,
-  "result": "CAUGHT",
-  "how": "1 tests fail",
-  "tests": [
-   "range-8.3"
-  ],
-  "secs": 17.7
- },
- {
-  "id": "W12",
-  "name": "W12 ParseValue 64-bit path skipped",
-  "old": "if (width == 64) {\n\t    *vp = (uint64_t)v;",
-  "new": "if (width == 99) {\n\t    *vp = (uint64_t)v;",
+  "id": "W06",
+  "name": "W06 PutElem 32 wrong offset",
+  "old": "memcpy(p + 4 * (size_t)i, &v, 4); break; }",
+  "new": "memcpy(p + 2 * (size_t)i, &v, 4); break; }",
   "cls": "changed:constant",
-  "line1": 445,
-  "line2": 446,
-  "total": 259,
+  "line1": 173,
+  "line2": 173,
+  "total": 282,
   "result": "CAUGHT",
-  "how": "15 tests fail",
+  "how": "13 tests fail",
+  "tests": [
+   "bitop-1.3",
+   "range-2.1",
+   "rev-2.1",
+   "conv-3.3",
+   "conv-4.1",
+   "range-32.1",
+   "elem-1.4",
+   "elem-1.9",
+   "bulk-32.1",
+   "diff-4.1",
+   "signed-1.2",
+   "signed-1.10",
+   "signed-1.16"
+  ],
+  "secs": 21.2
+ },
+ {
+  "id": "W07",
+  "name": "W07 PutElem 64 wrong offset",
+  "old": "case 64: memcpy(p + 8 * (size_t)i, &val, 8); break;",
+  "new": "case 64: memcpy(p + 4 * (size_t)i, &val, 8); break;",
+  "cls": "changed:constant",
+  "line1": 174,
+  "line2": 174,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "16 tests fail",
   "tests": [
    "bitop-1.3",
    "bitop-1.4",
@@ -1145,9 +1045,117 @@
    "bulk-64.1",
    "bulk-64.2",
    "diff-4.1",
-   "mem-1.1"
+   "signed-1.2",
+   "signed-1.13"
   ],
-  "secs": 8.1
+  "secs": 21.1
+ },
+ {
+  "id": "W08",
+  "name": "W08 ElemWide sign only for 32",
+  "old": "if (b->width == 64) return (Tcl_WideInt)(int64_t)val;",
+  "new": "if (b->width == 32) return (Tcl_WideInt)(int64_t)val;",
+  "cls": "changed:constant",
+  "line1": 275,
+  "line2": 275,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "3 tests fail",
+  "tests": [
+   "signed-1.2",
+   "signed-1.10",
+   "signed-1.16"
+  ],
+  "secs": 22.5
+ },
+ {
+  "id": "W09",
+  "name": "W09 ElemObj 1 returns zero",
+  "old": "if (val == 1) return b->one;",
+  "new": "if (val == 1) return b->zero;",
+  "cls": "changed:name/variable",
+  "line1": 288,
+  "line2": 288,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "3 tests fail",
+  "tests": [
+   "elem-1.1",
+   "diff-4.1",
+   "signed-1.9"
+  ],
+  "secs": 18.4
+ },
+ {
+  "id": "W10",
+  "name": "W10 ParseValue upper bound off by one",
+  "old": "v <= (Tcl_WideInt)(((uint64_t)1 << width) - 1)) {",
+  "new": "v <= (Tcl_WideInt)(((uint64_t)1 << width))) {",
+  "cls": "deleted:clause",
+  "line1": 494,
+  "line2": 494,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "6 tests fail",
+  "tests": [
+   "range-8.2",
+   "range-16.2",
+   "range-32.2",
+   "elem-1.5",
+   "elem-1.13",
+   "bulk-8.3"
+  ],
+  "secs": 21.0
+ },
+ {
+  "id": "W11",
+  "name": "W11 ParseValue accepts -1",
+  "old": "if (v >= 0 && v <= (Tcl_WideInt)",
+  "new": "if (v >= -1 && v <= (Tcl_WideInt)",
+  "cls": "changed:expression",
+  "line1": 494,
+  "line2": 494,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "3 tests fail",
+  "tests": [
+   "range-8.3",
+   "elem-1.17",
+   "signed-1.4"
+  ],
+  "secs": 22.3
+ },
+ {
+  "id": "W12",
+  "name": "W12 ParseValue 64-bit path skipped",
+  "old": "if (width == 64) {\n\t    *vp = (uint64_t)v;",
+  "new": "if (width == 99) {\n\t    *vp = (uint64_t)v;",
+  "cls": "changed:constant",
+  "line1": 483,
+  "line2": 484,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "17 tests fail",
+  "tests": [
+   "bitop-1.3",
+   "bitop-1.4",
+   "range-2.1",
+   "rev-2.1",
+   "fill-w.11",
+   "range-64.1",
+   "elem-1.2",
+   "elem-1.4",
+   "elem-1.15",
+   "elem-1.18",
+   "elem-1.19",
+   "bulk-64.1",
+   "bulk-64.2",
+   "diff-4.1",
+   "mem-1.1",
+   "signed-1.2",
+   "signed-1.13"
+  ],
+  "secs": 8.0
  },
  {
   "id": "W13",
@@ -1155,15 +1163,15 @@
   "old": "obj->bytes[0] >= '0' && obj->bytes[0] <= '9') {",
   "new": "obj->bytes[0] >= '0' && obj->bytes[0] <= 'z') {",
   "cls": "changed:token",
-  "line1": 440,
-  "line2": 440,
-  "total": 259,
+  "line1": 478,
+  "line2": 478,
+  "total": 282,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "range-8.4"
   ],
-  "secs": 17.5
+  "secs": 22.1
  },
  {
   "id": "W14",
@@ -1171,13 +1179,13 @@
   "old": "(Tcl_WideInt)len * width > BA_MAX_BITS",
   "new": "(Tcl_WideInt)len > BA_MAX_BITS",
   "cls": "deleted:clause",
-  "line1": 181,
-  "line2": 181,
-  "total": 259,
+  "line1": 186,
+  "line2": 186,
+  "total": 282,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 17.3
+  "secs": 21.7
  },
  {
   "id": "W15",
@@ -1185,8 +1193,8 @@
   "old": "nwords = WORDS_FOR(len, width);",
   "new": "nwords = (len + 63) / 64;",
   "cls": "changed:expression",
-  "line1": 189,
-  "line2": 189,
+  "line1": 194,
+  "line2": 194,
   "total": null,
   "result": "CAUGHT",
   "how": "crash rc=-4",
@@ -1200,11 +1208,11 @@
   "old": "* (width) + 63) / 64))",
   "new": "* (width) + 62) / 64))",
   "cls": "changed:constant",
-  "line1": 131,
-  "line2": 131,
+  "line1": 135,
+  "line2": 135,
   "total": null,
   "result": "CAUGHT",
-  "how": "crash rc=-11",
+  "how": "crash rc=-4",
   "tests": [
    "shift-1.1",
    "bitop-1.2",
@@ -1218,7 +1226,7 @@
    "grow-1.5"
   ],
   "running": "diff-3.1",
-  "secs": 2.5
+  "secs": 1.6
  },
  {
   "id": "W17",
@@ -1226,15 +1234,15 @@
   "old": "\tif (b->width != 1) {\n\t    Tcl_Size i;",
   "new": "\tif (0) {\n\t    Tcl_Size i;",
   "cls": "changed:expression",
-  "line1": 215,
-  "line2": 216,
-  "total": 259,
+  "line1": 221,
+  "line2": 222,
+  "total": 282,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "mem-1.1"
   ],
-  "secs": 18.6
+  "secs": 13.3
  },
  {
   "id": "W18",
@@ -1242,14 +1250,14 @@
   "old": "if (b->elems[i] != b->zero && b->elems[i] != b->one) {",
   "new": "if (1) {",
   "cls": "changed:expression",
-  "line1": 220,
-  "line2": 220,
+  "line1": 226,
+  "line2": 226,
   "total": null,
   "result": "CAUGHT",
   "how": "crash rc=-11",
   "tests": [],
   "running": "elem-1.16",
-  "secs": 4.1
+  "secs": 3.8
  },
  {
   "id": "W19",
@@ -1257,8 +1265,8 @@
   "old": "if (e != b->zero && e != b->one) Tcl_IncrRefCount(e);",
   "new": "",
   "cls": "deleted:statement",
-  "line1": 692,
-  "line2": 692,
+  "line1": 739,
+  "line2": 739,
   "total": null,
   "result": "CAUGHT",
   "how": "crash rc=-11",
@@ -1266,7 +1274,7 @@
    "elem-1.16"
   ],
   "running": "elem-1.16",
-  "secs": 3.5
+  "secs": 3.6
  },
  {
   "id": "W20",
@@ -1274,15 +1282,15 @@
   "old": "\tb->elemsLen = b->len;\n",
   "new": "",
   "cls": "deleted:statement",
-  "line1": 696,
-  "line2": 696,
-  "total": 259,
+  "line1": 743,
+  "line2": 743,
+  "total": 282,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "mem-1.1"
   ],
-  "secs": 16.2
+  "secs": 13.6
  },
  {
   "id": "W21",
@@ -1290,17 +1298,18 @@
   "old": "memcpy(BYTES(n), BYTES(b) + (size_t)from * EBYTES(b),",
   "new": "memcpy(BYTES(n), BYTES(b) + (size_t)from,",
   "cls": "deleted:clause",
-  "line1": 594,
-  "line2": 594,
-  "total": 259,
+  "line1": 641,
+  "line2": 641,
+  "total": 282,
   "result": "CAUGHT",
-  "how": "3 tests fail",
+  "how": "4 tests fail",
   "tests": [
    "range-2.1",
    "elem-1.10",
-   "diff-4.1"
+   "diff-4.1",
+   "signed-1.14"
   ],
-  "secs": 17.1
+  "secs": 20.9
  },
  {
   "id": "W22",
@@ -1308,20 +1317,23 @@
   "old": "\t\t(size_t)len * EBYTES(b));\n    } else if ((from & 63) == 0) {",
   "new": "\t\t(size_t)len);\n    } else if ((from & 63) == 0) {",
   "cls": "deleted:clause",
-  "line1": 595,
-  "line2": 596,
-  "total": 259,
+  "line1": 642,
+  "line2": 643,
+  "total": 282,
   "result": "CAUGHT",
-  "how": "6 tests fail",
+  "how": "9 tests fail",
   "tests": [
    "bitop-1.3",
    "bitop-1.4",
    "range-2.1",
    "rev-2.1",
    "elem-1.10",
-   "diff-4.1"
+   "diff-4.1",
+   "signed-1.10",
+   "signed-1.13",
+   "signed-1.14"
   ],
-  "secs": 16.5
+  "secs": 19.0
  },
  {
   "id": "W23",
@@ -1329,16 +1341,16 @@
   "old": "memcpy(BYTES(n) + 8 * (size_t)i, &v, 8);",
   "new": "memcpy(BYTES(n) + 8 * (size_t)(i ^ 1), &v, 8);",
   "cls": "changed:+tokens",
-  "line1": 655,
-  "line2": 655,
-  "total": 259,
+  "line1": 702,
+  "line2": 702,
+  "total": 282,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "rev-2.1",
    "diff-4.1"
   ],
-  "secs": 16.3
+  "secs": 21.0
  },
  {
   "id": "W24",
@@ -1346,13 +1358,13 @@
   "old": "memmove(BYTES(b) + (size_t)to * EBYTES(b),",
   "new": "memcpy(BYTES(b) + (size_t)to * EBYTES(b),",
   "cls": "changed:name/variable",
-  "line1": 810,
-  "line2": 810,
-  "total": 259,
+  "line1": 857,
+  "line2": 857,
+  "total": 282,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 16.7
+  "secs": 20.7
  },
  {
   "id": "W25",
@@ -1360,15 +1372,17 @@
   "old": "memmove(BYTES(b) + (size_t)to * EBYTES(b),",
   "new": "memmove(BYTES(b) + (size_t)to,",
   "cls": "deleted:clause",
-  "line1": 810,
-  "line2": 810,
-  "total": 259,
+  "line1": 857,
+  "line2": 857,
+  "total": 282,
   "result": "CAUGHT",
-  "how": "1 tests fail",
+  "how": "3 tests fail",
   "tests": [
-   "diff-4.1"
+   "diff-4.1",
+   "signed-1.6",
+   "signed-1.14"
   ],
-  "secs": 15.1
+  "secs": 20.5
  },
  {
   "id": "W26",
@@ -1376,25 +1390,25 @@
   "old": "\t    memset(BYTES(b) + (size_t)newLen * EBYTES(b), 0,\n\t\t    (size_t)(oldLen - newLen) * EBYTES(b));\n",
   "new": "\t    ;\n",
   "cls": "deleted:clause",
-  "line1": 930,
-  "line2": 931,
-  "total": 259,
+  "line1": 977,
+  "line2": 978,
+  "total": 282,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 16.9
+  "secs": 22.2
  },
  {
   "id": "W27",
   "name": "W27 string rep 64-bit printed unsigned",
-  "old": "n = snprintf(buf, sizeof(buf), \"%lld\", (long long)(int64_t)v);",
+  "old": "n = snprintf(buf, sizeof(buf), \"%lld\", (long long)ElemWide(b, v));",
   "new": "n = snprintf(buf, sizeof(buf), \"%llu\", (unsigned long long)v);",
   "cls": "changed:expression",
-  "line1": 530,
-  "line2": 530,
-  "total": 259,
+  "line1": 580,
+  "line2": 580,
+  "total": 282,
   "result": "CAUGHT",
-  "how": "8 tests fail",
+  "how": "17 tests fail",
   "tests": [
    "bitop-1.3",
    "bitop-1.4",
@@ -1403,9 +1417,18 @@
    "fill-w.11",
    "range-64.1",
    "bulk-64.1",
-   "bulk-64.2"
+   "bulk-64.2",
+   "signed-1.2",
+   "signed-1.6",
+   "signed-1.9",
+   "signed-1.10",
+   "signed-1.11",
+   "signed-1.14",
+   "signed-1.15",
+   "signed-1.16",
+   "signed-1.21"
   ],
-  "secs": 17.1
+  "secs": 21.9
  },
  {
   "id": "W28",
@@ -1413,11 +1436,11 @@
   "old": "if (i) Tcl_DStringAppend(&ds, \" \", 1);",
   "new": "if (i) Tcl_DStringAppend(&ds, \",\", 1);",
   "cls": "changed:token",
-  "line1": 528,
-  "line2": 528,
-  "total": 259,
+  "line1": 579,
+  "line2": 579,
+  "total": 282,
   "result": "CAUGHT",
-  "how": "41 tests fail",
+  "how": "53 tests fail",
   "tests": [
    "lcmd-w8",
    "bitop-1.3",
@@ -1459,9 +1482,21 @@
    "bulk-64.1",
    "bulk-64.2",
    "bulk-w.1",
-   "bulk-w.2"
+   "bulk-w.2",
+   "signed-1.2",
+   "signed-1.5",
+   "signed-1.6",
+   "signed-1.9",
+   "signed-1.10",
+   "signed-1.11",
+   "signed-1.13",
+   "signed-1.14",
+   "signed-1.15",
+   "signed-1.16",
+   "signed-1.19",
+   "signed-1.21"
   ],
-  "secs": 17.7
+  "secs": 20.5
  },
  {
   "id": "W29",
@@ -1469,16 +1504,17 @@
   "old": "if (strcmp(buf, s) == 0) {",
   "new": "if (1) {",
   "cls": "changed:expression",
-  "line1": 968,
-  "line2": 968,
-  "total": 259,
+  "line1": 1034,
+  "line2": 1034,
+  "total": 282,
   "result": "CAUGHT",
-  "how": "2 tests fail",
+  "how": "3 tests fail",
   "tests": [
    "elem-1.17",
-   "diff-4.1"
+   "diff-4.1",
+   "signed-1.8"
   ],
-  "secs": 18.5
+  "secs": 19.6
  },
  {
   "id": "W30",
@@ -1486,17 +1522,18 @@
   "old": "*resPtr = (NextWide(b, 0, 0, val) >= 0);",
   "new": "*resPtr = (NextWide(b, 0, 1, val) >= 0);",
   "cls": "changed:constant",
-  "line1": 969,
-  "line2": 969,
-  "total": 259,
+  "line1": 1035,
+  "line2": 1035,
+  "total": 282,
   "result": "CAUGHT",
-  "how": "3 tests fail",
+  "how": "4 tests fail",
   "tests": [
    "elem-1.17",
    "elem-1.18",
-   "diff-4.1"
+   "diff-4.1",
+   "signed-1.8"
   ],
-  "secs": 18.5
+  "secs": 22.1
  },
  {
   "id": "W31",
@@ -1504,19 +1541,20 @@
   "old": "total += (p[i] != 0);",
   "new": "total += (p[i] == 0);",
   "cls": "changed:operator",
-  "line1": 345,
-  "line2": 345,
-  "total": 259,
+  "line1": 381,
+  "line2": 381,
+  "total": 282,
   "result": "CAUGHT",
-  "how": "5 tests fail",
+  "how": "6 tests fail",
   "tests": [
    "bitop-1.3",
    "bitop-1.4",
    "bulk-8.1",
    "bulk-8.4",
-   "diff-4.1"
+   "diff-4.1",
+   "signed-1.7"
   ],
-  "secs": 18.0
+  "secs": 21.9
  },
  {
   "id": "W32",
@@ -1524,9 +1562,9 @@
   "old": "total += (p[i] == c);",
   "new": "total += (p[i] != c);",
   "cls": "changed:operator",
-  "line1": 349,
-  "line2": 349,
-  "total": 259,
+  "line1": 385,
+  "line2": 385,
+  "total": 282,
   "result": "CAUGHT",
   "how": "3 tests fail",
   "tests": [
@@ -1534,7 +1572,7 @@
    "bulk-8.4",
    "diff-4.1"
   ],
-  "secs": 18.8
+  "secs": 20.7
  },
  {
   "id": "W33",
@@ -1542,9 +1580,9 @@
   "old": "total += anyNZ ? (e != 0) : (e == val);",
   "new": "total += anyNZ ? (e == 0) : (e == val);",
   "cls": "changed:operator",
-  "line1": 356,
-  "line2": 356,
-  "total": 259,
+  "line1": 392,
+  "line2": 392,
+  "total": 282,
   "result": "CAUGHT",
   "how": "4 tests fail",
   "tests": [
@@ -1553,7 +1591,7 @@
    "bulk-16.2",
    "diff-4.1"
   ],
-  "secs": 18.2
+  "secs": 20.6
  },
  {
   "id": "W34",
@@ -1561,15 +1599,15 @@
   "old": "(size_t)(b->len - start));",
   "new": "(size_t)(b->len - start + 1));",
   "cls": "changed:+tokens",
-  "line1": 373,
-  "line2": 373,
-  "total": 259,
+  "line1": 409,
+  "line2": 409,
+  "total": 282,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "diff-4.1"
   ],
-  "secs": 17.3
+  "secs": 21.1
  },
  {
   "id": "W35",
@@ -1577,9 +1615,9 @@
   "old": "\t    if (w) break;\n",
   "new": "\t    ;\n",
   "cls": "deleted:clause",
-  "line1": 385,
-  "line2": 385,
-  "total": 259,
+  "line1": 421,
+  "line2": 421,
+  "total": 282,
   "result": "CAUGHT",
   "how": "3 tests fail",
   "tests": [
@@ -1587,7 +1625,7 @@
    "bulk-8.5",
    "diff-4.1"
   ],
-  "secs": 15.9
+  "secs": 23.1
  },
  {
   "id": "W36",
@@ -1595,9 +1633,9 @@
   "old": "if (anyNZ ? (e != 0) : (e == val)) return i;",
   "new": "if (anyNZ ? (e != 0) : (e != val)) return i;",
   "cls": "changed:operator",
-  "line1": 395,
-  "line2": 395,
-  "total": 259,
+  "line1": 431,
+  "line2": 431,
+  "total": 282,
   "result": "CAUGHT",
   "how": "4 tests fail",
   "tests": [
@@ -1606,7 +1644,7 @@
    "bulk-64.1",
    "diff-4.1"
   ],
-  "secs": 16.4
+  "secs": 21.1
  },
  {
   "id": "W37",
@@ -1614,19 +1652,20 @@
   "old": "memset(p + first, c, (size_t)(last - first + 1));",
   "new": "memset(p + first, c, (size_t)(last - first));",
   "cls": "deleted:clause",
-  "line1": 1631,
-  "line2": 1631,
-  "total": 259,
+  "line1": 1701,
+  "line2": 1701,
+  "total": 282,
   "result": "CAUGHT",
-  "how": "5 tests fail",
+  "how": "6 tests fail",
   "tests": [
    "fill-w.10",
    "conv-2.5",
    "bulk-8.2",
    "bulk-w.1",
-   "diff-4.1"
+   "diff-4.1",
+   "signed-1.15"
   ],
-  "secs": 16.4
+  "secs": 21.7
  },
  {
   "id": "W38",
@@ -1634,18 +1673,19 @@
   "old": "memset(p + first, c,",
   "new": "memset(p, c,",
   "cls": "deleted:clause",
-  "line1": 1631,
-  "line2": 1631,
-  "total": 259,
+  "line1": 1701,
+  "line2": 1701,
+  "total": 282,
   "result": "CAUGHT",
-  "how": "4 tests fail",
+  "how": "5 tests fail",
   "tests": [
    "fill-w.10",
    "conv-2.5",
    "bulk-8.2",
-   "diff-4.1"
+   "diff-4.1",
+   "signed-1.15"
   ],
-  "secs": 17.2
+  "secs": 21.3
  },
  {
   "id": "W39",
@@ -1653,16 +1693,16 @@
   "old": "p[i] = c;\n\t\t    if (last - i < step) break;",
   "new": "p[i] = c;\n\t\t    if (last - i <= step) break;",
   "cls": "changed:operator",
-  "line1": 1634,
-  "line2": 1635,
-  "total": 259,
+  "line1": 1704,
+  "line2": 1705,
+  "total": 282,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "bulk-8.1",
    "diff-4.1"
   ],
-  "secs": 17.7
+  "secs": 19.2
  },
  {
   "id": "W40",
@@ -1670,16 +1710,16 @@
   "old": "PutElem(b, i, val);\n\t\tif (last - i < step) break;",
   "new": "PutElem(b, i, val);\n\t\tif (last - i <= step) break;",
   "cls": "changed:operator",
-  "line1": 1640,
-  "line2": 1641,
-  "total": 259,
+  "line1": 1710,
+  "line2": 1711,
+  "total": 282,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "bulk-64.1",
    "diff-4.1"
   ],
-  "secs": 16.0
+  "secs": 19.6
  },
  {
   "id": "W41",
@@ -1687,11 +1727,11 @@
   "old": "if (val) PutElem(n, i, val);",
   "new": "if (val > 1) PutElem(n, i, val);",
   "cls": "changed:+tokens",
-  "line1": 1349,
-  "line2": 1349,
-  "total": 259,
+  "line1": 1419,
+  "line2": 1419,
+  "total": 282,
   "result": "CAUGHT",
-  "how": "57 tests fail",
+  "how": "60 tests fail",
   "tests": [
    "from-1.1",
    "index-1.1",
@@ -1749,9 +1789,12 @@
    "bulk-8.4",
    "bulk-1.9",
    "diff-4.1",
-   "diff-4.2"
+   "diff-4.2",
+   "signed-1.5",
+   "signed-1.9",
+   "signed-1.13"
   ],
-  "secs": 13.2
+  "secs": 17.3
  },
  {
   "id": "W42",
@@ -1759,9 +1802,9 @@
   "old": "memset(n->words, (int)val, (size_t)n->len);",
   "new": "memset(n->words, (int)val, (size_t)n->len - 1);",
   "cls": "changed:+tokens",
-  "line1": 1321,
-  "line2": 1321,
-  "total": 259,
+  "line1": 1391,
+  "line2": 1391,
+  "total": 282,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
@@ -1771,7 +1814,7 @@
    "elem-1.6",
    "bulk-w.1"
   ],
-  "secs": 16.2
+  "secs": 20.3
  },
  {
   "id": "W43",
@@ -1779,19 +1822,20 @@
   "old": "for (i = 0; i < n->len; i++) PutElem(n, i, val);",
   "new": "for (i = 0; i < n->len - 1; i++) PutElem(n, i, val);",
   "cls": "changed:+tokens",
-  "line1": 1323,
-  "line2": 1323,
-  "total": 259,
+  "line1": 1393,
+  "line2": 1393,
+  "total": 282,
   "result": "CAUGHT",
-  "how": "5 tests fail",
+  "how": "6 tests fail",
   "tests": [
    "fill-w.11",
    "elem-1.7",
    "elem-1.9",
    "bulk-16.1",
-   "bulk-w.2"
+   "bulk-w.2",
+   "signed-1.16"
   ],
-  "secs": 16.3
+  "secs": 20.6
  },
  {
   "id": "W44",
@@ -1799,9 +1843,9 @@
   "old": "(Tcl_WideInt)(last - first + 1) - cnt;",
   "new": "(Tcl_WideInt)(last - first) - cnt;",
   "cls": "deleted:clause",
-  "line1": 1409,
-  "line2": 1409,
-  "total": 259,
+  "line1": 1479,
+  "line2": 1479,
+  "total": 282,
   "result": "CAUGHT",
   "how": "4 tests fail",
   "tests": [
@@ -1810,17 +1854,17 @@
    "bulk-1.9",
    "diff-4.2"
   ],
-  "secs": 16.9
+  "secs": 20.6
  },
  {
   "id": "W45",
   "name": "W45 count ignores a given value",
-  "old": "\t    if (ParseValue(interp, valObj, b->width, &val) != TCL_OK) {\n\t\treturn TCL_ERROR;\n\t    }\n\t    anyNZ = 0;",
-  "new": "\t    if (ParseValue(interp, valObj, b->width, &val) != TCL_OK) {\n\t\treturn TCL_ERROR;\n\t    }",
+  "old": "\t    if (ParseValue(interp, valObj, b->width, b->isSigned, &val) != TCL_OK) {\n\t\treturn TCL_ERROR;\n\t    }\n\t    anyNZ = 0;",
+  "new": "\t    if (ParseValue(interp, valObj, b->width, b->isSigned, &val) != TCL_OK) {\n\t\treturn TCL_ERROR;\n\t    }",
   "cls": "deleted:clause",
-  "line1": 1401,
-  "line2": 1404,
-  "total": 259,
+  "line1": 1471,
+  "line2": 1474,
+  "total": 282,
   "result": "CAUGHT",
   "how": "8 tests fail",
   "tests": [
@@ -1833,27 +1877,29 @@
    "diff-4.1",
    "diff-4.2"
   ],
-  "secs": 16.9
+  "secs": 20.7
  },
  {
   "id": "W46",
   "name": "W46 next ignores a given value",
-  "old": "\t    if (ParseValue(interp, valObjN, b->width, &val) != TCL_OK) {\n\t\treturn TCL_ERROR;\n\t    }\n\t    anyNZ = 0;",
-  "new": "\t    if (ParseValue(interp, valObjN, b->width, &val) != TCL_OK) {\n\t\treturn TCL_ERROR;\n\t    }",
+  "old": "\t    if (ParseValue(interp, valObjN, b->width, b->isSigned, &val) != TCL_OK) {\n\t\treturn TCL_ERROR;\n\t    }\n\t    anyNZ = 0;",
+  "new": "\t    if (ParseValue(interp, valObjN, b->width, b->isSigned, &val) != TCL_OK) {\n\t\treturn TCL_ERROR;\n\t    }",
   "cls": "deleted:clause",
-  "line1": 1439,
-  "line2": 1442,
-  "total": 259,
+  "line1": 1509,
+  "line2": 1512,
+  "total": 282,
   "result": "CAUGHT",
-  "how": "5 tests fail",
+  "how": "7 tests fail",
   "tests": [
    "next-w.4",
    "bulk-8.1",
    "bulk-8.5",
    "bulk-16.2",
-   "diff-4.1"
+   "diff-4.1",
+   "signed-1.7",
+   "signed-1.15"
   ],
-  "secs": 17.0
+  "secs": 20.4
  },
  {
   "id": "W47",
@@ -1861,14 +1907,14 @@
   "old": "\t    if (i + 1 >= objc) goto usageError;\n",
   "new": "",
   "cls": "deleted:statement",
-  "line1": 1037,
-  "line2": 1037,
+  "line1": 1107,
+  "line2": 1107,
   "total": null,
   "result": "CAUGHT",
   "how": "crash rc=-11",
   "tests": [],
   "running": "width-1.8",
-  "secs": 3.9
+  "secs": 3.7
  },
  {
   "id": "W48",
@@ -1876,11 +1922,11 @@
   "old": "w != 8 && w != 16 && w != 32",
   "new": "w != 8 && w != 32",
   "cls": "deleted:clause",
-  "line1": 1011,
-  "line2": 1011,
-  "total": 259,
+  "line1": 1078,
+  "line2": 1078,
+  "total": 282,
   "result": "CAUGHT",
-  "how": "26 tests fail",
+  "how": "28 tests fail",
   "tests": [
    "bitop-1.3",
    "bitop-1.4",
@@ -1907,18 +1953,20 @@
    "bulk-w.2",
    "bulk-w.3",
    "diff-4.1",
-   "mem-1.1"
+   "mem-1.1",
+   "signed-1.1",
+   "signed-1.19"
   ],
-  "secs": 5.7
+  "secs": 5.4
  },
  {
   "id": "W49",
   "name": "W49 dup loses width",
-  "old": "BitArr *s = GETREP(srcPtr), *d = NewRep(NULL, s->len, s->width);",
-  "new": "BitArr *s = GETREP(srcPtr), *d = NewRep(NULL, s->len, 1);",
+  "old": "BitArr *s = GETREP(srcPtr), *d = NewRep(NULL, s->len, s->width, s->isSigned);",
+  "new": "BitArr *s = GETREP(srcPtr), *d = NewRep(NULL, s->len, 1, s->isSigned);",
   "cls": "changed:expression",
-  "line1": 491,
-  "line2": 491,
+  "line1": 542,
+  "line2": 542,
   "total": null,
   "result": "CAUGHT",
   "how": "crash rc=-11",
@@ -1926,19 +1974,19 @@
    "lcmd-w8"
   ],
   "running": "shift-2.1",
-  "secs": 0.7
+  "secs": 0.8
  },
  {
   "id": "W50",
   "name": "W50 setElement parses as 1-bit",
-  "old": "if (ParseValue(interp, valueObj, b->width, &val) != TCL_OK) return NULL;",
-  "new": "if (ParseValue(interp, valueObj, 1, &val) != TCL_OK) return NULL;",
+  "old": "if (ParseValue(interp, valueObj, b->width, b->isSigned, &val) != TCL_OK) return NULL;",
+  "new": "if (ParseValue(interp, valueObj, 1, b->isSigned, &val) != TCL_OK) return NULL;",
   "cls": "changed:expression",
-  "line1": 731,
-  "line2": 731,
-  "total": 259,
+  "line1": 778,
+  "line2": 778,
+  "total": 282,
   "result": "CAUGHT",
-  "how": "10 tests fail",
+  "how": "13 tests fail",
   "tests": [
    "conv-2.4",
    "width-1.14",
@@ -1949,21 +1997,24 @@
    "elem-1.19",
    "bulk-8.5",
    "diff-4.1",
-   "mem-1.1"
+   "mem-1.1",
+   "signed-1.5",
+   "signed-1.6",
+   "signed-1.14"
   ],
-  "secs": 4.1
+  "secs": 4.4
  },
  {
   "id": "W51",
   "name": "W51 replace validates as 1-bit",
-  "old": "if (ParseValue(interp, insertObjs[i], b->width, &val) != TCL_OK) {",
-  "new": "if (ParseValue(interp, insertObjs[i], 1, &val) != TCL_OK) {",
+  "old": "if (ParseValue(interp, insertObjs[i], b->width, b->isSigned, &val) != TCL_OK) {",
+  "new": "if (ParseValue(interp, insertObjs[i], 1, b->isSigned, &val) != TCL_OK) {",
   "cls": "changed:expression",
-  "line1": 870,
-  "line2": 870,
-  "total": 259,
+  "line1": 917,
+  "line2": 917,
+  "total": 282,
   "result": "CAUGHT",
-  "how": "7 tests fail",
+  "how": "10 tests fail",
   "tests": [
    "lcmd-w8",
    "width-1.14",
@@ -1971,9 +2022,12 @@
    "elem-1.12",
    "elem-1.19",
    "diff-4.1",
-   "mem-1.1"
+   "mem-1.1",
+   "signed-1.5",
+   "signed-1.6",
+   "signed-1.14"
   ],
-  "secs": 4.3
+  "secs": 4.6
  },
  {
   "id": "W52",
@@ -1981,8 +2035,8 @@
   "old": "needWords = WORDS_FOR(newLen, b->width);",
   "new": "needWords = (newLen + 63) / 64;",
   "cls": "changed:expression",
-  "line1": 884,
-  "line2": 884,
+  "line1": 931,
+  "line2": 931,
   "total": null,
   "result": "CAUGHT",
   "how": "crash rc=-11",
@@ -1990,7 +2044,7 @@
    "elem-1.19"
   ],
   "running": "diff-4.1",
-  "secs": 3.8
+  "secs": 3.6
  },
  {
   "id": "W53",
@@ -1998,19 +2052,21 @@
   "old": "} else if (b->width == 1) {\n\t*elemPtr = GETBIT(b, index) ? b->one : b->zero;\n    } else {",
   "new": "} else if (b->width == 1) {\n\t*elemPtr = GETBIT(b, index) ? b->one : b->zero;\n    } else if (index == b->len - 1) {\n\t*elemPtr = b->zero;\n    } else {",
   "cls": "added:code",
-  "line1": 556,
-  "line2": 558,
-  "total": 259,
+  "line1": 603,
+  "line2": 605,
+  "total": 282,
   "result": "CAUGHT",
-  "how": "5 tests fail",
+  "how": "7 tests fail",
   "tests": [
    "conv-1.5",
    "elem-1.1",
    "elem-1.3",
    "elem-1.19",
-   "diff-4.1"
+   "diff-4.1",
+   "signed-1.9",
+   "signed-1.10"
   ],
-  "secs": 17.3
+  "secs": 19.9
  },
  {
   "id": "P01",
@@ -2018,9 +2074,9 @@
   "old": "IsWord(objv[k], \"to\") ||",
   "new": "0 ||",
   "cls": "changed:expression",
-  "line1": 1575,
-  "line2": 1575,
-  "total": 259,
+  "line1": 1645,
+  "line2": 1645,
+  "total": 282,
   "result": "CAUGHT",
   "how": "12 tests fail",
   "tests": [
@@ -2037,7 +2093,7 @@
    "fill-w.25",
    "conv-2.5"
   ],
-  "secs": 17.6
+  "secs": 20.3
  },
  {
   "id": "P02",
@@ -2045,9 +2101,9 @@
   "old": "|| IsWord(objv[k], \"..\"))",
   "new": "|| 0)",
   "cls": "changed:expression",
-  "line1": 1575,
-  "line2": 1575,
-  "total": 259,
+  "line1": 1645,
+  "line2": 1645,
+  "total": 282,
   "result": "CAUGHT",
   "how": "3 tests fail",
   "tests": [
@@ -2055,7 +2111,7 @@
    "fill-w.6",
    "fill-w.11"
   ],
-  "secs": 18.7
+  "secs": 19.5
  },
  {
   "id": "P03",
@@ -2063,9 +2119,9 @@
   "old": "if (k < objc && IsWord(objv[k], \"with\")) k++;",
   "new": ";",
   "cls": "deleted:clause",
-  "line1": 1578,
-  "line2": 1578,
-  "total": 259,
+  "line1": 1648,
+  "line2": 1648,
+  "total": 282,
   "result": "CAUGHT",
   "how": "15 tests fail",
   "tests": [
@@ -2085,7 +2141,7 @@
    "fill-w.25",
    "conv-2.5"
   ],
-  "secs": 18.3
+  "secs": 19.8
  },
  {
   "id": "P04",
@@ -2093,9 +2149,9 @@
   "old": "if (k < objc && IsWord(objv[k], \"by\")) {",
   "new": "if (0) {",
   "cls": "changed:expression",
-  "line1": 1581,
-  "line2": 1581,
-  "total": 259,
+  "line1": 1651,
+  "line2": 1651,
+  "total": 282,
   "result": "CAUGHT",
   "how": "7 tests fail",
   "tests": [
@@ -2107,7 +2163,7 @@
    "fill-w.12",
    "fill-w.17"
   ],
-  "secs": 16.4
+  "secs": 20.1
  },
  {
   "id": "P05",
@@ -2115,16 +2171,16 @@
   "old": "if (k != objc - 1) goto fillUsage;",
   "new": ";",
   "cls": "deleted:clause",
-  "line1": 1583,
-  "line2": 1583,
-  "total": 259,
+  "line1": 1653,
+  "line2": 1653,
+  "total": 282,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "fill-w.12",
    "fill-w.16"
   ],
-  "secs": 16.9
+  "secs": 19.9
  },
  {
   "id": "P06",
@@ -2132,15 +2188,15 @@
   "old": "} else if (k < objc - 1) {",
   "new": "} else if (0) {",
   "cls": "changed:expression",
-  "line1": 1584,
-  "line2": 1584,
-  "total": 259,
+  "line1": 1654,
+  "line2": 1654,
+  "total": 282,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "fill-w.15"
   ],
-  "secs": 17.2
+  "secs": 19.8
  },
  {
   "id": "P07",
@@ -2148,9 +2204,9 @@
   "old": "return (size_t)n == strlen(w) &&",
   "new": "return",
   "cls": "deleted:clause",
-  "line1": 989,
-  "line2": 989,
-  "total": 259,
+  "line1": 1055,
+  "line2": 1055,
+  "total": 282,
   "result": "CAUGHT",
   "how": "3 tests fail",
   "tests": [
@@ -2158,7 +2214,7 @@
    "count-w.14",
    "next-w.9"
   ],
-  "secs": 17.5
+  "secs": 20.0
  },
  {
   "id": "P08",
@@ -2166,16 +2222,16 @@
   "old": "IndexError(interp, first < 0 ? firstObj : lastObj);",
   "new": "IndexError(interp, lastObj);",
   "cls": "deleted:clause",
-  "line1": 1609,
-  "line2": 1609,
-  "total": 259,
+  "line1": 1679,
+  "line2": 1679,
+  "total": 282,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "fill-w.20",
    "diff-2.1"
   ],
-  "secs": 17.1
+  "secs": 20.1
  },
  {
   "id": "P09",
@@ -2183,9 +2239,9 @@
   "old": "IsWord(objv[kc], \"to\") ||",
   "new": "0 ||",
   "cls": "changed:expression",
-  "line1": 1381,
-  "line2": 1381,
-  "total": 259,
+  "line1": 1451,
+  "line2": 1451,
+  "total": 282,
   "result": "CAUGHT",
   "how": "6 tests fail",
   "tests": [
@@ -2196,7 +2252,7 @@
    "count-w.9",
    "count-w.10"
   ],
-  "secs": 17.7
+  "secs": 20.3
  },
  {
   "id": "P10",
@@ -2204,16 +2260,16 @@
   "old": "|| IsWord(objv[kc], \"..\"))",
   "new": "|| 0)",
   "cls": "changed:expression",
-  "line1": 1381,
-  "line2": 1381,
-  "total": 259,
+  "line1": 1451,
+  "line2": 1451,
+  "total": 282,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "count-w.2",
    "count-w.8"
   ],
-  "secs": 17.5
+  "secs": 20.3
  },
  {
   "id": "P11",
@@ -2221,9 +2277,9 @@
   "old": "if (kc < objc && IsWord(objv[kc], \"with\")) {",
   "new": "if (0) {",
   "cls": "changed:expression",
-  "line1": 1384,
-  "line2": 1384,
-  "total": 259,
+  "line1": 1454,
+  "line2": 1454,
+  "total": 282,
   "result": "CAUGHT",
   "how": "6 tests fail",
   "tests": [
@@ -2234,7 +2290,7 @@
    "count-w.9",
    "count-w.11"
   ],
-  "secs": 17.3
+  "secs": 20.4
  },
  {
   "id": "P12",
@@ -2242,15 +2298,15 @@
   "old": "if (kc != objc) goto countUsage;",
   "new": ";",
   "cls": "deleted:clause",
-  "line1": 1389,
-  "line2": 1389,
-  "total": 259,
+  "line1": 1459,
+  "line2": 1459,
+  "total": 282,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "count-w.13"
   ],
-  "secs": 19.2
+  "secs": 19.6
  },
  {
   "id": "P13",
@@ -2258,9 +2314,9 @@
   "old": "hasVal = (valObj != NULL);",
   "new": "hasVal = 0;",
   "cls": "changed:expression",
-  "line1": 1390,
-  "line2": 1390,
-  "total": 259,
+  "line1": 1460,
+  "line2": 1460,
+  "total": 282,
   "result": "CAUGHT",
   "how": "9 tests fail",
   "tests": [
@@ -2274,7 +2330,7 @@
    "diff-4.1",
    "diff-4.2"
   ],
-  "secs": 20.2
+  "secs": 19.6
  },
  {
   "id": "P14",
@@ -2282,9 +2338,9 @@
   "old": "if (kn < objc && IsWord(objv[kn], \"with\")) {",
   "new": "if (0) {",
   "cls": "changed:expression",
-  "line1": 1428,
-  "line2": 1428,
-  "total": 259,
+  "line1": 1498,
+  "line2": 1498,
+  "total": 282,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
@@ -2294,7 +2350,7 @@
    "next-w.4",
    "next-w.5"
   ],
-  "secs": 20.2
+  "secs": 20.1
  },
  {
   "id": "P15",
@@ -2302,15 +2358,15 @@
   "old": "if (kn != objc) goto nextUsage;",
   "new": ";",
   "cls": "deleted:clause",
-  "line1": 1433,
-  "line2": 1433,
-  "total": 259,
+  "line1": 1503,
+  "line2": 1503,
+  "total": 282,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "next-w.6"
   ],
-  "secs": 19.6
+  "secs": 20.3
  },
  {
   "id": "Q01",
@@ -2318,11 +2374,11 @@
   "old": "if (nb > 0) memcpy(n->words, bytes, (size_t)nb);",
   "new": "if (nb > 0) memcpy(n->words, bytes, (size_t)nb - 1);",
   "cls": "changed:+tokens",
-  "line1": 1467,
-  "line2": 1467,
-  "total": 259,
+  "line1": 1537,
+  "line2": 1537,
+  "total": 282,
   "result": "CAUGHT",
-  "how": "8 tests fail",
+  "how": "9 tests fail",
   "tests": [
    "conv-1.1",
    "conv-1.5",
@@ -2331,26 +2387,27 @@
    "conv-2.4",
    "conv-2.5",
    "conv-5.1",
-   "conv-5.2"
+   "conv-5.2",
+   "signed-1.19"
   ],
-  "secs": 16.6
+  "secs": 21.5
  },
  {
   "id": "Q02",
   "name": "Q02 tobytes accepts any width",
-  "old": "if (b->width != 8) {\n\t    Tcl_SetObjResult(interp, Tcl_ObjPrintf(\n\t\t    \"tobytes",
-  "new": "if (0) {\n\t    Tcl_SetObjResult(interp, Tcl_ObjPrintf(\n\t\t    \"tobytes",
-  "cls": "changed:expression",
-  "line1": 1477,
-  "line2": 1479,
-  "total": 259,
+  "old": "if (b->width != 8 || b->isSigned) {\n\t    Tcl_SetObjResult(interp, Tcl_ObjPrintf(\n\t\t    \"tobytes",
+  "new": "if (b->isSigned) {\n\t    Tcl_SetObjResult(interp, Tcl_ObjPrintf(\n\t\t    \"tobytes",
+  "cls": "deleted:clause",
+  "line1": 1547,
+  "line2": 1549,
+  "total": 282,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "conv-2.6",
    "conv-2.7"
   ],
-  "secs": 17.2
+  "secs": 20.2
  },
  {
   "id": "Q03",
@@ -2358,9 +2415,9 @@
   "old": "(const unsigned char *)b->words, b->len));",
   "new": "(const unsigned char *)b->words, b->len > 0 ? b->len - 1 : 0));",
   "cls": "changed:+tokens",
-  "line1": 1485,
-  "line2": 1485,
-  "total": 259,
+  "line1": 1555,
+  "line2": 1555,
+  "total": 282,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
@@ -2370,7 +2427,7 @@
    "conv-2.5",
    "conv-5.1"
   ],
-  "secs": 16.9
+  "secs": 21.5
  },
  {
   "id": "Q04",
@@ -2378,16 +2435,16 @@
   "old": "width = 8;\n\tif (objc == 5) {",
   "new": "width = 16;\n\tif (objc == 5) {",
   "cls": "changed:constant",
-  "line1": 1496,
-  "line2": 1497,
-  "total": 259,
+  "line1": 1566,
+  "line2": 1567,
+  "total": 282,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "conv-3.1",
    "conv-3.4"
   ],
-  "secs": 17.7
+  "secs": 21.0
  },
  {
   "id": "Q05",
@@ -2395,32 +2452,32 @@
   "old": "(uint64_t)ch > maxv",
   "new": "(uint64_t)ch >= maxv",
   "cls": "changed:operator",
-  "line1": 1514,
-  "line2": 1514,
-  "total": 259,
+  "line1": 1584,
+  "line2": 1584,
+  "total": 282,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "conv-3.2",
    "conv-4.1"
   ],
-  "secs": 17.5
+  "secs": 20.6
  },
  {
   "id": "Q06",
   "name": "Q06 fromchars accepts width 64",
-  "old": "if (width != 8 && width != 16 && width != 32) {\n\t    Tcl_SetObjResult(interp, Tcl_NewStringObj(\n\t\t    \"fromchars",
-  "new": "if (width != 8 && width != 16 && width != 32 && width != 64) {\n\t    Tcl_SetObjResult(interp, Tcl_NewStringObj(\n\t\t    \"fromchars",
+  "old": "if (isSigned || (width != 8 && width != 16 && width != 32)) {\n\t    Tcl_SetObjResult(interp, Tcl_NewStringObj(\n\t\t    \"fromchars",
+  "new": "if (isSigned || (width != 8 && width != 16 && width != 32 && width != 64)) {\n\t    Tcl_SetObjResult(interp, Tcl_NewStringObj(\n\t\t    \"fromchars",
   "cls": "changed:+tokens",
-  "line1": 1504,
-  "line2": 1506,
-  "total": 259,
+  "line1": 1574,
+  "line2": 1576,
+  "total": 282,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "conv-3.6"
   ],
-  "secs": 16.8
+  "secs": 21.0
  },
  {
   "id": "Q07",
@@ -2428,15 +2485,15 @@
   "old": "if (ch) PutElem(n, i, (uint64_t)ch);",
   "new": "if (ch > 1) PutElem(n, i, (uint64_t)ch);",
   "cls": "changed:+tokens",
-  "line1": 1525,
-  "line2": 1525,
-  "total": 259,
+  "line1": 1595,
+  "line2": 1595,
+  "total": 282,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "conv-3.11"
   ],
-  "secs": 18.0
+  "secs": 21.7
  },
  {
   "id": "Q08",
@@ -2444,15 +2501,15 @@
   "old": "(v >= 0xD800 && v <= 0xDFFF)",
   "new": "0",
   "cls": "changed:expression",
-  "line1": 1547,
-  "line2": 1547,
-  "total": 259,
+  "line1": 1617,
+  "line2": 1617,
+  "total": 282,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "conv-4.6"
   ],
-  "secs": 17.7
+  "secs": 21.7
  },
  {
   "id": "Q09",
@@ -2460,31 +2517,31 @@
   "old": "v > 0x10FFFF",
   "new": "v > 0x110000",
   "cls": "changed:constant",
-  "line1": 1547,
-  "line2": 1547,
-  "total": 259,
+  "line1": 1617,
+  "line2": 1617,
+  "total": 282,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "conv-4.7"
   ],
-  "secs": 17.1
+  "secs": 21.4
  },
  {
   "id": "Q10",
   "name": "Q10 tochars accepts width 64",
-  "old": "b->width != 8 && b->width != 16 && b->width != 32) {\n\t    Tcl_SetObjResult(interp, Tcl_ObjPrintf(\n\t\t    \"tochars",
-  "new": "b->width != 8 && b->width != 16 && b->width != 32 && b->width != 64) {\n\t    Tcl_SetObjResult(interp, Tcl_ObjPrintf(\n\t\t    \"tochars",
+  "old": "if ((b->width != 8 && b->width != 16 && b->width != 32) || b->isSigned) {\n\t    Tcl_SetObjResult(interp, Tcl_ObjPrintf(\n\t\t    \"tochars",
+  "new": "if ((b->width != 8 && b->width != 16 && b->width != 32 && b->width != 64) || b->isSigned) {\n\t    Tcl_SetObjResult(interp, Tcl_ObjPrintf(\n\t\t    \"tochars",
   "cls": "changed:+tokens",
-  "line1": 1539,
-  "line2": 1541,
-  "total": 259,
+  "line1": 1609,
+  "line2": 1611,
+  "total": 282,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "conv-4.5"
   ],
-  "secs": 16.8
+  "secs": 21.1
  },
  {
   "id": "Q11",
@@ -2492,9 +2549,9 @@
   "old": "Tcl_NewUnicodeObj(buf, b->len)",
   "new": "Tcl_NewUnicodeObj(buf, b->len > 0 ? b->len - 1 : 0)",
   "cls": "changed:+tokens",
-  "line1": 1557,
-  "line2": 1557,
-  "total": 259,
+  "line1": 1627,
+  "line2": 1627,
+  "total": 282,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
@@ -2504,7 +2561,7 @@
    "conv-5.1",
    "conv-5.2"
   ],
-  "secs": 16.9
+  "secs": 21.2
  },
  {
   "id": "Q12",
@@ -2512,9 +2569,9 @@
   "old": "for (i = 0; i < b->len; i++) buf[i] = (Tcl_UniChar)GetElem(b, i);",
   "new": "for (i = 1; i < b->len; i++) buf[i] = (Tcl_UniChar)GetElem(b, i);",
   "cls": "changed:constant",
-  "line1": 1556,
-  "line2": 1556,
-  "total": 259,
+  "line1": 1626,
+  "line2": 1626,
+  "total": 282,
   "result": "CAUGHT",
   "how": "3 tests fail",
   "tests": [
@@ -2522,7 +2579,7 @@
    "conv-5.1",
    "conv-5.2"
   ],
-  "secs": 17.2
+  "secs": 20.7
  },
  {
   "id": "Q13",
@@ -2530,16 +2587,16 @@
   "old": "ch, i, width));",
   "new": "ch, i + 1, width));",
   "cls": "changed:+tokens",
-  "line1": 1517,
-  "line2": 1517,
-  "total": 259,
+  "line1": 1587,
+  "line2": 1587,
+  "total": 282,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "conv-3.4",
    "conv-3.5"
   ],
-  "secs": 18.1
+  "secs": 20.9
  },
  {
   "id": "S01",
@@ -2547,9 +2604,9 @@
   "old": "if (s + n > 64) v |= b->words[k + 1] << (64 - s);",
   "new": ";",
   "cls": "deleted:clause",
-  "line1": 761,
-  "line2": 761,
-  "total": 259,
+  "line1": 808,
+  "line2": 808,
+  "total": 282,
   "result": "CAUGHT",
   "how": "12 tests fail",
   "tests": [
@@ -2566,7 +2623,7 @@
    "diff-3.1",
    "diff-4.2"
   ],
-  "secs": 15.6
+  "secs": 19.8
  },
  {
   "id": "S02",
@@ -2574,9 +2631,9 @@
   "old": "v |= b->words[k + 1] << (64 - s);",
   "new": "v |= b->words[k + 1] << (63 - s);",
   "cls": "changed:constant",
-  "line1": 761,
-  "line2": 761,
-  "total": 259,
+  "line1": 808,
+  "line2": 808,
+  "total": 282,
   "result": "CAUGHT",
   "how": "11 tests fail",
   "tests": [
@@ -2592,7 +2649,7 @@
    "diff-3.1",
    "diff-4.2"
   ],
-  "secs": 15.7
+  "secs": 19.6
  },
  {
   "id": "S03",
@@ -2600,13 +2657,13 @@
   "old": "return (n == 64) ? v : (v & (((uint64_t)1 << n) - 1));",
   "new": "return v;",
   "cls": "deleted:clause",
-  "line1": 762,
-  "line2": 762,
-  "total": 259,
+  "line1": 809,
+  "line2": 809,
+  "total": 282,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 17.1
+  "secs": 20.8
  },
  {
   "id": "S04",
@@ -2614,13 +2671,13 @@
   "old": "    v &= m;\n",
   "new": "",
   "cls": "deleted:statement",
-  "line1": 776,
-  "line2": 776,
-  "total": 259,
+  "line1": 823,
+  "line2": 823,
+  "total": 282,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 16.1
+  "secs": 20.7
  },
  {
   "id": "S05",
@@ -2628,11 +2685,11 @@
   "old": "b->words[k] = (b->words[k] & ~(m << s)) | (v << s);",
   "new": "b->words[k] = (v << s);",
   "cls": "deleted:clause",
-  "line1": 777,
-  "line2": 777,
-  "total": 259,
+  "line1": 824,
+  "line2": 824,
+  "total": 282,
   "result": "CAUGHT",
-  "how": "14 tests fail",
+  "how": "15 tests fail",
   "tests": [
    "repl-1.1",
    "repl-1.3",
@@ -2643,13 +2700,14 @@
    "shift-1.2",
    "shift-2.1",
    "shift-2.2",
+   "in-1.4",
    "diff-1.1",
    "grow-1.1",
    "grow-1.3",
    "diff-3.1",
    "diff-4.2"
   ],
-  "secs": 14.7
+  "secs": 19.0
  },
  {
   "id": "S06",
@@ -2657,9 +2715,9 @@
   "old": "if (s + n > 64) {\n\tuint64_t mh",
   "new": "if (0) {\n\tuint64_t mh",
   "cls": "changed:expression",
-  "line1": 778,
-  "line2": 779,
-  "total": 259,
+  "line1": 825,
+  "line2": 826,
+  "total": 282,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
@@ -2669,7 +2727,7 @@
    "diff-3.1",
    "diff-4.2"
   ],
-  "secs": 15.5
+  "secs": 19.3
  },
  {
   "id": "S07",
@@ -2677,9 +2735,9 @@
   "old": "uint64_t mh = ((uint64_t)1 << (s + n - 64)) - 1;",
   "new": "uint64_t mh = ((uint64_t)1 << (s + n - 63)) - 1;",
   "cls": "changed:constant",
-  "line1": 779,
-  "line2": 779,
-  "total": 259,
+  "line1": 826,
+  "line2": 826,
+  "total": 282,
   "result": "CAUGHT",
   "how": "4 tests fail",
   "tests": [
@@ -2688,7 +2746,7 @@
    "diff-3.1",
    "diff-4.2"
   ],
-  "secs": 16.5
+  "secs": 20.1
  },
  {
   "id": "S08",
@@ -2696,9 +2754,9 @@
   "old": "b->words[k + 1] = (b->words[k + 1] & ~mh) | (v >> (64 - s));",
   "new": "b->words[k + 1] = (v >> (64 - s));",
   "cls": "deleted:clause",
-  "line1": 781,
-  "line2": 781,
-  "total": 259,
+  "line1": 828,
+  "line2": 828,
+  "total": 282,
   "result": "CAUGHT",
   "how": "4 tests fail",
   "tests": [
@@ -2707,7 +2765,7 @@
    "diff-3.1",
    "diff-4.2"
   ],
-  "secs": 15.7
+  "secs": 19.7
  },
  {
   "id": "S09",
@@ -2715,9 +2773,9 @@
   "old": "| (v >> (64 - s));",
   "new": "| (v >> (63 - s));",
   "cls": "changed:constant",
-  "line1": 781,
-  "line2": 781,
-  "total": 259,
+  "line1": 828,
+  "line2": 828,
+  "total": 282,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
@@ -2727,7 +2785,7 @@
    "diff-3.1",
    "diff-4.2"
   ],
-  "secs": 15.1
+  "secs": 18.7
  },
  {
   "id": "S10",
@@ -2735,13 +2793,13 @@
   "old": "\tPutBits(b, from, 0, n);\n\tfrom += n;",
   "new": "\tPutBits(b, from, 0, n);\n\tfrom += 0;",
   "cls": "changed:token",
-  "line1": 792,
-  "line2": 793,
-  "total": 259,
+  "line1": 839,
+  "line2": 840,
+  "total": 282,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 16.4
+  "secs": 18.9
  },
  {
   "id": "S11",
@@ -2749,9 +2807,9 @@
   "old": "PutBits(b, d, GetBits(b, q, h), h);",
   "new": "PutBits(b, d, GetBits(b, q + 1, h), h);",
   "cls": "changed:+tokens",
-  "line1": 826,
-  "line2": 826,
-  "total": 259,
+  "line1": 873,
+  "line2": 873,
+  "total": 282,
   "result": "CAUGHT",
   "how": "7 tests fail",
   "tests": [
@@ -2763,7 +2821,7 @@
    "diff-3.1",
    "diff-4.2"
   ],
-  "secs": 15.6
+  "secs": 18.5
  },
  {
   "id": "S12",
@@ -2771,9 +2829,9 @@
   "old": "PutBits(b, to + left, GetBits(b, from + left, n), n);",
   "new": "PutBits(b, to + left + 1, GetBits(b, from + left, n), n);",
   "cls": "changed:+tokens",
-  "line1": 845,
-  "line2": 845,
-  "total": 259,
+  "line1": 892,
+  "line2": 892,
+  "total": 282,
   "result": "CAUGHT",
   "how": "8 tests fail",
   "tests": [
@@ -2786,7 +2844,7 @@
    "diff-3.1",
    "diff-4.2"
   ],
-  "secs": 15.8
+  "secs": 18.3
  },
  {
   "id": "S13",
@@ -2794,13 +2852,13 @@
   "old": "int h = (cnt >= 64 - (d & 63)) ? (int)(64 - (d & 63)) : (int)cnt;",
   "new": "int h = (int)(64 - (d & 63));",
   "cls": "deleted:clause",
-  "line1": 824,
-  "line2": 824,
-  "total": 259,
+  "line1": 871,
+  "line2": 871,
+  "total": 282,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 17.3
+  "secs": 19.6
  },
  {
   "id": "S14",
@@ -2808,9 +2866,9 @@
   "old": "int n = (left >= 64) ? 64 : (int)left;",
   "new": "int n = 64;",
   "cls": "deleted:clause",
-  "line1": 842,
-  "line2": 842,
-  "total": 259,
+  "line1": 889,
+  "line2": 889,
+  "total": 282,
   "result": "CAUGHT",
   "how": "8 tests fail",
   "tests": [
@@ -2823,7 +2881,7 @@
    "diff-3.1",
    "diff-4.2"
   ],
-  "secs": 15.8
+  "secs": 18.4
  },
  {
   "id": "S15",
@@ -2831,14 +2889,14 @@
   "old": "int n = (count >= 64) ? 64 : (int)count;",
   "new": "int n = 64;",
   "cls": "deleted:clause",
-  "line1": 790,
-  "line2": 790,
+  "line1": 837,
+  "line2": 837,
   "total": null,
   "result": "CAUGHT",
   "how": "crash rc=-11",
   "tests": [],
   "running": "diff-3.1",
-  "secs": 1.6
+  "secs": 1.5
  },
  {
   "id": "B01",
@@ -2846,11 +2904,11 @@
   "old": "BO_LOOP(0, m, y->words[k], xv & yv)",
   "new": "BO_LOOP(0, m, y->words[k], xv | yv)",
   "cls": "changed:operator",
-  "line1": 1082,
-  "line2": 1082,
-  "total": 259,
+  "line1": 1152,
+  "line2": 1152,
+  "total": 282,
   "result": "CAUGHT",
-  "how": "8 tests fail",
+  "how": "11 tests fail",
   "tests": [
    "bitop-1.1",
    "bitop-1.2",
@@ -2859,9 +2917,12 @@
    "bitop-2.1",
    "bitop-2.4",
    "bitop-2.5",
-   "bitop-2.7"
+   "bitop-2.7",
+   "signed-1.11",
+   "signed-1.13",
+   "signed-1.21"
   ],
-  "secs": 16.7
+  "secs": 19.6
  },
  {
   "id": "B02",
@@ -2869,15 +2930,15 @@
   "old": "BO_LOOP(m, n, 0, xv & yv)",
   "new": "BO_LOOP(m, n, 0, xv)",
   "cls": "deleted:clause",
-  "line1": 1083,
-  "line2": 1083,
-  "total": 259,
+  "line1": 1153,
+  "line2": 1153,
+  "total": 282,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "bitop-1.4"
   ],
-  "secs": 16.9
+  "secs": 20.0
  },
  {
   "id": "B03",
@@ -2885,11 +2946,11 @@
   "old": "BO_LOOP(0, m, y->words[k], xv | yv)",
   "new": "BO_LOOP(0, m, y->words[k], xv ^ yv)",
   "cls": "changed:operator",
-  "line1": 1086,
-  "line2": 1086,
-  "total": 259,
+  "line1": 1156,
+  "line2": 1156,
+  "total": 282,
   "result": "CAUGHT",
-  "how": "7 tests fail",
+  "how": "8 tests fail",
   "tests": [
    "bitop-1.1",
    "bitop-1.2",
@@ -2897,9 +2958,10 @@
    "bitop-1.4",
    "bitop-2.2",
    "bitop-2.3",
-   "bitop-2.7"
+   "bitop-2.7",
+   "signed-1.11"
   ],
-  "secs": 16.6
+  "secs": 19.7
  },
  {
   "id": "B04",
@@ -2907,15 +2969,15 @@
   "old": "BO_LOOP(m, n, 0, xv | yv)",
   "new": "BO_LOOP(m, n, 0, 0)",
   "cls": "deleted:clause",
-  "line1": 1087,
-  "line2": 1087,
-  "total": 259,
+  "line1": 1157,
+  "line2": 1157,
+  "total": 282,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "bitop-1.4"
   ],
-  "secs": 16.2
+  "secs": 19.7
  },
  {
   "id": "B05",
@@ -2923,11 +2985,11 @@
   "old": "BO_LOOP(0, m, y->words[k], xv ^ yv)",
   "new": "BO_LOOP(0, m, y->words[k], xv | yv)",
   "cls": "changed:operator",
-  "line1": 1090,
-  "line2": 1090,
-  "total": 259,
+  "line1": 1160,
+  "line2": 1160,
+  "total": 282,
   "result": "CAUGHT",
-  "how": "7 tests fail",
+  "how": "9 tests fail",
   "tests": [
    "bitop-1.1",
    "bitop-1.2",
@@ -2935,9 +2997,11 @@
    "bitop-1.4",
    "bitop-2.2",
    "bitop-2.3",
-   "bitop-2.7"
+   "bitop-2.7",
+   "signed-1.11",
+   "signed-1.21"
   ],
-  "secs": 15.3
+  "secs": 19.7
  },
  {
   "id": "B06",
@@ -2945,15 +3009,15 @@
   "old": "BO_LOOP(m, n, 0, xv ^ yv)",
   "new": "BO_LOOP(m, n, 0, 0)",
   "cls": "deleted:clause",
-  "line1": 1091,
-  "line2": 1091,
-  "total": 259,
+  "line1": 1161,
+  "line2": 1161,
+  "total": 282,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "bitop-1.4"
   ],
-  "secs": 16.3
+  "secs": 19.3
  },
  {
   "id": "B07",
@@ -2961,20 +3025,21 @@
   "old": "BO_LOOP(0, m, y->words[k], xv & ~yv)",
   "new": "BO_LOOP(0, m, y->words[k], xv & yv)",
   "cls": "deleted:clause",
-  "line1": 1094,
-  "line2": 1094,
-  "total": 259,
+  "line1": 1164,
+  "line2": 1164,
+  "total": 282,
   "result": "CAUGHT",
-  "how": "6 tests fail",
+  "how": "7 tests fail",
   "tests": [
    "bitop-1.1",
    "bitop-1.2",
    "bitop-1.3",
    "bitop-1.4",
    "bitop-2.3",
-   "bitop-2.4"
+   "bitop-2.4",
+   "signed-1.11"
   ],
-  "secs": 16.6
+  "secs": 19.5
  },
  {
   "id": "B08",
@@ -2982,15 +3047,15 @@
   "old": "BO_LOOP(m, n, 0, xv & ~yv)",
   "new": "BO_LOOP(m, n, 0, 0)",
   "cls": "deleted:clause",
-  "line1": 1095,
-  "line2": 1095,
-  "total": 259,
+  "line1": 1165,
+  "line2": 1165,
+  "total": 282,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "bitop-1.4"
   ],
-  "secs": 16.0
+  "secs": 19.3
  },
  {
   "id": "B09",
@@ -2998,11 +3063,11 @@
   "old": "dst->words[k] = ~x->words[k];",
   "new": "dst->words[k] = x->words[k];",
   "cls": "deleted:clause",
-  "line1": 1076,
-  "line2": 1076,
-  "total": 259,
+  "line1": 1146,
+  "line2": 1146,
+  "total": 282,
   "result": "CAUGHT",
-  "how": "7 tests fail",
+  "how": "8 tests fail",
   "tests": [
    "bitop-1.1",
    "bitop-1.2",
@@ -3010,9 +3075,10 @@
    "bitop-1.5",
    "bitop-2.2",
    "bitop-2.5",
-   "bitop-2.6"
+   "bitop-2.6",
+   "signed-1.11"
   ],
-  "secs": 16.9
+  "secs": 19.7
  },
  {
   "id": "B10",
@@ -3020,11 +3086,11 @@
   "old": "m = (y->nwords < n) ? y->nwords : n;",
   "new": "m = (y->nwords < n) ? y->nwords : n / 2;",
   "cls": "changed:+tokens",
-  "line1": 1079,
-  "line2": 1079,
-  "total": 259,
+  "line1": 1149,
+  "line2": 1149,
+  "total": 282,
   "result": "CAUGHT",
-  "how": "10 tests fail",
+  "how": "13 tests fail",
   "tests": [
    "bitop-1.1",
    "bitop-1.2",
@@ -3035,9 +3101,12 @@
    "bitop-2.3",
    "bitop-2.4",
    "bitop-2.5",
-   "bitop-2.7"
+   "bitop-2.7",
+   "signed-1.11",
+   "signed-1.13",
+   "signed-1.21"
   ],
-  "secs": 17.3
+  "secs": 19.2
  },
  {
   "id": "B11",
@@ -3045,13 +3114,13 @@
   "old": "if (r) b->words[b->nwords - 1] &= (((uint64_t)1 << r) - 1);",
   "new": ";",
   "cls": "deleted:clause",
-  "line1": 1116,
-  "line2": 1116,
-  "total": 259,
+  "line1": 1186,
+  "line2": 1186,
+  "total": 282,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 17.1
+  "secs": 20.1
  },
  {
   "id": "B12",
@@ -3059,16 +3128,16 @@
   "old": "int r = (int)(bits & 63);",
   "new": "int r = (int)(bits & 31);",
   "cls": "changed:constant",
-  "line1": 1114,
-  "line2": 1114,
-  "total": 259,
+  "line1": 1184,
+  "line2": 1184,
+  "total": 282,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "bitop-1.2",
    "bitop-1.5"
   ],
-  "secs": 18.1
+  "secs": 19.2
  },
  {
   "id": "B13",
@@ -3076,29 +3145,30 @@
   "old": "if (total > used) memset(BYTES(b) + used, 0, total - used);",
   "new": ";",
   "cls": "deleted:clause",
-  "line1": 1120,
-  "line2": 1120,
-  "total": 259,
+  "line1": 1190,
+  "line2": 1190,
+  "total": 282,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 17.4
+  "secs": 19.3
  },
  {
   "id": "B14",
   "name": "B14 width check dropped",
-  "old": "if (x->width != y->width) {",
-  "new": "if (0) {",
-  "cls": "changed:expression",
-  "line1": 1139,
-  "line2": 1139,
-  "total": 259,
+  "old": "if (x->width != y->width || SignedBits(x) != SignedBits(y)) {",
+  "new": "if (SignedBits(x) != SignedBits(y)) {",
+  "cls": "deleted:clause",
+  "line1": 1209,
+  "line2": 1209,
+  "total": 282,
   "result": "CAUGHT",
-  "how": "1 tests fail",
+  "how": "2 tests fail",
   "tests": [
-   "bitop-3.1"
+   "bitop-3.1",
+   "signed-1.12"
   ],
-  "secs": 15.9
+  "secs": 21.8
  },
  {
   "id": "B15",
@@ -3106,16 +3176,16 @@
   "old": "if (!zero && x->len != y->len) {",
   "new": "if (x->len != y->len) {",
   "cls": "deleted:clause",
-  "line1": 1146,
-  "line2": 1146,
-  "total": 259,
+  "line1": 1216,
+  "line2": 1216,
+  "total": 282,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "bitop-1.4",
    "bitop-2.7"
   ],
-  "secs": 15.9
+  "secs": 20.0
  },
  {
   "id": "B16",
@@ -3123,9 +3193,9 @@
   "old": "if (!zero && x->len != y->len) {",
   "new": "if (zero && x->len != y->len) {",
   "cls": "deleted:clause",
-  "line1": 1146,
-  "line2": 1146,
-  "total": 259,
+  "line1": 1216,
+  "line2": 1216,
+  "total": 282,
   "result": "CAUGHT",
   "how": "4 tests fail",
   "tests": [
@@ -3134,7 +3204,7 @@
    "bitop-3.2",
    "bitop-3.8"
   ],
-  "secs": 16.5
+  "secs": 19.3
  },
  {
   "id": "B17",
@@ -3142,9 +3212,9 @@
   "old": "work = Tcl_IsShared(obj) ? Tcl_DuplicateObj(obj) : obj;\n\td = GETREP(work);\n\tBitOpWords",
   "new": "work = obj;\n\td = GETREP(work);\n\tBitOpWords",
   "cls": "deleted:clause",
-  "line1": 1229,
-  "line2": 1231,
-  "total": 259,
+  "line1": 1299,
+  "line2": 1301,
+  "total": 282,
   "result": "CAUGHT",
   "how": "3 tests fail",
   "tests": [
@@ -3152,7 +3222,7 @@
    "bitop-2.3",
    "bitop-2.5"
   ],
-  "secs": 16.5
+  "secs": 19.5
  },
  {
   "id": "B18",
@@ -3160,31 +3230,31 @@
   "old": "MaskTail(d);\n\tTouch(work);",
   "new": "MaskTail(d);",
   "cls": "deleted:clause",
-  "line1": 1232,
-  "line2": 1233,
-  "total": 259,
+  "line1": 1302,
+  "line2": 1303,
+  "total": 282,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "bitop-2.6"
   ],
-  "secs": 18.9
+  "secs": 20.3
  },
  {
   "id": "B19",
   "name": "B19 new result takes the length of the second array",
-  "old": "NewRep(interp, x->len, x->width)) == NULL) return TCL_ERROR;\n\tBitOpWords",
-  "new": "NewRep(interp, y ? y->len : x->len, x->width)) == NULL) return TCL_ERROR;\n\tBitOpWords",
+  "old": "NewRep(interp, x->len, x->width, x->isSigned)) == NULL) return TCL_ERROR;\n\tBitOpWords",
+  "new": "NewRep(interp, y ? y->len : x->len, x->width, x->isSigned)) == NULL) return TCL_ERROR;\n\tBitOpWords",
   "cls": "changed:+tokens",
-  "line1": 1240,
-  "line2": 1241,
-  "total": 259,
+  "line1": 1310,
+  "line2": 1311,
+  "total": 282,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "bitop-2.7"
   ],
-  "secs": 18.1
+  "secs": 22.3
  },
  {
   "id": "B20",
@@ -3192,18 +3262,19 @@
   "old": "(rest == 3 || rest == 4) && IsArrow(objv[idx + 1])",
   "new": "(rest == 3) && IsArrow(objv[idx + 1])",
   "cls": "deleted:clause",
-  "line1": 1204,
-  "line2": 1204,
-  "total": 259,
+  "line1": 1274,
+  "line2": 1274,
+  "total": 282,
   "result": "CAUGHT",
-  "how": "4 tests fail",
+  "how": "5 tests fail",
   "tests": [
    "bitop-2.2",
    "bitop-2.3",
    "bitop-2.4",
-   "bitop-2.7"
+   "bitop-2.7",
+   "signed-1.21"
   ],
-  "secs": 17.5
+  "secs": 19.6
  },
  {
   "id": "B21",
@@ -3211,16 +3282,16 @@
   "old": "inPlace = 0; srcA = objv[idx + 2]; srcB = objv[idx + 3];",
   "new": "inPlace = 0; srcA = objv[idx + 3]; srcB = objv[idx + 2];",
   "cls": "changed:2 tokens",
-  "line1": 1209,
-  "line2": 1209,
-  "total": 259,
+  "line1": 1279,
+  "line2": 1279,
+  "total": 282,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "bitop-2.4",
    "bitop-2.7"
   ],
-  "secs": 17.0
+  "secs": 21.5
  },
  {
   "id": "B22",
@@ -3228,16 +3299,16 @@
   "old": "zero = mode;",
   "new": "zero = !mode;",
   "cls": "changed:+tokens",
-  "line1": 1188,
-  "line2": 1188,
-  "total": 259,
+  "line1": 1258,
+  "line2": 1258,
+  "total": 282,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "bitop-1.4",
    "bitop-2.7"
   ],
-  "secs": 15.8
+  "secs": 20.8
  },
  {
   "id": "B23",
@@ -3245,9 +3316,9 @@
   "old": "zero = mode;\n\tidx += 2;",
   "new": "zero = mode;\n\tidx += 1;",
   "cls": "changed:constant",
-  "line1": 1188,
-  "line2": 1189,
-  "total": 259,
+  "line1": 1258,
+  "line2": 1259,
+  "total": 282,
   "result": "CAUGHT",
   "how": "3 tests fail",
   "tests": [
@@ -3255,7 +3326,7 @@
    "bitop-2.7",
    "bitop-3.7"
   ],
-  "secs": 15.6
+  "secs": 20.9
  },
  {
   "id": "B24",
@@ -3263,16 +3334,16 @@
   "old": "inPlace = 1; srcB = objv[idx + 2];",
   "new": "inPlace = 0; srcA = objv[idx]; srcB = objv[idx + 2];",
   "cls": "changed:expression",
-  "line1": 1207,
-  "line2": 1207,
-  "total": 259,
+  "line1": 1277,
+  "line2": 1277,
+  "total": 282,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "bitop-2.1",
    "bitop-2.7"
   ],
-  "secs": 17.6
+  "secs": 20.7
  },
  {
   "id": "B25",
@@ -3280,15 +3351,15 @@
   "old": "if (IsWord(dstName, \"<-\")) {",
   "new": "if (0) {",
   "cls": "changed:expression",
-  "line1": 1215,
-  "line2": 1215,
-  "total": 259,
+  "line1": 1285,
+  "line2": 1285,
+  "total": 282,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "bitop-3.9"
   ],
-  "secs": 18.0
+  "secs": 21.1
  },
  {
   "id": "B26",
@@ -3296,15 +3367,15 @@
   "old": "} else if (rest == 2 && IsArrow(objv[idx + 1])) {",
   "new": "} else if (0) {",
   "cls": "changed:expression",
-  "line1": 1200,
-  "line2": 1200,
-  "total": 259,
+  "line1": 1270,
+  "line2": 1270,
+  "total": 282,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "bitop-3.10"
   ],
-  "secs": 20.2
+  "secs": 20.9
  },
  {
   "id": "R01",
@@ -3312,9 +3383,9 @@
   "old": "x = ((x >> 16) & 0x0000FFFF0000FFFFULL) | ((x & 0x0000FFFF0000FFFFULL) << 16);",
   "new": "",
   "cls": "deleted:statement",
-  "line1": 574,
-  "line2": 574,
-  "total": 259,
+  "line1": 621,
+  "line2": 621,
+  "total": 282,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
@@ -3324,7 +3395,7 @@
    "diff-1.1",
    "diff-4.2"
   ],
-  "secs": 18.9
+  "secs": 21.3
  },
  {
   "id": "R02",
@@ -3332,9 +3403,9 @@
   "old": "return (x >> 32) | (x << 32);",
   "new": "return x;",
   "cls": "deleted:clause",
-  "line1": 575,
-  "line2": 575,
-  "total": 259,
+  "line1": 622,
+  "line2": 622,
+  "total": 282,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
@@ -3344,7 +3415,7 @@
    "diff-1.1",
    "diff-4.2"
   ],
-  "secs": 17.3
+  "secs": 21.6
  },
  {
   "id": "R03",
@@ -3352,16 +3423,16 @@
   "old": "dst[i] = src[b->len - 1 - i];",
   "new": "dst[i] = src[i];",
   "cls": "deleted:clause",
-  "line1": 635,
-  "line2": 635,
-  "total": 259,
+  "line1": 682,
+  "line2": 682,
+  "total": 282,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "rev-2.1",
    "diff-4.1"
   ],
-  "secs": 17.0
+  "secs": 20.6
  },
  {
   "id": "R04",
@@ -3369,9 +3440,9 @@
   "old": "n->words[i >> 6] = GetBits(b, from + i, m);",
   "new": "n->words[i >> 6] = GetBits(b, from + i, m) & ~(uint64_t)1;",
   "cls": "changed:+tokens",
-  "line1": 607,
-  "line2": 607,
-  "total": 259,
+  "line1": 654,
+  "line2": 654,
+  "total": 282,
   "result": "CAUGHT",
   "how": "6 tests fail",
   "tests": [
@@ -3382,7 +3453,7 @@
    "diff-1.1",
    "diff-4.2"
   ],
-  "secs": 18.5
+  "secs": 20.6
  },
  {
   "id": "R05",
@@ -3390,13 +3461,13 @@
   "old": "int m = (len - i >= 64) ? 64 : (int)(len - i);",
   "new": "int m = 64;",
   "cls": "deleted:clause",
-  "line1": 605,
-  "line2": 605,
-  "total": 259,
+  "line1": 652,
+  "line2": 652,
+  "total": 282,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 18.4
+  "secs": 20.0
  },
  {
   "id": "R06",
@@ -3404,9 +3475,9 @@
   "old": ": b->words[kq];",
   "new": ": b->words[kq + 1];",
   "cls": "changed:+tokens",
-  "line1": 834,
-  "line2": 834,
-  "total": 259,
+  "line1": 881,
+  "line2": 881,
+  "total": 282,
   "result": "CAUGHT",
   "how": "4 tests fail",
   "tests": [
@@ -3415,7 +3486,7 @@
    "diff-3.1",
    "diff-4.2"
   ],
-  "secs": 17.2
+  "secs": 20.8
  },
  {
   "id": "R07",
@@ -3423,9 +3494,9 @@
   "old": "(b->words[kq + 1] << (64 - sh))",
   "new": "(b->words[kq + 1] << (63 - sh))",
   "cls": "changed:constant",
-  "line1": 834,
-  "line2": 834,
-  "total": 259,
+  "line1": 881,
+  "line2": 881,
+  "total": 282,
   "result": "CAUGHT",
   "how": "6 tests fail",
   "tests": [
@@ -3436,7 +3507,7 @@
    "diff-3.1",
    "diff-4.2"
   ],
-  "secs": 17.1
+  "secs": 21.3
  },
  {
   "id": "R08",
@@ -3444,9 +3515,9 @@
   "old": "if (cnt > 0) PutBits(b, d, GetBits(b, q, (int)cnt), (int)cnt);",
   "new": "if (cnt > 1) PutBits(b, d, GetBits(b, q, (int)cnt), (int)cnt);",
   "cls": "changed:constant",
-  "line1": 837,
-  "line2": 837,
-  "total": 259,
+  "line1": 884,
+  "line2": 884,
+  "total": 282,
   "result": "CAUGHT",
   "how": "6 tests fail",
   "tests": [
@@ -3457,6 +3528,685 @@
    "diff-1.1",
    "diff-3.1"
   ],
-  "secs": 18.4
+  "secs": 22.2
+ },
+ {
+  "id": "G01",
+  "name": "G01 signed range: upper end one too high",
+  "old": "if (v >= -lim && v < lim) {",
+  "new": "if (v >= -lim && v <= lim) {",
+  "cls": "changed:operator",
+  "line1": 490,
+  "line2": 490,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "2 tests fail",
+  "tests": [
+   "signed-1.3",
+   "signed-1.5"
+  ],
+  "secs": 21.3
+ },
+ {
+  "id": "G02",
+  "name": "G02 signed range: lowest value refused",
+  "old": "if (v >= -lim && v < lim) {",
+  "new": "if (v > -lim && v < lim) {",
+  "cls": "changed:operator",
+  "line1": 490,
+  "line2": 490,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "7 tests fail",
+  "tests": [
+   "signed-1.2",
+   "signed-1.6",
+   "signed-1.7",
+   "signed-1.8",
+   "signed-1.10",
+   "signed-1.11",
+   "signed-1.21"
+  ],
+  "secs": 20.8
+ },
+ {
+  "id": "G03",
+  "name": "G03 signed parse: negative value not masked to its width",
+  "old": "*vp = (uint64_t)v & (((uint64_t)1 << width) - 1);",
+  "new": "*vp = (uint64_t)v;",
+  "cls": "deleted:clause",
+  "line1": 491,
+  "line2": 491,
+  "total": 282,
+  "result": "MISSED",
+  "how": "",
+  "tests": [],
+  "secs": 20.7
+ },
+ {
+  "id": "G04",
+  "name": "G04 signed 8: read back as unsigned",
+  "old": "if (b->width == 8) return (Tcl_WideInt)(int8_t)val;",
+  "new": "if (b->width == 8) return (Tcl_WideInt)(uint8_t)val;",
+  "cls": "changed:name/variable",
+  "line1": 277,
+  "line2": 277,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "6 tests fail",
+  "tests": [
+   "signed-1.2",
+   "signed-1.8",
+   "signed-1.9",
+   "signed-1.11",
+   "signed-1.15",
+   "signed-1.21"
+  ],
+  "secs": 21.1
+ },
+ {
+  "id": "G05",
+  "name": "G05 signed 16: read back as unsigned",
+  "old": "if (b->width == 16) return (Tcl_WideInt)(int16_t)val;",
+  "new": "if (b->width == 16) return (Tcl_WideInt)(uint16_t)val;",
+  "cls": "changed:name/variable",
+  "line1": 278,
+  "line2": 278,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "3 tests fail",
+  "tests": [
+   "signed-1.2",
+   "signed-1.6",
+   "signed-1.14"
+  ],
+  "secs": 21.6
+ },
+ {
+  "id": "G06",
+  "name": "G06 signed 32: read back as unsigned",
+  "old": "return (Tcl_WideInt)(int32_t)val;",
+  "new": "return (Tcl_WideInt)(uint32_t)val;",
+  "cls": "changed:name/variable",
+  "line1": 279,
+  "line2": 279,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "3 tests fail",
+  "tests": [
+   "signed-1.2",
+   "signed-1.10",
+   "signed-1.16"
+  ],
+  "secs": 21.7
+ },
+ {
+  "id": "G07",
+  "name": "G07 signed widths never sign-extend",
+  "old": "if (b->isSigned) {\n\tif (b->width == 8)",
+  "new": "if (0) {\n\tif (b->width == 8)",
+  "cls": "changed:expression",
+  "line1": 276,
+  "line2": 277,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "10 tests fail",
+  "tests": [
+   "signed-1.2",
+   "signed-1.6",
+   "signed-1.8",
+   "signed-1.9",
+   "signed-1.10",
+   "signed-1.11",
+   "signed-1.14",
+   "signed-1.15",
+   "signed-1.16",
+   "signed-1.21"
+  ],
+  "secs": 21.1
+ },
+ {
+  "id": "G08",
+  "name": "G08 new array never signed",
+  "old": "b->isSigned = (unsigned char)(isSigned != 0);",
+  "new": "b->isSigned = 0;",
+  "cls": "deleted:clause",
+  "line1": 209,
+  "line2": 209,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "15 tests fail",
+  "tests": [
+   "signed-1.1",
+   "signed-1.2",
+   "signed-1.5",
+   "signed-1.6",
+   "signed-1.7",
+   "signed-1.8",
+   "signed-1.9",
+   "signed-1.10",
+   "signed-1.11",
+   "signed-1.12",
+   "signed-1.14",
+   "signed-1.15",
+   "signed-1.16",
+   "signed-1.17",
+   "signed-1.21"
+  ],
+  "secs": 20.9
+ },
+ {
+  "id": "G09",
+  "name": "G09 slice loses the sign",
+  "old": "NewRep(interp, len, b->width, b->isSigned)",
+  "new": "NewRep(interp, len, b->width, 0)",
+  "cls": "changed:expression",
+  "line1": 639,
+  "line2": 639,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "5 tests fail",
+  "tests": [
+   "signed-1.10",
+   "signed-1.11",
+   "signed-1.14",
+   "signed-1.15",
+   "signed-1.21"
+  ],
+  "secs": 22.4
+ },
+ {
+  "id": "G10",
+  "name": "G10 reverse loses the sign",
+  "old": "NewRep(interp, b->len, b->width, b->isSigned)",
+  "new": "NewRep(interp, b->len, b->width, 0)",
+  "cls": "changed:expression",
+  "line1": 667,
+  "line2": 667,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "signed-1.14"
+  ],
+  "secs": 21.8
+ },
+ {
+  "id": "G11",
+  "name": "G11 copy loses the sign",
+  "old": "NewRep(NULL, s->len, s->width, s->isSigned)",
+  "new": "NewRep(NULL, s->len, s->width, 0)",
+  "cls": "changed:expression",
+  "line1": 542,
+  "line2": 542,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "4 tests fail",
+  "tests": [
+   "signed-1.5",
+   "signed-1.6",
+   "signed-1.9",
+   "signed-1.14"
+  ],
+  "secs": 20.3
+ },
+ {
+  "id": "G12",
+  "name": "G12 bitwise result loses the sign",
+  "old": "NewRep(interp, x->len, x->width, x->isSigned)",
+  "new": "NewRep(interp, x->len, x->width, 0)",
+  "cls": "changed:expression",
+  "line1": 1310,
+  "line2": 1310,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "signed-1.21"
+  ],
+  "secs": 19.6
+ },
+ {
+  "id": "G13",
+  "name": "G13 bitwise: signed and unsigned arrays accepted together",
+  "old": "if (x->width != y->width || SignedBits(x) != SignedBits(y)) {",
+  "new": "if (x->width != y->width) {",
+  "cls": "deleted:clause",
+  "line1": 1209,
+  "line2": 1209,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "signed-1.12"
+  ],
+  "secs": 20.6
+ },
+ {
+  "id": "G14",
+  "name": "G14 bitwise: 64 and -64 refused together",
+  "old": "return b->isSigned || b->width == 64;",
+  "new": "return b->isSigned;",
+  "cls": "deleted:clause",
+  "line1": 303,
+  "line2": 303,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "signed-1.13"
+  ],
+  "secs": 20.7
+ },
+ {
+  "id": "G15",
+  "name": "G15 width query drops the sign",
+  "old": "return b->isSigned ? -(int)b->width : (int)b->width;",
+  "new": "return (int)b->width;",
+  "cls": "deleted:clause",
+  "line1": 296,
+  "line2": 296,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "7 tests fail",
+  "tests": [
+   "signed-1.1",
+   "signed-1.6",
+   "signed-1.12",
+   "signed-1.14",
+   "signed-1.16",
+   "signed-1.17",
+   "signed-1.21"
+  ],
+  "secs": 22.2
+ },
+ {
+  "id": "G16",
+  "name": "G16 -width -8 not taken as signed",
+  "old": "*signedPtr = (w < 0);",
+  "new": "*signedPtr = 0;",
+  "cls": "deleted:clause",
+  "line1": 1086,
+  "line2": 1086,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "17 tests fail",
+  "tests": [
+   "signed-1.1",
+   "signed-1.2",
+   "signed-1.3",
+   "signed-1.5",
+   "signed-1.6",
+   "signed-1.7",
+   "signed-1.8",
+   "signed-1.9",
+   "signed-1.10",
+   "signed-1.11",
+   "signed-1.12",
+   "signed-1.14",
+   "signed-1.15",
+   "signed-1.16",
+   "signed-1.17",
+   "signed-1.18",
+   "signed-1.21"
+  ],
+  "secs": 22.1
+ },
+ {
+  "id": "G17",
+  "name": "G17 fromchars accepts a signed width",
+  "old": "if (isSigned || (width != 8",
+  "new": "if ((width != 8",
+  "cls": "deleted:clause",
+  "line1": 1574,
+  "line2": 1574,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "signed-1.18"
+  ],
+  "secs": 20.4
+ },
+ {
+  "id": "G18",
+  "name": "G18 tobytes accepts a signed array",
+  "old": "if (b->width != 8 || b->isSigned) {",
+  "new": "if (b->width != 8) {",
+  "cls": "deleted:clause",
+  "line1": 1547,
+  "line2": 1547,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "signed-1.17"
+  ],
+  "secs": 20.2
+ },
+ {
+  "id": "G19",
+  "name": "G19 tochars accepts a signed array",
+  "old": "(b->width != 8 && b->width != 16 && b->width != 32) || b->isSigned) {",
+  "new": "(b->width != 8 && b->width != 16 && b->width != 32)) {",
+  "cls": "deleted:clause",
+  "line1": 1609,
+  "line2": 1609,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "signed-1.17"
+  ],
+  "secs": 20.0
+ },
+ {
+  "id": "G20",
+  "name": "G20 in: canonical text of a signed value unsigned",
+  "old": "snprintf(buf, sizeof(buf), \"%lld\", (long long)ElemWide(b, val));",
+  "new": "snprintf(buf, sizeof(buf), \"%lld\", (long long)val);",
+  "cls": "deleted:clause",
+  "line1": 1033,
+  "line2": 1033,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "signed-1.8"
+  ],
+  "secs": 21.1
+ },
+ {
+  "id": "G21",
+  "name": "G21 string form of a signed element unsigned",
+  "old": "n = snprintf(buf, sizeof(buf), \"%lld\", (long long)ElemWide(b, v));",
+  "new": "n = snprintf(buf, sizeof(buf), \"%lld\", (long long)v);",
+  "cls": "deleted:clause",
+  "line1": 580,
+  "line2": 580,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "9 tests fail",
+  "tests": [
+   "signed-1.2",
+   "signed-1.6",
+   "signed-1.9",
+   "signed-1.10",
+   "signed-1.11",
+   "signed-1.14",
+   "signed-1.15",
+   "signed-1.16",
+   "signed-1.21"
+  ],
+  "secs": 21.2
+ },
+ {
+  "id": "G22",
+  "name": "G22 signed range message: lower end positive",
+  "old": "-(long long)((uint64_t)1 << (width - 1)),",
+  "new": "(long long)((uint64_t)1 << (width - 1)),",
+  "cls": "deleted:clause",
+  "line1": 507,
+  "line2": 507,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "2 tests fail",
+  "tests": [
+   "signed-1.3",
+   "signed-1.5"
+  ],
+  "secs": 21.1
+ },
+ {
+  "id": "G23",
+  "name": "G23 element object of a signed value unsigned",
+  "old": "return Tcl_NewWideIntObj(ElemWide(b, val));",
+  "new": "return Tcl_NewWideIntObj((Tcl_WideInt)val);",
+  "cls": "changed:expression",
+  "line1": 289,
+  "line2": 289,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "3 tests fail",
+  "tests": [
+   "signed-1.6",
+   "signed-1.9",
+   "signed-1.10"
+  ],
+  "secs": 21.5
+ },
+ {
+  "id": "G24",
+  "name": "G24 -32 not an accepted width",
+  "old": "&& w != -8 && w != -16 && w != -32 && w != -64)",
+  "new": "&& w != -8 && w != -16 && w != -64)",
+  "cls": "deleted:clause",
+  "line1": 1079,
+  "line2": 1079,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "5 tests fail",
+  "tests": [
+   "signed-1.1",
+   "signed-1.2",
+   "signed-1.3",
+   "signed-1.10",
+   "signed-1.16"
+  ],
+  "secs": 21.2
+ },
+ {
+  "id": "G25",
+  "name": "G25 width given with a sign kept negative",
+  "old": "*widthPtr = (int)(w < 0 ? -w : w);",
+  "new": "*widthPtr = (int)w;",
+  "cls": "deleted:clause",
+  "line1": 1087,
+  "line2": 1087,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "17 tests fail",
+  "tests": [
+   "signed-1.1",
+   "signed-1.2",
+   "signed-1.3",
+   "signed-1.5",
+   "signed-1.6",
+   "signed-1.7",
+   "signed-1.8",
+   "signed-1.9",
+   "signed-1.10",
+   "signed-1.11",
+   "signed-1.12",
+   "signed-1.13",
+   "signed-1.14",
+   "signed-1.15",
+   "signed-1.16",
+   "signed-1.17",
+   "signed-1.21"
+  ],
+  "secs": 20.3
+ },
+ {
+  "id": "H01",
+  "name": "H01 HasBit: looking for 1 stops on a zero word",
+  "old": "if (val ? (w != 0) : (w != ~(uint64_t)0)) return 1;",
+  "new": "if (val ? (w == 0) : (w != ~(uint64_t)0)) return 1;",
+  "cls": "changed:operator",
+  "line1": 1006,
+  "line2": 1006,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "3 tests fail",
+  "tests": [
+   "in-1.3",
+   "diff-1.1",
+   "diff-4.2"
+  ],
+  "secs": 20.9
+ },
+ {
+  "id": "H02",
+  "name": "H02 HasBit: looking for 0 tests against 0 instead of all ones",
+  "old": "if (val ? (w != 0) : (w != ~(uint64_t)0)) return 1;",
+  "new": "if (val ? (w != 0) : (w != 0)) return 1;",
+  "cls": "deleted:clause",
+  "line1": 1006,
+  "line2": 1006,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "2 tests fail",
+  "tests": [
+   "in-1.3",
+   "in-1.4"
+  ],
+  "secs": 21.0
+ },
+ {
+  "id": "H03",
+  "name": "H03 HasBit: first word skipped",
+  "old": "for (i = 0; i < lw; i++) {\n\tw = b->words[i];\n\tif (val ?",
+  "new": "for (i = 1; i < lw; i++) {\n\tw = b->words[i];\n\tif (val ?",
+  "cls": "changed:constant",
+  "line1": 1004,
+  "line2": 1006,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "3 tests fail",
+  "tests": [
+   "in-1.3",
+   "diff-1.1",
+   "diff-4.2"
+  ],
+  "secs": 22.3
+ },
+ {
+  "id": "H04",
+  "name": "H04 HasBit: loop also runs over the last word unmasked",
+  "old": "for (i = 0; i < lw; i++) {\n\tw = b->words[i];\n\tif (val ?",
+  "new": "for (i = 0; i <= lw; i++) {\n\tw = b->words[i];\n\tif (val ?",
+  "cls": "changed:operator",
+  "line1": 1004,
+  "line2": 1006,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "5 tests fail",
+  "tests": [
+   "in-1.2",
+   "in-1.3",
+   "in-1.4",
+   "diff-1.1",
+   "diff-4.2"
+  ],
+  "secs": 20.0
+ },
+ {
+  "id": "H05",
+  "name": "H05 HasBit: last word, looking for 1, not masked",
+  "old": "((w & lm) != 0)",
+  "new": "(w != 0)",
+  "cls": "deleted:clause",
+  "line1": 1009,
+  "line2": 1009,
+  "total": 282,
+  "result": "MISSED",
+  "how": "",
+  "tests": [],
+  "secs": 20.5
+ },
+ {
+  "id": "H06",
+  "name": "H06 HasBit: last word, looking for 0, padding not filled with ones",
+  "old": "((w | ~lm) != ~(uint64_t)0)",
+  "new": "(w != ~(uint64_t)0)",
+  "cls": "deleted:clause",
+  "line1": 1009,
+  "line2": 1009,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "5 tests fail",
+  "tests": [
+   "in-1.2",
+   "in-1.3",
+   "in-1.4",
+   "diff-1.1",
+   "diff-4.2"
+  ],
+  "secs": 20.7
+ },
+ {
+  "id": "H07",
+  "name": "H07 HasBit: last word index uses len not len-1",
+  "old": "lw = (b->len - 1) >> 6;\n    lm",
+  "new": "lw = b->len >> 6;\n    lm",
+  "cls": "deleted:clause",
+  "line1": 1002,
+  "line2": 1003,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "in-1.3"
+  ],
+  "secs": 20.1
+ },
+ {
+  "id": "H08",
+  "name": "H08 HasBit: last word mask one bit too wide",
+  "old": "~(uint64_t)0 >> (63 - ((b->len - 1) & 63));\t/* bits in use */",
+  "new": "~(uint64_t)0 >> (62 - ((b->len - 1) & 63));\t/* bits in use */",
+  "cls": "changed:constant",
+  "line1": 1003,
+  "line2": 1003,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "5 tests fail",
+  "tests": [
+   "in-1.2",
+   "in-1.3",
+   "in-1.4",
+   "diff-1.1",
+   "diff-4.2"
+  ],
+  "secs": 20.5
+ },
+ {
+  "id": "H09",
+  "name": "H09 HasBit: empty array not handled",
+  "old": "if (b->len == 0) return 0;\n    lw",
+  "new": "lw",
+  "cls": "deleted:clause",
+  "line1": 1001,
+  "line2": 1002,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "3 tests fail",
+  "tests": [
+   "in-1.2",
+   "diff-1.1",
+   "diff-4.2"
+  ],
+  "secs": 20.1
+ },
+ {
+  "id": "H10",
+  "name": "H10 BAInOper: 1-bit value letter inverted",
+  "old": "HasBit(b, s[0] == '1')",
+  "new": "HasBit(b, s[0] == '0')",
+  "cls": "changed:token",
+  "line1": 1022,
+  "line2": 1022,
+  "total": 282,
+  "result": "CAUGHT",
+  "how": "6 tests fail",
+  "tests": [
+   "in-1.1",
+   "in-1.2",
+   "in-1.3",
+   "in-1.4",
+   "diff-1.1",
+   "diff-4.2"
+  ],
+  "secs": 19.7
  }
 ]

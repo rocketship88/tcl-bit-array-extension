@@ -147,6 +147,7 @@ if {$mode ne "l"} {
 #          pre SCRIPT = run once after each preparation, outside the timing (lappend uses it to give the array its spare room,
 #                       so that the cost of the first growth is not averaged into the figure);
 #          data sparse = use an array of zeros whose only 1 is the last element (for searches that must scan a long way);
+#          data ones   = use an array of all 1s (a search for a 0 must read every element and finds none);
 #          after SCRIPT = in the same-answer check, also compare what this script returns after the command (used to compare
 #                       the array a fill has changed);
 #          s_plain8  = plain-list script for the list / 8-bit ratio and the 8-bit same-answer check, when the operation differs from the 1-bit one;
@@ -182,6 +183,10 @@ op "lassign first 3 (rest returned)" {lassign $X a b c} cold 1
 op "lsearch -exact (hit at 0, warm)" {lsearch -exact $X 1}
 op "lsearch -exact (hit at 0, cold)" {lsearch -exact $X 1} cold 1
 op "lsearch -exact (miss, scans all)" {lsearch -exact $X 2} cold 1
+op "1 in \$X (hit at 0)"            {expr {1 in $X}} cold 1
+op "0 in \$X (hit at 1)"            {expr {0 in $X}} cold 1
+op "1 in \$X (hit at the last element)" {expr {1 in $X}} cold 1 data sparse
+op "0 in \$X (miss: all elements are 1)" {expr {0 in $X}} cold 1 data ones
 op "2 in \$X (miss)"               {expr {2 in $X}} cold 1 noratio 1
 op "lsort -integer"                {lsort -integer $X} cold 1
 op "foreach over all elements"     {foreach e $X {}} cold 1
@@ -255,10 +260,13 @@ proc measure {opd type n} {
 	set reps 1
     } else {
 	prep $kind [dict get $opd pre]
+	# one call first, untimed: the first call on a bitarray may build the element list the core asks for (milliseconds), which would
+	# make the estimate below far too big, give 1 or 2 repeats, and leave a clock with 1 us ticks reading 0 or 0.5 us for a 0.2 us call
+	uplevel #0 $script
 	set t1 [lindex [uplevel #0 [list time $script 1]] 0]
 	set reps [expr {int($::targetMs * 1000.0 / ($t1 < 0.05 ? 0.05 : $t1))}]
 	if {$reps < 1} { set reps 1 }
-	if {$reps > 5000} { set reps 5000 }
+	if {$reps > 5000} { set reps 5000 }	;# a call under 0.1 us needs many repeats for a clock with coarse ticks (Windows showed 0.0)
 	if {$cap ne "0" && $reps > $cap} { set reps [expr {$cap < 1 ? 1 : $cap}] }
     }
     set best 1e30
@@ -277,6 +285,7 @@ proc measure {opd type n} {
 	    set t [expr {double($sum) / $j}]
 	} else {
 	    prep $kind [dict get $opd pre]
+	    uplevel #0 $script	;# untimed first call (see above): the timed calls are the warm ones
 	    set t [lindex [uplevel #0 [list time $script $reps]] 0]
 	}
 	if {$t < $best} { set best $t }
@@ -288,8 +297,8 @@ proc mklist2 {n} {
     for {set i 2} {$i < $n} {incr i 5} { lset l $i 1 }
     return $l
 }
-proc setBase {type {sparse 0} {needZ 0}} {
-    set src [expr {$sparse ? $::LS : $::L}]
+proc setBase {type {mode normal} {needZ 0}} {
+    switch $mode { sparse { set src $::LS } ones { set src $::LO } default { set src $::L } }
     switch $type {
 	plain - plain8 { set ::BASE $src }
 	w1    { set ::BASE [bitarray newfrom $src] }
@@ -330,14 +339,14 @@ proc applies {opd type} { expr {![dict exists $opd s_$type] || [dict get $opd s_
 # An operation is compared in every column that has a script for it (its own script, or an s_plain / s_w1 / s_w8 one).  A row with
 # s_plain8 (the plain-list version of an operation that behaves differently at 8 bits, such as not) is checked against that in the 8-bit column.
 proc checkRun {opd type} {
-    setBase $type [expr {[dict get $opd data] eq "sparse"}] [dict get $opd z]
+    setBase $type [dict get $opd data] [dict get $opd z]
     prep own
     set r [uplevel #0 [scriptFor $opd $type 1000]]
     if {[dict get $opd after] ne ""} { set r [uplevel #0 [dict get $opd after]] }
     return "$r"
 }
 if {$check && [llength $types] > 1} {
-    set ::L [mklist 1000]; set ::LS [mksparse 1000]
+    set ::L [mklist 1000]; set ::LS [mksparse 1000]; set ::LO [lrepeat 1000 1]
     set nchecked 0; set nskipped 0
     foreach opd $OPS {
 	if {[dict get $opd nocheck]} { incr nskipped; continue }
@@ -386,7 +395,7 @@ proc commas {x} {
     while {[regsub {^(-?\d+)(\d{3})} $s {\1,\2} s]} {}
     return $s
 }
-proc fmt {us} { if {$us < 10} { format %.2f $us } elseif {$us < 100} { format %.1f $us } else { commas $us } }
+proc fmt {us} { if {$us <= 0} { return <0.01 } elseif {$us < 10} { format %.2f $us } elseif {$us < 100} { format %.1f $us } else { commas $us } }
 proc ratioNum {a b} {
     if {$a eq "-" || $b eq "-" || $b <= 0} { return "" }
     return [expr {$a / $b}]
@@ -409,7 +418,7 @@ if {$mode ne "l"} {
 puts "calibration: [calibrate]"
 set t0 [clock seconds]
 foreach n $sizes {
-    set ::L [mklist $n]; set ::LS [mksparse $n]; set ::STR [join $::L " "]
+    set ::L [mklist $n]; set ::LS [mksparse $n]; set ::LO [lrepeat $n 1]; set ::STR [join $::L " "]
     puts ""
     set title "$n elements: "
     append title [expr {$ratiosOnly ? "time list/bitarray (>1x: bitarray faster)" : "us per call, best of $runs"}]
@@ -431,14 +440,14 @@ foreach n $sizes {
 	foreach type $types {
 	    if {![applies $opd $type]} { lappend res - ; continue }
 	    set any 1
-	    setBase $type [expr {[dict get $opd data] eq "sparse"}] [dict get $opd z]
+	    setBase $type [dict get $opd data] [dict get $opd z]
 	    lappend res [measure $opd $type $n]
 	}
 	if {!$any} continue
 	# a row with s_plain8: the list / 8-bit ratio is against the plain list doing the 8-bit version of the operation
 	set p8 ""
 	if {[dict exists $opd s_plain8] && "plain" in $types && "w8" in $types} {
-	    setBase plain8 [expr {[dict get $opd data] eq "sparse"}] [dict get $opd z]
+	    setBase plain8 [dict get $opd data] [dict get $opd z]
 	    set p8 [measure $opd plain8 $n]
 	}
 	set cells {}; foreach v $res { lappend cells [expr {$v eq "-" ? "-" : [fmt $v]}] }
@@ -463,7 +472,7 @@ foreach n $sizes {
 	    puts [format "%-36s%s" $name [join [lmap c $cells {format " %10s" $c}] ""]]
 	}
     }
-    unset ::L ::LS ::STR ::BASE ::X
+    unset ::L ::LS ::LO ::STR ::BASE ::X
     catch {unset ::S}
     catch {unset ::Y}
     catch {unset ::L2}
@@ -481,7 +490,8 @@ if {$verbose} {
     puts " * 'cold' rows start from a fresh array for every call and time only the call.  For a bitarray they include building the list of"
     puts "   element objects that the core asks for when a command treats it as an ordinary list; that list is kept until the array is next"
     puts "   changed, so a second call on the same unchanged array is faster ('warm')."
-    puts " * '2 in \$X (miss)': a bitarray answers at once for a value it cannot hold; a plain list has to look at every element."
+    puts " * '2 in \$X (miss)' has no ratio (n/a): a 1-bit array answers at once for a value it cannot hold, so the comparison would only measure that shortcut; a plain list has to look at every element."
+    puts " * The other 'in' rows have ratios: a 1-bit array tests whole words and stops at the first one that settles the answer (hit at 0 stops at once, hit at the last element and the all-1s miss read every word)."
     puts " * 'ledit (shared: copies)' is what a loop sees when another variable holds the same value; 'in place' is the unshared case."
     puts " * lappend, lset and the in-place ledit rows work on a private copy and repeat the call; lappend is amortised (the array doubles)."
     puts " * 'create from text': both start from the same fresh string of values.  The plain list is made by parsing it (llength forces the"

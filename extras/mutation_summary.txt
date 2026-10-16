@@ -1,199 +1,246 @@
 id    result   class                  lines tests     description
 ----------------------------------------------------------------------------------------------------
-B01   CAUGHT   changed:operator       1082  8         and: uses OR on the common words
-B02   CAUGHT   deleted:clause         1083  1         and: words past the end of y keep x
-B03   CAUGHT   changed:operator       1086  7         or: uses XOR on the common words
-B04   CAUGHT   deleted:clause         1087  1         or: words past the end of y are cleared
-B05   CAUGHT   changed:operator       1090  7         xor: uses OR on the common words
-B06   CAUGHT   deleted:clause         1091  1         xor: words past the end of y become 0
-B07   CAUGHT   deleted:clause         1094  6         andnot: the NOT is missing
-B08   CAUGHT   deleted:clause         1095  1         andnot: words past the end of y are cleared
-B09   CAUGHT   deleted:clause         1076  7         not: does not flip
-B10   CAUGHT   changed:+tokens        1079  10        common-word count wrong when y is longer
-B11   MISSED   deleted:clause         1116  -         MaskTail width 1: mask removed
-B12   CAUGHT   changed:constant       1114  2         MaskTail width 1: wrong remainder
-B13   MISSED   deleted:clause         1120  -         MaskTail wide: unused bytes not cleared
-B14   CAUGHT   changed:expression     1139  1         width check dropped
-B15   CAUGHT   deleted:clause         1146  2         length check ignores -length zero
-B16   CAUGHT   deleted:clause         1146  4         length check inverted
-B17   CAUGHT   deleted:clause         1229  3         in place: shared value not copied
-B18   CAUGHT   deleted:clause         1232  1         in place: string form not invalidated
-B19   CAUGHT   changed:+tokens        1240  1         new result takes the length of the second array
-B20   CAUGHT   deleted:clause         1204  4         arrow with four words not recognised
-B21   CAUGHT   changed:2 tokens       1209  2         arrow: two sources swapped
-B22   CAUGHT   changed:+tokens        1188  2         -length mode inverted
-B23   CAUGHT   changed:constant       1188  3         -length value not skipped
-B24   CAUGHT   changed:expression     1207  2         arrow with one source: treated as not in place
-B25   CAUGHT   changed:expression     1215  1         destination named <- accepted
-B26   CAUGHT   changed:expression     1200  1         arrow with nothing after it: taken as an array
-M01   CAUGHT   changed:constant       123   12        GETBIT shift mask 63->31
-M02   CAUGHT   changed:operator       124   6         SETBIT or -> xor
-M03   CAUGHT   deleted:clause         125   24        CLRBIT loses ~
-M04   CAUGHT   changed:constant       48    3         size limit 2^40 -> 2^41
-M05   CAUGHT   changed:operator       554   2         index bound > for >=
-M06   MISSED   changed:operator       586   -         slice upper clamp
-M07   MISSED   deleted:clause         600   -         slice tail mask removed
-M08   MISSED   deleted:clause         585   -         slice lower clamp removed
-M09   CAUGHT   changed:constant       629   5         reverse (width 1) shift off by one
-M10   CAUGHT   changed:operator       727   9         setElement append disabled
-M11   CAUGHT   changed:expression     732   5         setElement never duplicates
-M12   CAUGHT   deleted:clause         256   2         Touch keeps string rep
-M13   CAUGHT   deleted:clause         256   5         Touch keeps element cache
-M14   CAUGHT   deleted:statement      868   2         replace delete clamp removed
-M15   CAUGHT   changed:+tokens        921   14        replace tail move count off by one
-M16   CAUGHT   changed:operator       952   3         in-operator zero test
-M17   CAUGHT   changed:+tokens        297   24        count first mask
-M18   CAUGHT   changed:constant       298   16        count last mask
-M19   CAUGHT   deleted:clause         318   8         next start mask removed
-M20   CAUGHT   deleted:clause         322   7         next tail check removed
-M21   CAUGHT   deleted:clause         278   9         fill single-word mask
-M22   CAUGHT   changed:operator       282   3         fill middle loop <=
-M23   CAUGHT   changed:operator       1623  4         fill step stop early (1-bit)
-M24   CAUGHT   deleted:statement      1607  2         fill empty range check removed
-M25   CAUGHT   changed:operator       406   1         ParseBit fast path accepts longer
-M26   CAUGHT   changed:token          517   60        string rep separator
-M27   CAUGHT   changed:+tokens        495   12        dup copies one word short
-M28   CAUGHT   deleted:statement      199   1         new: no memset
-M29   CAUGHT   changed:operator       1397  1         count last clamp
-M30   CAUGHT   changed:2 tokens       686   5         elems cache swapped
-M31   MISSED   changed:expression     1319  -         new init-one tail not masked
-M32   CAUGHT   deleted:clause         935   1         replace leaves stale string
-M33   MISSED   deleted:clause         1310  -         new: size check on narrowed value dropped
-M34   MISSED   changed:expression     875   -         replace: growth limit dropped
-M35   MISSED   changed:expression     889   -         capacity not doubled
-M36   MISSED   deleted:clause         928   -         shrink does not clear vacated bits
-M37   CAUGHT   changed:operator       814   6         MoveElems direction reversed
-M38   MISSED   deleted:statement      910   -         new capacity not zeroed
-M39   CAUGHT   deleted:clause         913   0         rep pointer not updated after realloc
-M40   CAUGHT   deleted:clause         935   2         word count not updated
-M41   CAUGHT   deleted:statement      916   0         element cache not dropped by replace
-M42   MISSED   deleted:statement      866   -         first-index clamp removed
-P01   CAUGHT   changed:expression     1575  12        fill: 'to' not recognised
-P02   CAUGHT   changed:expression     1575  3         fill: '..' not recognised
-P03   CAUGHT   deleted:clause         1578  15        fill: 'with' not recognised
-P04   CAUGHT   changed:expression     1581  7         fill: 'by' not recognised
-P05   CAUGHT   deleted:clause         1583  2         fill: extra arguments after 'by step' accepted
-P06   CAUGHT   changed:expression     1584  1         fill: extra arguments after a bare step accepted
-P07   CAUGHT   deleted:clause         989   3         IsWord matches a prefix
-P08   CAUGHT   deleted:clause         1609  2         fill: range error always names last
-P09   CAUGHT   changed:expression     1381  6         count: 'to' not recognised
-P10   CAUGHT   changed:expression     1381  2         count: '..' not recognised
-P11   CAUGHT   changed:expression     1384  6         count: 'with' not recognised
-P12   CAUGHT   deleted:clause         1389  1         count: extra arguments accepted
-P13   CAUGHT   changed:expression     1390  9         count: a value is never used
-P14   CAUGHT   changed:expression     1428  5         next: 'with' not recognised
-P15   CAUGHT   deleted:clause         1433  1         next: extra arguments accepted
-Q01   CAUGHT   changed:+tokens        1467  8         frombytes copies one byte short
-Q02   CAUGHT   changed:expression     1477  2         tobytes accepts any width
-Q03   CAUGHT   changed:+tokens        1485  5         tobytes drops the last byte
-Q04   CAUGHT   changed:constant       1496  2         fromchars default width 16
-Q05   CAUGHT   changed:operator       1514  2         fromchars range check off by one
-Q06   CAUGHT   changed:+tokens        1504  1         fromchars accepts width 64
-Q07   CAUGHT   changed:+tokens        1525  1         fromchars loses characters 0 and 1
-Q08   CAUGHT   changed:expression     1547  1         tochars accepts surrogates
-Q09   CAUGHT   changed:constant       1547  1         tochars limit 0x10FFFF -> 0x110000
-Q10   CAUGHT   changed:+tokens        1539  1         tochars accepts width 64
-Q11   CAUGHT   changed:+tokens        1557  5         tochars drops the last character
-Q12   CAUGHT   changed:constant       1556  3         tochars skips element 0
-Q13   CAUGHT   changed:+tokens        1517  2         fromchars error names the wrong index
-R01   CAUGHT   deleted:statement      574   5         Rev64: the 16-bit swap is missing
-R02   CAUGHT   deleted:clause         575   5         Rev64: the final 32-bit swap is missing
-R03   CAUGHT   deleted:clause         635   2         lreverse width 8 copies instead of reversing
-R04   CAUGHT   changed:+tokens        607   6         lrange unaligned: low bit of every chunk cleared
-R05   MISSED   deleted:clause         605   -         lrange unaligned: chunk length not shortened at the end
-R06   CAUGHT   changed:+tokens        834   4         shift left: aligned source reads the next word
-R07   CAUGHT   changed:constant       834   6         shift left: upper part shifted by one too many
-R08   CAUGHT   changed:constant       837   6         shift left: partial last word dropped
-S01   CAUGHT   deleted:clause         761   12        GetBits: high word not merged
-S02   CAUGHT   changed:constant       761   11        GetBits: wrong shift for the high word
-S03   MISSED   deleted:clause         762   -         GetBits: result not masked to n bits
-S04   MISSED   deleted:statement      776   -         PutBits: value not masked
-S05   CAUGHT   deleted:clause         777   14        PutBits: other bits of the word not kept
-S06   CAUGHT   changed:expression     778   5         PutBits: high word not written
-S07   CAUGHT   changed:constant       779   4         PutBits: wrong high-word mask
-S08   CAUGHT   deleted:clause         781   4         PutBits: high word keeps nothing
-S09   CAUGHT   changed:constant       781   5         PutBits: wrong shift for the high part
-S10   MISSED   changed:token          792   -         ClearBits: position not advanced
-S11   CAUGHT   changed:+tokens        826   7         MoveElems left: source off by one
-S12   CAUGHT   changed:+tokens        845   8         MoveElems right: destination off by one
-S13   MISSED   deleted:clause         824   -         MoveElems left: first partial chunk not shortened
-S14   CAUGHT   deleted:clause         842   8         MoveElems right: last chunk not shortened
-S15   CAUGHT   deleted:clause         790   0         ClearBits: last chunk not shortened
-W01   CAUGHT   changed:constant       149   17        GetElem 16 wrong offset
-W02   CAUGHT   changed:constant       150   10        GetElem 32 wrong offset
-W03   CAUGHT   changed:constant       151   12        GetElem 64 wrong offset
-W04   CAUGHT   changed:+tokens        166   5         PutElem 8 ORs instead of assigns
-W05   CAUGHT   changed:constant       167   1         PutElem 16 wrong offset
-W06   CAUGHT   changed:constant       168   10        PutElem 32 wrong offset
-W07   CAUGHT   changed:constant       169   14        PutElem 64 wrong offset
-W08   MISSED   changed:constant       266   -         ElemObj sign only for 32
-W09   CAUGHT   changed:name/variable  265   2         ElemObj 1 returns zero
-W10   CAUGHT   deleted:clause         449   6         ParseValue upper bound off by one
-W11   CAUGHT   changed:expression     449   1         ParseValue accepts -1
-W12   CAUGHT   changed:constant       445   15        ParseValue 64-bit path skipped
-W13   CAUGHT   changed:token          440   1         ParseValue digit fast path too wide
-W14   MISSED   deleted:clause         181   -         NewRep limit ignores width
-W15   CAUGHT   changed:expression     189   0         NewRep allocates for 1-bit only
-W16   CAUGHT   changed:constant       131   10        WORDS_FOR rounds down by one
-W17   CAUGHT   changed:expression     215   1         FreeElems never releases owned elements
-W18   CAUGHT   changed:expression     220   0         FreeElems also releases shared 0/1
-W19   CAUGHT   deleted:statement      692   1         GetElements forgets to take a reference
-W20   CAUGHT   deleted:statement      696   1         GetElements does not record its length
-W21   CAUGHT   deleted:clause         594   3         Slice wide copies from offset 0 units
-W22   CAUGHT   deleted:clause         595   6         Slice wide copies too few bytes
-W23   CAUGHT   changed:+tokens        655   2         Reverse 64-bit stores to the neighbouring element
-W24   MISSED   changed:name/variable  810   -         MoveElems wide memmove -> memcpy
-W25   CAUGHT   deleted:clause         810   1         MoveElems wide wrong destination unit
-W26   MISSED   deleted:clause         930   -         Replace wide vacated storage not cleared
-W27   CAUGHT   changed:expression     530   8         string rep 64-bit printed unsigned
-W28   CAUGHT   changed:token          528   41        string rep wrong separator (wide)
-W29   CAUGHT   changed:expression     968   2         in: canonical check dropped
-W30   CAUGHT   changed:constant       969   3         in: searches nonzero instead of value
-W31   CAUGHT   changed:operator       345   5         CountWide 8-bit nonzero inverted
-W32   CAUGHT   changed:operator       349   3         CountWide 8-bit equal inverted
-W33   CAUGHT   changed:operator       356   4         CountWide generic nonzero inverted
-W34   CAUGHT   changed:+tokens        373   1         NextWide memchr reads one byte too many
-W35   CAUGHT   deleted:clause         385   3         NextWide word skip never stops
-W36   CAUGHT   changed:operator       395   4         NextWide generic compares wrong
-W37   CAUGHT   deleted:clause         1631  5         fill 8-bit memset one short
-W38   CAUGHT   deleted:clause         1631  4         fill 8-bit memset wrong start
-W39   CAUGHT   changed:operator       1634  2         fill 8-bit step stop early
-W40   CAUGHT   changed:operator       1640  2         fill generic step stop early
-W41   CAUGHT   changed:+tokens        1349  57        newfrom stores only values above 1
-W42   CAUGHT   changed:+tokens        1321  5         new 8-bit init one short
-W43   CAUGHT   changed:+tokens        1323  5         new generic init one short
-W44   CAUGHT   deleted:clause         1409  4         count zeros of bits off by one
-W45   CAUGHT   deleted:clause         1401  8         count ignores a given value
-W46   CAUGHT   deleted:clause         1439  5         next ignores a given value
-W47   CAUGHT   deleted:statement      1037  0         -width without argument not detected
-W48   CAUGHT   deleted:clause         1011  26        width 16 rejected
-W49   CAUGHT   changed:expression     491   1         dup loses width
-W50   CAUGHT   changed:expression     731   10        setElement parses as 1-bit
-W51   CAUGHT   changed:expression     870   7         replace validates as 1-bit
-W52   CAUGHT   changed:expression     884   1         replace sizes storage for 1-bit
-W53   CAUGHT   added:code             556   5         index out of range for wide returns last
+B01   CAUGHT   changed:operator       1152  11        and: uses OR on the common words
+B02   CAUGHT   deleted:clause         1153  1         and: words past the end of y keep x
+B03   CAUGHT   changed:operator       1156  8         or: uses XOR on the common words
+B04   CAUGHT   deleted:clause         1157  1         or: words past the end of y are cleared
+B05   CAUGHT   changed:operator       1160  9         xor: uses OR on the common words
+B06   CAUGHT   deleted:clause         1161  1         xor: words past the end of y become 0
+B07   CAUGHT   deleted:clause         1164  7         andnot: the NOT is missing
+B08   CAUGHT   deleted:clause         1165  1         andnot: words past the end of y are cleared
+B09   CAUGHT   deleted:clause         1146  8         not: does not flip
+B10   CAUGHT   changed:+tokens        1149  13        common-word count wrong when y is longer
+B11   MISSED   deleted:clause         1186  -         MaskTail width 1: mask removed
+B12   CAUGHT   changed:constant       1184  2         MaskTail width 1: wrong remainder
+B13   MISSED   deleted:clause         1190  -         MaskTail wide: unused bytes not cleared
+B14   CAUGHT   deleted:clause         1209  2         width check dropped
+B15   CAUGHT   deleted:clause         1216  2         length check ignores -length zero
+B16   CAUGHT   deleted:clause         1216  4         length check inverted
+B17   CAUGHT   deleted:clause         1299  3         in place: shared value not copied
+B18   CAUGHT   deleted:clause         1302  1         in place: string form not invalidated
+B19   CAUGHT   changed:+tokens        1310  1         new result takes the length of the second array
+B20   CAUGHT   deleted:clause         1274  5         arrow with four words not recognised
+B21   CAUGHT   changed:2 tokens       1279  2         arrow: two sources swapped
+B22   CAUGHT   changed:+tokens        1258  2         -length mode inverted
+B23   CAUGHT   changed:constant       1258  3         -length value not skipped
+B24   CAUGHT   changed:expression     1277  2         arrow with one source: treated as not in place
+B25   CAUGHT   changed:expression     1285  1         destination named <- accepted
+B26   CAUGHT   changed:expression     1270  1         arrow with nothing after it: taken as an array
+G01   CAUGHT   changed:operator       490   2         signed range: upper end one too high
+G02   CAUGHT   changed:operator       490   7         signed range: lowest value refused
+G03   MISSED   deleted:clause         491   -         signed parse: negative value not masked to its width
+G04   CAUGHT   changed:name/variable  277   6         signed 8: read back as unsigned
+G05   CAUGHT   changed:name/variable  278   3         signed 16: read back as unsigned
+G06   CAUGHT   changed:name/variable  279   3         signed 32: read back as unsigned
+G07   CAUGHT   changed:expression     276   10        signed widths never sign-extend
+G08   CAUGHT   deleted:clause         209   15        new array never signed
+G09   CAUGHT   changed:expression     639   5         slice loses the sign
+G10   CAUGHT   changed:expression     667   1         reverse loses the sign
+G11   CAUGHT   changed:expression     542   4         copy loses the sign
+G12   CAUGHT   changed:expression     1310  1         bitwise result loses the sign
+G13   CAUGHT   deleted:clause         1209  1         bitwise: signed and unsigned arrays accepted together
+G14   CAUGHT   deleted:clause         303   1         bitwise: 64 and -64 refused together
+G15   CAUGHT   deleted:clause         296   7         width query drops the sign
+G16   CAUGHT   deleted:clause         1086  17        -width -8 not taken as signed
+G17   CAUGHT   deleted:clause         1574  1         fromchars accepts a signed width
+G18   CAUGHT   deleted:clause         1547  1         tobytes accepts a signed array
+G19   CAUGHT   deleted:clause         1609  1         tochars accepts a signed array
+G20   CAUGHT   deleted:clause         1033  1         in: canonical text of a signed value unsigned
+G21   CAUGHT   deleted:clause         580   9         string form of a signed element unsigned
+G22   CAUGHT   deleted:clause         507   2         signed range message: lower end positive
+G23   CAUGHT   changed:expression     289   3         element object of a signed value unsigned
+G24   CAUGHT   deleted:clause         1079  5         -32 not an accepted width
+G25   CAUGHT   deleted:clause         1087  17        width given with a sign kept negative
+H01   CAUGHT   changed:operator       1006  3         HasBit: looking for 1 stops on a zero word
+H02   CAUGHT   deleted:clause         1006  2         HasBit: looking for 0 tests against 0 instead of all ones
+H03   CAUGHT   changed:constant       1004  3         HasBit: first word skipped
+H04   CAUGHT   changed:operator       1004  5         HasBit: loop also runs over the last word unmasked
+H05   MISSED   deleted:clause         1009  -         HasBit: last word, looking for 1, not masked
+H06   CAUGHT   deleted:clause         1009  5         HasBit: last word, looking for 0, padding not filled with ones
+H07   CAUGHT   deleted:clause         1002  1         HasBit: last word index uses len not len-1
+H08   CAUGHT   changed:constant       1003  5         HasBit: last word mask one bit too wide
+H09   CAUGHT   deleted:clause         1001  3         HasBit: empty array not handled
+H10   CAUGHT   changed:token          1022  6         BAInOper: 1-bit value letter inverted
+M01   CAUGHT   changed:constant       127   12        GETBIT shift mask 63->31
+M02   CAUGHT   changed:operator       128   6         SETBIT or -> xor
+M03   CAUGHT   deleted:clause         129   25        CLRBIT loses ~
+M04   CAUGHT   changed:constant       50    3         size limit 2^40 -> 2^41
+M05   CAUGHT   changed:operator       601   2         index bound > for >=
+M06   MISSED   changed:operator       633   -         slice upper clamp
+M07   MISSED   deleted:clause         647   -         slice tail mask removed
+M08   MISSED   deleted:clause         632   -         slice lower clamp removed
+M09   CAUGHT   changed:constant       676   5         reverse (width 1) shift off by one
+M10   CAUGHT   changed:operator       774   9         setElement append disabled
+M11   CAUGHT   changed:expression     779   6         setElement never duplicates
+M12   CAUGHT   deleted:clause         262   2         Touch keeps string rep
+M13   CAUGHT   deleted:clause         262   5         Touch keeps element cache
+M14   CAUGHT   deleted:statement      915   2         replace delete clamp removed
+M15   CAUGHT   changed:+tokens        968   16        replace tail move count off by one
+M17   CAUGHT   changed:+tokens        333   23        count first mask
+M18   CAUGHT   changed:constant       334   16        count last mask
+M19   CAUGHT   deleted:clause         354   8         next start mask removed
+M20   CAUGHT   deleted:clause         358   7         next tail check removed
+M21   CAUGHT   deleted:clause         314   9         fill single-word mask
+M22   CAUGHT   changed:operator       318   3         fill middle loop <=
+M23   CAUGHT   changed:operator       1693  4         fill step stop early (1-bit)
+M24   CAUGHT   deleted:statement      1677  2         fill empty range check removed
+M25   CAUGHT   changed:operator       442   1         ParseBit fast path accepts longer
+M26   CAUGHT   changed:token          568   60        string rep separator
+M27   CAUGHT   changed:+tokens        546   13        dup copies one word short
+M28   CAUGHT   deleted:statement      204   1         new: no memset
+M29   CAUGHT   changed:operator       1467  1         count last clamp
+M30   CAUGHT   changed:2 tokens       733   5         elems cache swapped
+M31   MISSED   changed:expression     1389  -         new init-one tail not masked
+M32   CAUGHT   deleted:clause         982   1         replace leaves stale string
+M33   MISSED   deleted:clause         1380  -         new: size check on narrowed value dropped
+M34   MISSED   changed:expression     922   -         replace: growth limit dropped
+M35   MISSED   changed:expression     936   -         capacity not doubled
+M36   MISSED   deleted:clause         975   -         shrink does not clear vacated bits
+M37   CAUGHT   changed:operator       861   6         MoveElems direction reversed
+M38   MISSED   deleted:statement      957   -         new capacity not zeroed
+M39   CAUGHT   deleted:clause         960   0         rep pointer not updated after realloc
+M40   CAUGHT   deleted:clause         982   2         word count not updated
+M41   CAUGHT   deleted:statement      963   0         element cache not dropped by replace
+M42   MISSED   deleted:statement      913   -         first-index clamp removed
+P01   CAUGHT   changed:expression     1645  12        fill: 'to' not recognised
+P02   CAUGHT   changed:expression     1645  3         fill: '..' not recognised
+P03   CAUGHT   deleted:clause         1648  15        fill: 'with' not recognised
+P04   CAUGHT   changed:expression     1651  7         fill: 'by' not recognised
+P05   CAUGHT   deleted:clause         1653  2         fill: extra arguments after 'by step' accepted
+P06   CAUGHT   changed:expression     1654  1         fill: extra arguments after a bare step accepted
+P07   CAUGHT   deleted:clause         1055  3         IsWord matches a prefix
+P08   CAUGHT   deleted:clause         1679  2         fill: range error always names last
+P09   CAUGHT   changed:expression     1451  6         count: 'to' not recognised
+P10   CAUGHT   changed:expression     1451  2         count: '..' not recognised
+P11   CAUGHT   changed:expression     1454  6         count: 'with' not recognised
+P12   CAUGHT   deleted:clause         1459  1         count: extra arguments accepted
+P13   CAUGHT   changed:expression     1460  9         count: a value is never used
+P14   CAUGHT   changed:expression     1498  5         next: 'with' not recognised
+P15   CAUGHT   deleted:clause         1503  1         next: extra arguments accepted
+Q01   CAUGHT   changed:+tokens        1537  9         frombytes copies one byte short
+Q02   CAUGHT   deleted:clause         1547  2         tobytes accepts any width
+Q03   CAUGHT   changed:+tokens        1555  5         tobytes drops the last byte
+Q04   CAUGHT   changed:constant       1566  2         fromchars default width 16
+Q05   CAUGHT   changed:operator       1584  2         fromchars range check off by one
+Q06   CAUGHT   changed:+tokens        1574  1         fromchars accepts width 64
+Q07   CAUGHT   changed:+tokens        1595  1         fromchars loses characters 0 and 1
+Q08   CAUGHT   changed:expression     1617  1         tochars accepts surrogates
+Q09   CAUGHT   changed:constant       1617  1         tochars limit 0x10FFFF -> 0x110000
+Q10   CAUGHT   changed:+tokens        1609  1         tochars accepts width 64
+Q11   CAUGHT   changed:+tokens        1627  5         tochars drops the last character
+Q12   CAUGHT   changed:constant       1626  3         tochars skips element 0
+Q13   CAUGHT   changed:+tokens        1587  2         fromchars error names the wrong index
+R01   CAUGHT   deleted:statement      621   5         Rev64: the 16-bit swap is missing
+R02   CAUGHT   deleted:clause         622   5         Rev64: the final 32-bit swap is missing
+R03   CAUGHT   deleted:clause         682   2         lreverse width 8 copies instead of reversing
+R04   CAUGHT   changed:+tokens        654   6         lrange unaligned: low bit of every chunk cleared
+R05   MISSED   deleted:clause         652   -         lrange unaligned: chunk length not shortened at the end
+R06   CAUGHT   changed:+tokens        881   4         shift left: aligned source reads the next word
+R07   CAUGHT   changed:constant       881   6         shift left: upper part shifted by one too many
+R08   CAUGHT   changed:constant       884   6         shift left: partial last word dropped
+S01   CAUGHT   deleted:clause         808   12        GetBits: high word not merged
+S02   CAUGHT   changed:constant       808   11        GetBits: wrong shift for the high word
+S03   MISSED   deleted:clause         809   -         GetBits: result not masked to n bits
+S04   MISSED   deleted:statement      823   -         PutBits: value not masked
+S05   CAUGHT   deleted:clause         824   15        PutBits: other bits of the word not kept
+S06   CAUGHT   changed:expression     825   5         PutBits: high word not written
+S07   CAUGHT   changed:constant       826   4         PutBits: wrong high-word mask
+S08   CAUGHT   deleted:clause         828   4         PutBits: high word keeps nothing
+S09   CAUGHT   changed:constant       828   5         PutBits: wrong shift for the high part
+S10   MISSED   changed:token          839   -         ClearBits: position not advanced
+S11   CAUGHT   changed:+tokens        873   7         MoveElems left: source off by one
+S12   CAUGHT   changed:+tokens        892   8         MoveElems right: destination off by one
+S13   MISSED   deleted:clause         871   -         MoveElems left: first partial chunk not shortened
+S14   CAUGHT   deleted:clause         889   8         MoveElems right: last chunk not shortened
+S15   CAUGHT   deleted:clause         837   0         ClearBits: last chunk not shortened
+W01   CAUGHT   changed:constant       154   20        GetElem 16 wrong offset
+W02   CAUGHT   changed:constant       155   13        GetElem 32 wrong offset
+W03   CAUGHT   changed:constant       156   14        GetElem 64 wrong offset
+W04   CAUGHT   changed:+tokens        171   5         PutElem 8 ORs instead of assigns
+W05   CAUGHT   changed:constant       172   1         PutElem 16 wrong offset
+W06   CAUGHT   changed:constant       173   13        PutElem 32 wrong offset
+W07   CAUGHT   changed:constant       174   16        PutElem 64 wrong offset
+W08   CAUGHT   changed:constant       275   3         ElemWide sign only for 32
+W09   CAUGHT   changed:name/variable  288   3         ElemObj 1 returns zero
+W10   CAUGHT   deleted:clause         494   6         ParseValue upper bound off by one
+W11   CAUGHT   changed:expression     494   3         ParseValue accepts -1
+W12   CAUGHT   changed:constant       483   17        ParseValue 64-bit path skipped
+W13   CAUGHT   changed:token          478   1         ParseValue digit fast path too wide
+W14   MISSED   deleted:clause         186   -         NewRep limit ignores width
+W15   CAUGHT   changed:expression     194   0         NewRep allocates for 1-bit only
+W16   CAUGHT   changed:constant       135   10        WORDS_FOR rounds down by one
+W17   CAUGHT   changed:expression     221   1         FreeElems never releases owned elements
+W18   CAUGHT   changed:expression     226   0         FreeElems also releases shared 0/1
+W19   CAUGHT   deleted:statement      739   1         GetElements forgets to take a reference
+W20   CAUGHT   deleted:statement      743   1         GetElements does not record its length
+W21   CAUGHT   deleted:clause         641   4         Slice wide copies from offset 0 units
+W22   CAUGHT   deleted:clause         642   9         Slice wide copies too few bytes
+W23   CAUGHT   changed:+tokens        702   2         Reverse 64-bit stores to the neighbouring element
+W24   MISSED   changed:name/variable  857   -         MoveElems wide memmove -> memcpy
+W25   CAUGHT   deleted:clause         857   3         MoveElems wide wrong destination unit
+W26   MISSED   deleted:clause         977   -         Replace wide vacated storage not cleared
+W27   CAUGHT   changed:expression     580   17        string rep 64-bit printed unsigned
+W28   CAUGHT   changed:token          579   53        string rep wrong separator (wide)
+W29   CAUGHT   changed:expression     1034  3         in: canonical check dropped
+W30   CAUGHT   changed:constant       1035  4         in: searches nonzero instead of value
+W31   CAUGHT   changed:operator       381   6         CountWide 8-bit nonzero inverted
+W32   CAUGHT   changed:operator       385   3         CountWide 8-bit equal inverted
+W33   CAUGHT   changed:operator       392   4         CountWide generic nonzero inverted
+W34   CAUGHT   changed:+tokens        409   1         NextWide memchr reads one byte too many
+W35   CAUGHT   deleted:clause         421   3         NextWide word skip never stops
+W36   CAUGHT   changed:operator       431   4         NextWide generic compares wrong
+W37   CAUGHT   deleted:clause         1701  6         fill 8-bit memset one short
+W38   CAUGHT   deleted:clause         1701  5         fill 8-bit memset wrong start
+W39   CAUGHT   changed:operator       1704  2         fill 8-bit step stop early
+W40   CAUGHT   changed:operator       1710  2         fill generic step stop early
+W41   CAUGHT   changed:+tokens        1419  60        newfrom stores only values above 1
+W42   CAUGHT   changed:+tokens        1391  5         new 8-bit init one short
+W43   CAUGHT   changed:+tokens        1393  6         new generic init one short
+W44   CAUGHT   deleted:clause         1479  4         count zeros of bits off by one
+W45   CAUGHT   deleted:clause         1471  8         count ignores a given value
+W46   CAUGHT   deleted:clause         1509  7         next ignores a given value
+W47   CAUGHT   deleted:statement      1107  0         -width without argument not detected
+W48   CAUGHT   deleted:clause         1078  28        width 16 rejected
+W49   CAUGHT   changed:expression     542   1         dup loses width
+W50   CAUGHT   changed:expression     778   13        setElement parses as 1-bit
+W51   CAUGHT   changed:expression     917   10        replace validates as 1-bit
+W52   CAUGHT   changed:expression     931   1         replace sizes storage for 1-bit
+W53   CAUGHT   added:code             603   7         index out of range for wide returns last
 
 Tests by number of mutants they failed on (only mutants that ran to completion are counted; crashes list the test running at the time separately)
-  diff-1.1        38
+  diff-1.1        44
+  diff-4.2        43
   diff-4.1        37
-  diff-4.2        37
   bitop-1.4       28
   diff-3.1        27
   rev-2.1         25
   shift-1.1       21
+  signed-1.14     21
   bitop-1.3       20
   range-2.1       20
+  signed-1.2      19
   shift-2.1       18
+  signed-1.6      17
+  signed-1.10     17
+  signed-1.11     16
+  signed-1.21     16
   bitop-2.7       14
   diff-2.1        14
+  signed-1.16     14
   bitop-1.2       13
+  signed-1.9      13
   shift-2.2       12
+  signed-1.15     12
+  signed-1.5      10
+  signed-1.13     10
   repl-1.1         9
   ledit-1.1        9
   bitop-1.1        9
+  in-1.3           9
   fill-w.11        9
   grow-1.3         9
   elem-1.4         9
+  signed-1.8       9
   rev-1.2          8
   bitop-2.3        8
   elem-1.19        8
@@ -208,17 +255,23 @@ Tests by number of mutants they failed on (only mutants that ran to completion a
   bulk-64.1        7
   shift-1.2        6
   bitop-2.5        6
+  in-1.4           6
   fill-w.10        6
   count-w.4        6
   conv-2.5         6
   bulk-1.9         6
   mem-1.1          6
+  signed-1.1       6
+  signed-1.7       6
+  signed-1.12      6
+  signed-1.17      6
   rev-1.1          5
   lremove-1.1      5
   lcmd-w8          5
   bitop-1.5        5
   bitop-2.1        5
   bitop-2.6        5
+  in-1.2           5
   fill-w.5         5
   fill-w.6         5
   count-w.6        5
@@ -230,6 +283,7 @@ Tests by number of mutants they failed on (only mutants that ran to completion a
   bulk-8.1         5
   bulk-8.4         5
   bulk-64.2        5
+  signed-1.3       5
   set-1.4          4
   range-1.1        4
   repl-1.3         4
@@ -273,9 +327,11 @@ Tests by number of mutants they failed on (only mutants that ran to completion a
   range-32.1       3
   elem-1.13        3
   elem-1.15        3
+  elem-1.17        3
   bulk-8.2         3
   bulk-8.5         3
   bulk-w.1         3
+  signed-1.19      3
   new-1.1          2
   new-1.7          2
   from-1.1         2
@@ -286,7 +342,6 @@ Tests by number of mutants they failed on (only mutants that ran to completion a
   range-1.2        2
   ledit-1.3        2
   bitop-3.9        2
-  in-1.2           2
   iter-1.1         2
   iter-1.2         2
   next-1.1         2
@@ -320,8 +375,8 @@ Tests by number of mutants they failed on (only mutants that ran to completion a
   elem-1.2         2
   elem-1.5         2
   elem-1.6         2
-  elem-1.17        2
   bulk-32.1        2
+  signed-1.18      2
   new-1.2          1
   new-1.5          1
   index-1.1        1
@@ -330,6 +385,7 @@ Tests by number of mutants they failed on (only mutants that ran to completion a
   bitop-3.7        1
   bitop-3.8        1
   bitop-3.10       1
+  in-1.1           1
   next-1.2         1
   fill-1.1         1
   fill-1.2         1
@@ -373,6 +429,7 @@ Tests by number of mutants they failed on (only mutants that ran to completion a
   bulk-8.3         1
   bulk-w.3         1
   bulk-1.10        1
+  signed-1.4       1
   new-1.3          0
   new-1.4          0
   new-1.6          0
@@ -392,7 +449,6 @@ Tests by number of mutants they failed on (only mutants that ran to completion a
   bitop-3.6        0
   version-1.1      0
   version-1.2      0
-  in-1.1           0
   count-1.2        0
   fill-1.7         0
   fill-1.8         0
@@ -433,12 +489,13 @@ Tests by number of mutants they failed on (only mutants that ran to completion a
   range-1.4        0
   bulk-8.6         0
   bulk-1.11        0
+  signed-1.20      0
 
-Tests that failed on no mutant: new-1.3 new-1.4 new-1.6 from-1.2 from-1.3 from-1.4 is-1.1 set-1.5 set-1.6 set-1.7 set-1.8 repl-1.2 bitop-1.6 bitop-3.3 bitop-3.4 bitop-3.5 bitop-3.6 version-1.1 version-1.2 in-1.1 count-1.2 fill-1.7 fill-1.8 fill-1.9 fill-1.10 fill-1.11 fill-w.13 fill-w.18 next-w.8 count-w.12 next-w.7 conv-1.2 conv-1.4 conv-1.6 conv-1.7 conv-2.3 conv-2.8 conv-2.9 conv-3.7 conv-3.8 conv-3.9 conv-3.10 conv-4.2 conv-4.4 conv-4.9 misc-0.1 misc-1.1 width-1.1 width-1.6 width-1.7 width-1.8 width-1.9 width-1.10 width-1.12 width-1.13 range-64.2 range-64.3 range-1.4 bulk-8.6 bulk-1.11
+Tests that failed on no mutant: new-1.3 new-1.4 new-1.6 from-1.2 from-1.3 from-1.4 is-1.1 set-1.5 set-1.6 set-1.7 set-1.8 repl-1.2 bitop-1.6 bitop-3.3 bitop-3.4 bitop-3.5 bitop-3.6 version-1.1 version-1.2 count-1.2 fill-1.7 fill-1.8 fill-1.9 fill-1.10 fill-1.11 fill-w.13 fill-w.18 next-w.8 count-w.12 next-w.7 conv-1.2 conv-1.4 conv-1.6 conv-1.7 conv-2.3 conv-2.8 conv-2.9 conv-3.7 conv-3.8 conv-3.9 conv-3.10 conv-4.2 conv-4.4 conv-4.9 misc-0.1 misc-1.1 width-1.1 width-1.6 width-1.7 width-1.8 width-1.9 width-1.10 width-1.12 width-1.13 range-64.2 range-64.3 range-1.4 bulk-8.6 bulk-1.11 signed-1.20
 Mutants that crashed the run (test running at the time): M39:shift-1.1, M40:diff-2.1, M41:diff-1.1, M24:diff-2.1, M28:new-1.2, W05:bitop-1.4, W15:bitop-1.3, W16:diff-3.1, W18:elem-1.16, W19:elem-1.16, W47:width-1.8, W49:shift-2.1, W52:diff-4.1, S15:diff-3.1
 
   added      CAUGHT   1
-  changed    CAUGHT   98
-  changed    MISSED   7
-  deleted    CAUGHT   52
-  deleted    MISSED   14
+  changed    CAUGHT   112
+  changed    MISSED   6
+  deleted    CAUGHT   71
+  deleted    MISSED   16

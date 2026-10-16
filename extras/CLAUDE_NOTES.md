@@ -7,9 +7,9 @@ changed since this date. Name functions and tests when you cite things, not line
 ## What this is
 
 `bitarray` is an extension-only C package for Tcl 9.1 (trunk `3d77be8951`, 64-bit Linux, gcc): packed arrays of 1, 8, 16, 32
-(unsigned) or 64 (signed) bit integers that behave like ordinary Tcl lists, through the Tcl 9 abstract-list hooks
+(unsigned, or signed as -8, -16, -32) or 64 (signed) bit integers that behave like ordinary Tcl lists, through the Tcl 9 abstract-list hooks
 (`Tcl_ObjType` version 2, documented in `doc/ObjectType.3` of the Tcl source), the machinery `lseq` uses. It is loaded
-with `load ./libbitarray.so Bitarray` (it also does `Tcl_PkgProvide bitarray 0.6.0`; the top-level `pkgIndex.tcl` lets `package require bitarray` find it).
+with `load ./libbitarray.so Bitarray` (it also does `Tcl_PkgProvide bitarray 0.7.0`; the top-level `pkgIndex.tcl` lets `package require bitarray` find it).
 A bitarray is an ordinary `Tcl_Obj` of a custom list type: a value, not a handle or a TclOO object.
 Since 0.4, `fill`, `count` and `next` take optional `lseq`-style helper words (`to` or `..`, `with`, `by`); the plain forms still work. The usage strings say `array`. Since 0.5, `frombytes`/`tobytes` (8-bit arrays and binary data) and `fromchars`/`tochars` (code points, widths 8/16/32) convert to and from strings without a temporary list. Since 0.6.0, `and`, `or`, `xor`, `andnot` and `not` combine or flip whole arrays 64 bits at a time (`bitarray and varName ?<-? array ?array?`, `-length strict|zero`; `varName` is a variable name, the arrays are values; see `README.md`).
 
@@ -27,14 +27,16 @@ Garage "Primes" drag race, included unchanged. Say so plainly when asked who wro
 | Build, run the tests, run the sieve benchmark | `build.sh`, `run_tests.sh`, `run_sieves.sh` (Windows: the `.bat` equivalents) |
 | No Tcl 9.1 installed: clone, build, test from nothing | this file, "Setting up from nothing" |
 | Walk through the code | this file, "Walking someone through the code", and the interactive `extras/bitarray_stepper.html` |
-| The tests (259) | `tests/bitarray.test`; random comparisons against plain lists: `tests/diff_*.tcl`; memory growth: `tests/leak_check.tcl` |
+| The tests (282) | `tests/bitarray.test`; random comparisons against plain lists: `tests/diff_*.tcl`; memory growth: `tests/leak_check.tcl` |
 | All measured results, with the commands that produced them | `RESULTS.txt` |
 | The sieve variants A-F and Frank's file | `sieve/` (`sieve/README.md`) |
-| Mutation testing: the 172 deliberate bugs | `extras/mutate5.py` (the list), `extras/mutate6.py` (runner and report) |
+| Mutation testing: the 206 deliberate bugs | `extras/mutate5.py` (the list), `extras/mutate6.py` (runner and report) |
 | Which test caught which bug | `extras/mutants.json`, `extras/bitarray.mutants`, `extras/mutation_summary.txt` |
 | The `lappend`/`linsert` type loss: cause, reproductions, ticket text | `extras/typeloss_*`, `RESULTS.txt` section 13a |
 
 ## Setting up from nothing (a fresh sandbox, no Tcl 9.1)
+
+**If the clone, the package install or any command is refused:** in claude.ai the person may have two settings off, under Settings > Capabilities: *Code execution and file creation* and *Allow network egress* (GitHub is on the allowed list; on a Team or Enterprise plan an organization owner sets them under Organization settings > Capabilities; Free accounts have both, with lower usage limits). Tell them which one, and ask them to turn it on and say so; the exact names may change, see Claude's help article "Create and edit files with Claude".
 
 Tested on 2026-10-15 in an empty directory on 64-bit Linux with gcc, against the then-current GitHub mirror of trunk
 (`7e6fd02`, reports itself as 9.1.1): both routes below built without errors and passed all 259 tests. The measurements in
@@ -56,7 +58,7 @@ Route A, straight from the build directory (nothing installed):
 
     cd W/bitarray
     ./build.sh --include W/tcl/generic --stub W/build/libtclstub.a
-    sh ./run_tests.sh --tclsh W/build/tclsh      # expect: Total 259 Passed 259 Failed 0
+    sh ./run_tests.sh --tclsh W/build/tclsh      # expect: Total 282 Passed 282 Failed 0
 
 Route B, installed into a prefix:
 
@@ -80,6 +82,8 @@ Notes:
   Windows (see `README.md`), and trunk revisions other than the two named here.
 
 ## Walking someone through the code
+
+**Show the simulator, do not only describe it.** `extras/bitarray_stepper.html` is one self-contained file (about 150 KB, no network requests, no other files needed), so it can be displayed anywhere HTML can: in claude.ai, send or publish the file so that it opens in the side panel (as a rendered HTML file or as an artifact); in Claude Code, open it in a browser. Try that before telling the person you cannot. If it really cannot be shown, give them the live copy: https://rocketship88.github.io/tcl-bit-array-extension/extras/bitarray_stepper.html
 
 If you have built and tested the package (see above) you can walk a person through `bitarray.c` (about 1,670 lines, one
 file). **`extras/bitarray_stepper.html` is an interactive version of this walkthrough**: the person opens it in a browser, picks a
@@ -113,7 +117,7 @@ and what happens when a bitarray is shared (`Tcl_IsShared` then `Tcl_DuplicateOb
 ## Mutation testing, and how to trace one
 
 Each mutant is one deliberate change to `bitarray.c`. The suite is run against it. **CAUGHT** means at least one test fails or
-the run crashes; **MISSED** means every test passed. Current numbers: 172 mutants, 151 caught, 21 missed.
+the run crashes; **MISSED** means every test passed. Current numbers: 206 mutants, 184 caught, 22 missed (one full run on 0.7.0, extras/mutation_round12.txt; M16 was retired in 0.7.0 because the code it mutated was replaced by `HasBit`, whose mutants are H01 to H10).
 
 Worked example, M04. `BA_MAX_BITS`, the largest array allowed counted in total bits (elements times width), is
 `1 << 40`; M04 changes it to `1 << 41`. It is caught by exactly three tests, each asking for an array one element over the
@@ -124,19 +128,19 @@ elements, at three widths. (The `x` in `range-x` is only a label for extra range
 To trace any mutant: find its id in `extras/mutants.json` (its `tests` list) or in `extras/bitarray.mutants` (the changed
 line with a comment at the right), then read those tests in `tests/bitarray.test`.
 
-The 21 missed, and why (full reasons in `RESULTS.txt`, sections 10, 16 and 17): M06, M08, M42 are unreachable because the Tcl core clamps The two added after the 0.6.0 speed changes: S13 (the first partial chunk of the left move in `MoveElems` not shortened) and R05 (the last unaligned `lrange` chunk not shortened) only change bits past the moved range or the unused bits of the last word, which nothing can read, the same kind as M36 and B11; the other new ones, R01 to R04 and R06 to R08, are caught.
+The 22 missed, and why (full reasons in `RESULTS.txt`, sections 10, 16 and 17): M06, M08, M42 are unreachable because the Tcl core clamps
 the indexes first; M07, M31, M36, M38, W26 leave stray bits or bytes beyond the end of the array, which nothing can read;
 M33, M34, W14 repeat a size check that an earlier check already makes on a 64-bit build; M35 (capacity doubling) is invisible
-at test sizes; W08 is an equivalent mutant; W24 changes `memmove` to `memcpy`, undefined for overlapping data in standard C but
-identical on glibc. The three added in 0.5.1: S03 and S04 remove the mask on the value read (`GetBits`) or on the value stored (`PutBits`), and each mask makes the other redundant, so either one alone is an equivalent mutant; S10 stops `ClearBits` advancing, which only leaves stray bits beyond the end, like M36. The two added in 0.6.0: B11 and B13 remove the clearing of the unused bits after the end of the data in the last word (a bit mask for 1-bit arrays, a `memset` of the unused bytes for wider ones); nothing reads those bits, so no test can see the difference, the same kind as M36. 60 of the 259 tests failed on none of the 172 mutants; that list is in `mutation_summary.txt`. It is not by
-itself a defect, since the mutants cover only part of the code, and a crashing mutant stops the run before later tests.
+at test sizes; H05 (the mask on the last word when `HasBit` looks for a 1) is an equivalent mutant, because shrinking an array clears the bits past its end; W24 changes `memmove` to `memcpy`, undefined for overlapping data in standard C but
+identical on glibc. The three added in 0.5.1: S03 and S04 remove the mask on the value read (`GetBits`) or on the value stored (`PutBits`), and each mask makes the other redundant, so either one alone is an equivalent mutant; S10 stops `ClearBits` advancing, which only leaves stray bits beyond the end, like M36. The two added in 0.6.0: B11 and B13 remove the clearing of the unused bits after the end of the data in the last word (a bit mask for 1-bit arrays, a `memset` of the unused bytes for wider ones); nothing reads those bits, so no test can see the difference, the same kind as M36. In the last full run (206 mutants, 282 tests) the tests that failed on none of the mutants are listed in `mutation_summary.txt`. It is not by
+itself a defect, since the mutants cover only part of the code, and a crashing mutant stops the run before later tests. The two added after the 0.6.0 speed changes: S13 (the first partial chunk of the left move in `MoveElems` not shortened) and R05 (the last unaligned `lrange` chunk not shortened) only change bits past the moved range or the unused bits of the last word, which nothing can read, the same kind as M36 and B11; the other new ones, R01 to R04 and R06 to R08, are caught. G03 (the signed parse does not mask a negative value to its width) is an equivalent mutant: every user of the parsed value (`PutElem`, `memset`, `NextWide`, `ElemWide`) already truncates it to the width.
 
 The "kind" label on each mutant (`deleted:clause`, `changed:operator`, ...) is worked out automatically from the text; treat
 it as a rough label. Almost all mutants delete or edit existing code; only one (W53) adds a new branch.
 
 ## What was and was not checked
 
-Checked: 259 tests pass natively and with `-DBA_NO_BUILTINS` and `-DBA_FORCE_32BIT_LIMITS`; valgrind clean (no invalid
+Checked: 282 tests pass natively and with `-DBA_NO_BUILTINS` and `-DBA_FORCE_32BIT_LIMITS`; valgrind clean (no invalid
 accesses, nothing definitely lost); a 200,000-step random comparison against plain lists across all five widths with no
 differences; flat memory over 16 million `lindex` calls.
 

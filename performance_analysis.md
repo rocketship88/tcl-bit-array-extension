@@ -1,6 +1,6 @@
 # bitarray: why it exists, what it costs, when to use it
 
-Version 0.6.0, Tcl 9.1. The figures were measured with 0.5; the only ones measured again since are the two 1-bit edit rows in section 3 (after the 0.5.1 change) and the bitwise rows in section 4 (0.6.0), the `lreverse` row in section 3 and the table in section 6 (0.6.0 after the word-at-a-time copies). Written by Eric Taylor together with Claude (Anthropic's AI model), which ran the measurements and
+Version 0.7.0, Tcl 9.1. The figures were measured with 0.5; the only ones measured again since are the `in` rows in section 4 (0.7.0), the two 1-bit edit rows in section 3 (after the 0.5.1 change) and the bitwise rows in section 4 (0.6.0), the `lreverse` row in section 3 and the table in section 6 (0.6.0 after the word-at-a-time copies). Written by Eric Taylor together with Claude (Anthropic's AI model), which ran the measurements and
 drafted the text. Every figure below was measured on the machines named in each section; nothing is estimated unless it says so.
 
 ## 1. Why bitarray
@@ -107,6 +107,18 @@ The ranges come from all stored runs on Linux and on two Windows 10 machines. On
 | 1,000,000 | `not` | 53,665 | 5.26 | 40.2 | 10,212x | 1,330x |
 
 All five rows at the three sizes are in the saved benchmark output, and the benchmark first checks, on 1,000 elements, that the plain-list loop and both bitarray columns give the same answers. A 1-bit array does a million elements in about 15,600 word operations; an 8-bit array is eight times as large and took about 7 to 14 times as long here (57.7 against 8.15 µs for `and`, 89.9 against 6.55 for `or`). `not` flips every bit, so on an 8-bit array 0 becomes 255; its 8-bit ratio is against a plain-list loop doing `x ^ 255`. Timings in this container vary by about 30% from run to run, and so do the ratios, because the plain-list time moves too.
+
+**The `in` operator** (0.7.0; `extras/listbench.tcl -only ' in '`, Linux, one million elements, microseconds per call, one run, so differences under about 2x are noise). A 1-bit array tests whole 64-bit words and stops at the first word that decides the answer (a word that is not 0 holds a 1, a word that is not all ones holds a 0); an 8-bit array scans bytes; a plain list compares element by element:
+
+| operation | plain list | 1-bit | 8-bit | list / 1-bit | list / 8-bit |
+|---|---|---|---|---|---|
+| `1 in $X` (hit at the first element) | 3.44 | 0.30 | 1.16 | 11x | 3.0x |
+| `0 in $X` (hit at the second element) | 5.5 | 0.36 | 1.16 | 15x | 4.7x |
+| `1 in $X` (the only 1 is the last element) | 2,992 | 8.6 | 24.5 | 348x | 122x |
+| `0 in $X` (miss: every element is 1) | 4,084 | 9.58 | 20.6 | 426x | 199x |
+| `2 in $X` (a value the array cannot hold) | 2,996 | 0.34 | 20.8 | no ratio | no ratio |
+
+The last row has no ratio on purpose: a 1-bit array answers at once for a value it cannot hold, so the comparison would only measure that shortcut (the 8-bit column does scan). On Windows, 2,000,000 elements, the same rows gave 12x for the two early hits and 312x and 306x for the two full scans (`extras/windows_0.7.0_run.txt`).
 
 ## 5. What it does differently from a list
 

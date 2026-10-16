@@ -1,0 +1,28 @@
+# mutation_round11: the 25 mutants added for the signed widths (G01 to G25), run one by one on 2026-10-16 (not a full run).
+# G12 was first MISSED with 279 tests; test signed-1.21 (the arrow form) was added (280 tests) and G12 re-run: CAUGHT 1 tests fail.
+already done: 0, to run: 25
+G01 CAUGHT 2 tests fail
+G02 CAUGHT 6 tests fail
+G03 MISSED 
+G04 CAUGHT 5 tests fail
+G06 CAUGHT 3 tests fail
+G05 CAUGHT 3 tests fail
+G07 CAUGHT 9 tests fail
+G08 CAUGHT 14 tests fail
+G09 CAUGHT 4 tests fail
+G10 CAUGHT 1 tests fail
+G11 CAUGHT 4 tests fail
+G12 CAUGHT 1 tests fail
+G13 CAUGHT 1 tests fail
+G14 CAUGHT 1 tests fail
+G15 CAUGHT 6 tests fail
+G16 CAUGHT 16 tests fail
+G17 CAUGHT 1 tests fail
+G18 CAUGHT 1 tests fail
+G19 CAUGHT 1 tests fail
+G20 CAUGHT 1 tests fail
+G21 CAUGHT 8 tests fail
+G22 CAUGHT 2 tests fail
+G23 CAUGHT 3 tests fail
+G24 CAUGHT 5 tests fail
+G25 CAUGHT 16 tests fail

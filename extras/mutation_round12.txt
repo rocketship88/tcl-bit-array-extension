@@ -1,0 +1,9 @@
+# mutation_round12: the first full run of all 206 mutants since the signed widths, on 0.7.0 (2026-10-16).
+# 206 mutants: 184 CAUGHT, 22 MISSED.  Run: python3 extras/mutate6.py --jobs 2   (the record is in mutants.json, mutation_summary.txt, bitarray.mutants).
+# New in 0.7.0: H01 to H10 for HasBit (the early-exit word test behind `in` on 1-bit arrays): 9 caught, H05 missed (equivalent: the mask on
+#   the last word, looking for a 1, is redundant because shrinking an array clears the bits past its end; kept as a safeguard).
+# M16 (the old popcount test in `in`) was retired: that code no longer exists.
+# 12 older mutants had stopped matching the source after the signed-width change (BADPATTERN: W08 W27 W45 W46 W49 W50 W51 B14 B19 Q02 Q06 Q10); their patterns
+#   were rewritten for the new code and all 12 are CAUGHT.  The first pass of this run found them; G01 to G25 had been run alone, which hid it.
+# MISSED (22): B11 B13 G03 H05 M06 M07 M08 M31 M33 M34 M35 M36 M38 M42 R05 S03 S04 S10 S13 W14 W24 W26   (reasons: RESULTS.txt and CLAUDE_NOTES.md)
+# (W08, an equivalent mutant before, was rewritten for the signed code and is now caught.)

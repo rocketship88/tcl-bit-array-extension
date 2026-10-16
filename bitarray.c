@@ -8,10 +8,12 @@
  *
  *	Element width (chosen when the array is created, fixed afterwards):
  *	    1   bit      values 0 and 1
- *	    8   bits     unsigned, 0 .. 255
- *	    16  bits     unsigned, 0 .. 65535
- *	    32  bits     unsigned, 0 .. 4294967295
- *	    64  bits     signed,   -2^63 .. 2^63-1
+ *	    8   bits     unsigned, 0 .. 255          -8   signed, -128 .. 127
+ *	    16  bits     unsigned, 0 .. 65535        -16  signed, -32768 .. 32767
+ *	    32  bits     unsigned, 0 .. 4294967295   -32  signed, -2^31 .. 2^31-1
+ *	    64  bits     signed,   -2^63 .. 2^63-1   (-64 is accepted too)
+ *	A minus sign in the width means signed.  The stored bits are the same
+ *	either way; the sign only changes how a value is read and written.
  *
  *	Written by Claude (an AI model made by Anthropic) for Eric Taylor.
  *
@@ -30,7 +32,7 @@
  */
 
 #include <tcl.h>
-#define BA_VERSION "0.6.0"	/* the one place the version is set (also in pkgIndex.tcl) */
+#define BA_VERSION "0.7.0"	/* the one place the version is set (also in pkgIndex.tcl) */
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -89,7 +91,9 @@ typedef struct BitArr {
     Tcl_Size capWords;		/* Words allocated (>= nwords); every bit at or
 				 * beyond the end of the data, up to the
 				 * capacity, is 0. */
-    int width;			/* Bits per element: 1, 8, 16, 32 or 64. */
+    unsigned char width;	/* Bits per element: 1, 8, 16, 32 or 64. */
+    unsigned char isSigned;	/* 1 if the width was given with a minus sign
+				 * (-8, -16, -32 or -64). */
     Tcl_Obj *zero, *one;	/* Shared element values handed out by index. */
     Tcl_Obj **elems;		/* Lazily built element vector, or NULL. */
     Tcl_Size elemsLen;		/* Number of entries in elems. */
@@ -133,8 +137,9 @@ static const Tcl_ObjType bitarrayType = {
 /* ---------------------------------------------------------------- */
 
 /*
- * Read or write element I.  The value is the raw unsigned bit pattern; for
- * width 64 the caller reinterprets it as signed.  Multi-byte elements go
+ * Read or write element I.  The value is the raw unsigned bit pattern; the
+ * caller reinterprets it as signed for width 64 and the signed widths
+ * (ElemWide).  Multi-byte elements go
  * through memcpy, which compilers turn into a single load or store and which
  * avoids strict-aliasing and alignment problems.
  */
@@ -172,7 +177,7 @@ PutElem(BitArr *b, Tcl_Size i, uint64_t val)
 }
 
 static BitArr *
-NewRep(Tcl_Interp *interp, Tcl_Size len, int width)
+NewRep(Tcl_Interp *interp, Tcl_Size len, int width, int isSigned)
 {
     Tcl_Size nwords;
     size_t bytes;
@@ -200,7 +205,8 @@ NewRep(Tcl_Interp *interp, Tcl_Size len, int width)
     b->len = len;
     b->nwords = nwords;
     b->capWords = nwords;
-    b->width = width;
+    b->width = (unsigned char)width;
+    b->isSigned = (unsigned char)(isSigned != 0);
     b->zero = Tcl_NewWideIntObj(0);
     b->one = Tcl_NewWideIntObj(1);
     Tcl_IncrRefCount(b->zero);
@@ -258,13 +264,43 @@ Touch(Tcl_Obj *obj)
 }
 
 /* Element VAL as a Tcl value (new object, reference count 0, unless 0 or 1). */
+/*
+ * ElemWide --
+ *	The number an element stands for: the stored bits VAL (width > 1),
+ *	sign-extended for the signed widths.
+ */
+static Tcl_WideInt
+ElemWide(const BitArr *b, uint64_t val)
+{
+    if (b->width == 64) return (Tcl_WideInt)(int64_t)val;
+    if (b->isSigned) {
+	if (b->width == 8) return (Tcl_WideInt)(int8_t)val;
+	if (b->width == 16) return (Tcl_WideInt)(int16_t)val;
+	return (Tcl_WideInt)(int32_t)val;
+    }
+    return (Tcl_WideInt)val;
+}
+
 static Tcl_Obj *
 ElemObj(const BitArr *b, uint64_t val)
 {
     if (val == 0) return b->zero;
     if (val == 1) return b->one;
-    return Tcl_NewWideIntObj(b->width == 64 ? (Tcl_WideInt)(int64_t)val
-	    : (Tcl_WideInt)val);
+    return Tcl_NewWideIntObj(ElemWide(b, val));
+}
+
+/* The width as the user wrote it: negative for the signed widths. */
+static int
+SignedWidth(const BitArr *b)
+{
+    return b->isSigned ? -(int)b->width : (int)b->width;
+}
+
+/* Does the array hold signed numbers?  Width 64 always does. */
+static int
+SignedBits(const BitArr *b)
+{
+    return b->isSigned || b->width == 64;
 }
 
 static void
@@ -422,10 +458,12 @@ ParseBit(Tcl_Interp *interp, Tcl_Obj *obj, int *bitPtr)
 
 /*
  * Parse an element value for an array of WIDTH bits into its raw bit pattern.
- * Widths 8, 16 and 32 are unsigned; width 64 is signed.
+ * Widths 8, 16 and 32 are unsigned, or signed if ISSIGNED (-8, -16, -32: the
+ * value is stored as its low WIDTH bits); width 64 is always signed.
  */
 static int
-ParseValue(Tcl_Interp *interp, Tcl_Obj *obj, int width, uint64_t *vp)
+ParseValue(Tcl_Interp *interp, Tcl_Obj *obj, int width, int isSigned,
+	uint64_t *vp)
 {
     Tcl_WideInt v;
 
@@ -446,7 +484,14 @@ ParseValue(Tcl_Interp *interp, Tcl_Obj *obj, int width, uint64_t *vp)
 	    *vp = (uint64_t)v;
 	    return TCL_OK;
 	}
-	if (v >= 0 && v <= (Tcl_WideInt)(((uint64_t)1 << width) - 1)) {
+	if (isSigned) {
+	    Tcl_WideInt lim = (Tcl_WideInt)1 << (width - 1);
+
+	    if (v >= -lim && v < lim) {
+		*vp = (uint64_t)v & (((uint64_t)1 << width) - 1);
+		return TCL_OK;
+	    }
+	} else if (v >= 0 && v <= (Tcl_WideInt)(((uint64_t)1 << width) - 1)) {
 	    *vp = (uint64_t)v;
 	    return TCL_OK;
 	}
@@ -456,6 +501,12 @@ ParseValue(Tcl_Interp *interp, Tcl_Obj *obj, int width, uint64_t *vp)
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "expected integer in range -9223372036854775808..9223372036854775807"
 		    " but got \"%s\"", Tcl_GetString(obj)));
+	} else if (isSigned) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "expected integer in range %lld..%lld but got \"%s\"",
+		    -(long long)((uint64_t)1 << (width - 1)),
+		    (long long)(((uint64_t)1 << (width - 1)) - 1),
+		    Tcl_GetString(obj)));
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "expected integer in range 0..%lld but got \"%s\"",
@@ -488,7 +539,7 @@ BAFree(Tcl_Obj *objPtr)
 static void
 BADup(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr)
 {
-    BitArr *s = GETREP(srcPtr), *d = NewRep(NULL, s->len, s->width);
+    BitArr *s = GETREP(srcPtr), *d = NewRep(NULL, s->len, s->width, s->isSigned);
     Tcl_ObjInternalRep ir;
 
     if (d == NULL) Tcl_Panic("bitarray: out of memory in dup");
@@ -526,11 +577,7 @@ BAUpdateString(Tcl_Obj *objPtr)
 	    uint64_t v = GetElem(b, i);
 
 	    if (i) Tcl_DStringAppend(&ds, " ", 1);
-	    if (b->width == 64) {
-		n = snprintf(buf, sizeof(buf), "%lld", (long long)(int64_t)v);
-	    } else {
-		n = snprintf(buf, sizeof(buf), "%llu", (unsigned long long)v);
-	    }
+	    n = snprintf(buf, sizeof(buf), "%lld", (long long)ElemWide(b, v));
 	    Tcl_DStringAppend(&ds, buf, n);
 	}
 	Tcl_InitStringRep(objPtr, Tcl_DStringValue(&ds),
@@ -589,7 +636,7 @@ BASlice(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size from, Tcl_Size to,
 	return TCL_OK;
     }
     len = to - from + 1;
-    if ((n = NewRep(interp, len, b->width)) == NULL) return TCL_ERROR;
+    if ((n = NewRep(interp, len, b->width, b->isSigned)) == NULL) return TCL_ERROR;
     if (b->width != 1) {
 	memcpy(BYTES(n), BYTES(b) + (size_t)from * EBYTES(b),
 		(size_t)len * EBYTES(b));
@@ -617,7 +664,7 @@ BAReverse(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Obj **newObjPtr)
     BitArr *b = GETREP(objPtr), *n;
     Tcl_Size i;
 
-    if ((n = NewRep(interp, b->len, b->width)) == NULL) return TCL_ERROR;
+    if ((n = NewRep(interp, b->len, b->width, b->isSigned)) == NULL) return TCL_ERROR;
     if (b->width == 1) {
 	/*
 	 * Result bits i..i+m-1 are source bits L-i-m..L-i-1 in reverse order:
@@ -728,7 +775,7 @@ BASetElement(Tcl_Interp *interp, Tcl_Obj *listPtr, Tcl_Size indexCount,
 	IndexError(interp, indexArray[0]);
 	return NULL;
     }
-    if (ParseValue(interp, valueObj, b->width, &val) != TCL_OK) return NULL;
+    if (ParseValue(interp, valueObj, b->width, b->isSigned, &val) != TCL_OK) return NULL;
     if (Tcl_IsShared(obj)) {
 	obj = Tcl_DuplicateObj(obj);
     }
@@ -867,7 +914,7 @@ BAReplace(Tcl_Interp *interp, Tcl_Obj *listObj, Tcl_Size first,
     if (numToDelete < 0) numToDelete = 0;
     if (numToDelete > oldLen - first) numToDelete = oldLen - first;
     for (i = 0; i < numToInsert; i++) {
-	if (ParseValue(interp, insertObjs[i], b->width, &val) != TCL_OK) {
+	if (ParseValue(interp, insertObjs[i], b->width, b->isSigned, &val) != TCL_OK) {
 	    return TCL_ERROR;
 	}
     }
@@ -920,7 +967,7 @@ BAReplace(Tcl_Interp *interp, Tcl_Obj *listObj, Tcl_Size first,
     MoveElems(b, first + numToDelete, first + numToInsert,
 	    oldLen - (first + numToDelete));
     for (i = 0; i < numToInsert; i++) {
-	ParseValue(NULL, insertObjs[i], b->width, &val);
+	ParseValue(NULL, insertObjs[i], b->width, b->isSigned, &val);
 	PutElem(b, first + i, val);
     }
     if (newLen < oldLen) {
@@ -937,19 +984,42 @@ BAReplace(Tcl_Interp *interp, Tcl_Obj *listObj, Tcl_Size first,
     return TCL_OK;
 }
 
+/*
+ * HasBit --
+ *	True if some element of the 1-bit array B equals VAL (0 or 1).  Tests
+ *	whole words and stops at the first word that holds the wanted bit: a
+ *	word that is not 0 holds a 1, a word that is not all ones holds a 0.
+ *	The last word is padded with ones for the unused bits past the end,
+ *	so they never count as zeros.
+ */
+static int
+HasBit(BitArr *b, int val)
+{
+    Tcl_Size i, lw;
+    uint64_t lm, w;
+
+    if (b->len == 0) return 0;
+    lw = (b->len - 1) >> 6;
+    lm = ~(uint64_t)0 >> (63 - ((b->len - 1) & 63));	/* bits in use */
+    for (i = 0; i < lw; i++) {
+	w = b->words[i];
+	if (val ? (w != 0) : (w != ~(uint64_t)0)) return 1;
+    }
+    w = b->words[lw];
+    return val ? ((w & lm) != 0) : ((w | ~lm) != ~(uint64_t)0);
+}
+
 static int
 BAInOper(Tcl_Interp *interp, Tcl_Obj *valueObj, Tcl_Obj *listObj, int *resPtr)
 {
     BitArr *b = GETREP(listObj);
     const char *s = Tcl_GetString(valueObj);
-    Tcl_WideInt ones;
 
     (void)interp;
     *resPtr = 0;
     if (b->width == 1) {
 	if (s[0] && !s[1] && (s[0] == '0' || s[0] == '1')) {
-	    ones = CountRange(b, 0, b->len - 1);
-	    *resPtr = (s[0] == '1') ? (ones > 0) : (ones < b->len);
+	    *resPtr = HasBit(b, s[0] == '1');
 	}
     } else {
 	/*
@@ -959,12 +1029,8 @@ BAInOper(Tcl_Interp *interp, Tcl_Obj *valueObj, Tcl_Obj *listObj, int *resPtr)
 	uint64_t val;
 	char buf[32];
 
-	if (ParseValue(NULL, valueObj, b->width, &val) == TCL_OK) {
-	    if (b->width == 64) {
-		snprintf(buf, sizeof(buf), "%lld", (long long)(int64_t)val);
-	    } else {
-		snprintf(buf, sizeof(buf), "%llu", (unsigned long long)val);
-	    }
+	if (ParseValue(NULL, valueObj, b->width, b->isSigned, &val) == TCL_OK) {
+	    snprintf(buf, sizeof(buf), "%lld", (long long)ElemWide(b, val));
 	    if (strcmp(buf, s) == 0) {
 		*resPtr = (NextWide(b, 0, 0, val) >= 0);
 	    }
@@ -1003,19 +1069,22 @@ NeedBA(Tcl_Interp *interp, Tcl_Obj *obj, BitArr **bPtr)
 }
 
 static int
-ParseWidthArg(Tcl_Interp *interp, Tcl_Obj *obj, int *widthPtr)
+ParseWidthArg(Tcl_Interp *interp, Tcl_Obj *obj, int *widthPtr,
+	int *signedPtr)
 {
     Tcl_WideInt w;
 
     if (Tcl_GetWideIntFromObj(NULL, obj, &w) != TCL_OK
-	    || (w != 1 && w != 8 && w != 16 && w != 32 && w != 64)) {
+	    || (w != 1 && w != 8 && w != 16 && w != 32 && w != 64
+	    && w != -8 && w != -16 && w != -32 && w != -64)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"bad width \"%s\": must be 1, 8, 16, 32 or 64",
-		Tcl_GetString(obj)));
+		"bad width \"%s\": must be 1, 8, 16, 32, 64, -8, -16, -32 or -64"
+		" (a minus sign means signed)", Tcl_GetString(obj)));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
 	return TCL_ERROR;
     }
-    *widthPtr = (int)w;
+    *signedPtr = (w < 0);
+    *widthPtr = (int)(w < 0 ? -w : w);
     return TCL_OK;
 }
 
@@ -1025,17 +1094,18 @@ ParseWidthArg(Tcl_Interp *interp, Tcl_Obj *obj, int *widthPtr)
  */
 static int
 ParseCreateArgs(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[],
-	Tcl_Size from, int allowValue, int *widthPtr, Tcl_Obj **valuePtr,
-	const char *usage)
+	Tcl_Size from, int allowValue, int *widthPtr, int *signedPtr,
+	Tcl_Obj **valuePtr, const char *usage)
 {
     Tcl_Size i;
 
     *widthPtr = 1;
+    *signedPtr = 0;
     *valuePtr = NULL;
     for (i = from; i < objc; i++) {
 	if (strcmp(Tcl_GetString(objv[i]), "-width") == 0) {
 	    if (i + 1 >= objc) goto usageError;
-	    if (ParseWidthArg(interp, objv[++i], widthPtr) != TCL_OK) {
+	    if (ParseWidthArg(interp, objv[++i], widthPtr, signedPtr) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	} else if (allowValue && *valuePtr == NULL) {
@@ -1136,10 +1206,10 @@ static int
 BitOpCompat(Tcl_Interp *interp, const char *name, const BitArr *x,
 	const BitArr *y, int zero)
 {
-    if (x->width != y->width) {
+    if (x->width != y->width || SignedBits(x) != SignedBits(y)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"bitarray %s: arrays differ in width (%d vs %d)",
-		name, x->width, y->width));
+		name, SignedWidth(x), SignedWidth(y)));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
 	return TCL_ERROR;
     }
@@ -1237,7 +1307,7 @@ BitOpCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[], int op)
 	    if (NeedBA(interp, srcB, &y) != TCL_OK) return TCL_ERROR;
 	    if (BitOpCompat(interp, name, x, y, zero) != TCL_OK) return TCL_ERROR;
 	}
-	if ((d = NewRep(interp, x->len, x->width)) == NULL) return TCL_ERROR;
+	if ((d = NewRep(interp, x->len, x->width, x->isSigned)) == NULL) return TCL_ERROR;
 	BitOpWords(d, x, y, op);
 	MaskTail(d);
 	work = WrapRep(d);
@@ -1264,7 +1334,7 @@ BitarrayCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     enum { S_NEW, S_NEWFROM, S_WIDTH, S_IS, S_COUNT, S_NEXT, S_FILL,
 	   S_FROMBYTES, S_TOBYTES, S_FROMCHARS, S_TOCHARS,
 	   S_AND, S_OR, S_XOR, S_ANDNOT, S_NOT, S_VERSION };
-    int sub, bit, width;
+    int sub, bit, width, isSigned = 0;
     BitArr *b = NULL, *n;
     Tcl_Size i, first, last;
     Tcl_WideInt w;
@@ -1299,12 +1369,12 @@ BitarrayCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetWideIntFromObj(interp, objv[2], &w) != TCL_OK) return TCL_ERROR;
-	if (ParseCreateArgs(interp, objc, objv, 3, 1, &width, &valObj,
+	if (ParseCreateArgs(interp, objc, objv, 3, 1, &width, &isSigned, &valObj,
 		"size ?value? ?-width w?") != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	val = 0;
-	if (valObj != NULL && ParseValue(interp, valObj, width, &val) != TCL_OK) {
+	if (valObj != NULL && ParseValue(interp, valObj, width, isSigned, &val) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (w < 0 || w > BA_MAX_BITS / width) {
@@ -1313,7 +1383,7 @@ BitarrayCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "SIZE", NULL);
 	    return TCL_ERROR;
 	}
-	if ((n = NewRep(interp, (Tcl_Size)w, width)) == NULL) return TCL_ERROR;
+	if ((n = NewRep(interp, (Tcl_Size)w, width, isSigned)) == NULL) return TCL_ERROR;
 	if (val && n->len > 0) {
 	    if (width == 1) {
 		SetRangeOnes(n, 0, n->len - 1, 1);
@@ -1333,7 +1403,7 @@ BitarrayCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	    Tcl_WrongNumArgs(interp, 2, objv, "list ?-width w?");
 	    return TCL_ERROR;
 	}
-	if (ParseCreateArgs(interp, objc, objv, 3, 0, &width, &valObj,
+	if (ParseCreateArgs(interp, objc, objv, 3, 0, &width, &isSigned, &valObj,
 		"list ?-width w?") != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -1341,11 +1411,11 @@ BitarrayCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	    return TCL_ERROR;
 	}
 	for (i = 0; i < ec; i++) {
-	    if (ParseValue(interp, ev[i], width, &val) != TCL_OK) return TCL_ERROR;
+	    if (ParseValue(interp, ev[i], width, isSigned, &val) != TCL_OK) return TCL_ERROR;
 	}
-	if ((n = NewRep(interp, ec, width)) == NULL) return TCL_ERROR;
+	if ((n = NewRep(interp, ec, width, isSigned)) == NULL) return TCL_ERROR;
 	for (i = 0; i < ec; i++) {
-	    ParseValue(NULL, ev[i], width, &val);
+	    ParseValue(NULL, ev[i], width, isSigned, &val);
 	    if (val) PutElem(n, i, val);
 	}
 	Tcl_SetObjResult(interp, WrapRep(n));
@@ -1357,7 +1427,7 @@ BitarrayCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	    return TCL_ERROR;
 	}
 	if (NeedBA(interp, objv[2], &b) != TCL_OK) return TCL_ERROR;
-	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(b->width));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(SignedWidth(b)));
 	return TCL_OK;
     case S_IS:
 	if (objc != 3) {
@@ -1398,7 +1468,7 @@ BitarrayCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	}
 	val = 1;
 	if (hasVal) {
-	    if (ParseValue(interp, valObj, b->width, &val) != TCL_OK) {
+	    if (ParseValue(interp, valObj, b->width, b->isSigned, &val) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    anyNZ = 0;
@@ -1436,7 +1506,7 @@ BitarrayCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	}
 	val = 1;
 	if (valObjN != NULL) {
-	    if (ParseValue(interp, valObjN, b->width, &val) != TCL_OK) {
+	    if (ParseValue(interp, valObjN, b->width, b->isSigned, &val) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    anyNZ = 0;
@@ -1463,7 +1533,7 @@ BitarrayCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	}
 	bytes = Tcl_GetBytesFromObj(interp, objv[2], &nb);
 	if (bytes == NULL) return TCL_ERROR;
-	if ((n = NewRep(interp, nb, 8)) == NULL) return TCL_ERROR;
+	if ((n = NewRep(interp, nb, 8, 0)) == NULL) return TCL_ERROR;
 	if (nb > 0) memcpy(n->words, bytes, (size_t)nb);
 	Tcl_SetObjResult(interp, WrapRep(n));
 	return TCL_OK;
@@ -1474,10 +1544,10 @@ BitarrayCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	    return TCL_ERROR;
 	}
 	if (NeedBA(interp, objv[2], &b) != TCL_OK) return TCL_ERROR;
-	if (b->width != 8) {
+	if (b->width != 8 || b->isSigned) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "tobytes: array has width %d; only width 8 can be written as bytes",
-		    b->width));
+		    SignedWidth(b)));
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
 	    return TCL_ERROR;
 	}
@@ -1499,9 +1569,9 @@ BitarrayCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		Tcl_WrongNumArgs(interp, 2, objv, "string ?-width w?");
 		return TCL_ERROR;
 	    }
-	    if (ParseWidthArg(interp, objv[4], &width) != TCL_OK) return TCL_ERROR;
+	    if (ParseWidthArg(interp, objv[4], &width, &isSigned) != TCL_OK) return TCL_ERROR;
 	}
-	if (width != 8 && width != 16 && width != 32) {
+	if (isSigned || (width != 8 && width != 16 && width != 32)) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "fromchars: -width must be 8, 16 or 32", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
@@ -1519,7 +1589,7 @@ BitarrayCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		return TCL_ERROR;
 	    }
 	}
-	if ((n = NewRep(interp, nc, width)) == NULL) return TCL_ERROR;
+	if ((n = NewRep(interp, nc, width, 0)) == NULL) return TCL_ERROR;
 	for (i = 0; i < nc; i++) {
 	    ch = Tcl_GetUniChar(objv[2], i);
 	    if (ch) PutElem(n, i, (uint64_t)ch);
@@ -1536,9 +1606,9 @@ BitarrayCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	    return TCL_ERROR;
 	}
 	if (NeedBA(interp, objv[2], &b) != TCL_OK) return TCL_ERROR;
-	if (b->width != 8 && b->width != 16 && b->width != 32) {
+	if ((b->width != 8 && b->width != 16 && b->width != 32) || b->isSigned) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "tochars: array has width %d; need width 8, 16 or 32", b->width));
+		    "tochars: array has width %d; need width 8, 16 or 32", SignedWidth(b)));
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
 	    return TCL_ERROR;
 	}
@@ -1590,7 +1660,7 @@ BitarrayCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	if (Tcl_GetIntForIndex(interp, firstObj, b->len - 1, &first) != TCL_OK
 		|| Tcl_GetIntForIndex(interp, lastObj, b->len - 1, &last)
 		!= TCL_OK
-		|| ParseValue(interp, valueObj, b->width, &val) != TCL_OK) {
+		|| ParseValue(interp, valueObj, b->width, b->isSigned, &val) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (k < objc) {
