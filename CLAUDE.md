@@ -20,6 +20,8 @@ the file is right.
 
 **Show the simulator, do not only describe it.** `extras/bitarray_stepper.html` is one self-contained file (about 250 KB, no network requests, no other files needed), so it can be displayed anywhere HTML can: in claude.ai, send or publish the file so that it opens in the side panel (as a rendered HTML file or as an artifact); in Claude Code, open it in a browser. Try that before telling the person you cannot. If it really cannot be shown, give them the live copy: https://rocketship88.github.io/tcl-bit-array-extension/extras/bitarray_stepper.html
 
+**GitHub Pages**: the empty file `.nojekyll` at the top of the repository must stay. Without it GitHub's Jekyll tries to process the .md files and fails on the `{{}` in the Tcl tests in `extras/typeloss_ticket_comment.md` (a Liquid syntax error); with it the pages are served as they are, which is all the stepper needs.
+
 **Comments in `bitarray.c`**: a line that is not obvious gets a short side comment, `   // like this` (spaces, not tabs, before it; the stepper shows it in green). Nothing on obvious lines. A new comment never changes the code: compare `gcc -E -P` output before and after.
 
 **Whenever `bitarray.c` changes, refresh the stepper in the same step**: run `python3 extras/embed_source.py` (then `--check`), look at the stepper's scenes for anything the change made wrong, and put the new page in the zip.
