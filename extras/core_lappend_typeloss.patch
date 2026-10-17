@@ -1,0 +1,33 @@
+diff --git a/generic/tclExecute.c b/generic/tclExecute.c
+index fd43b87..025044d 100644
+--- a/generic/tclExecute.c
++++ b/generic/tclExecute.c
+@@ -3624,7 +3624,7 @@ TEBCresume(
+ 	    varPtr->value.objPtr = objResultPtr = newValue;
+ 	    Tcl_IncrRefCount(newValue);
+ 	}
+-	if (TclListObjAppendElements(interp, objResultPtr, objc, objv)
++	if (Tcl_ListObjReplace(interp, objResultPtr, len, 0, objc, objv)
+ 		!= TCL_OK) {
+ 	    TRACE_ERROR(interp);
+ 	    goto gotError;
+diff --git a/generic/tclVar.c b/generic/tclVar.c
+index 64618b4..cf8ce03 100644
+--- a/generic/tclVar.c
++++ b/generic/tclVar.c
+@@ -1872,7 +1872,14 @@ ListAppendInVar(
+ 	Tcl_IncrRefCount(oldValuePtr);	/* Since var is referenced. */
+     }
+ 
+-    return Tcl_ListObjAppendElement(interp, oldValuePtr, newValuePtr);
++    {
++	Tcl_Size len;
++
++	if (TclListObjLength(interp, oldValuePtr, &len) != TCL_OK) {
++	    return TCL_ERROR;
++	}
++	return Tcl_ListObjReplace(interp, oldValuePtr, len, 0, 1, &newValuePtr);
++    }
+ }
+ 
+ static inline void

@@ -55,7 +55,7 @@ A value outside the range is an error; nothing is wrapped or truncated. The sign
 
 * **Tcl 9.1 (trunk).** Tested only against trunk revision `3d77be8951` (2026-10-11), which reports itself as 9.1.1. That is a Fossil id; if you use the
   GitHub mirror (`tcltk/tcl`) the ids differ. The package also built and passed all tests on mirror commit `7e6fd02` (2026-10-14). It needs
-  `TCL_OBJTYPE_V2`, i.e. the abstract-list hooks. Tcl 8.x cannot work. Tcl 9.0.x was not tried.
+  `TCL_OBJTYPE_V2`, i.e. the abstract-list hooks. Tcl 8.x cannot work. Tcl 9.0.x: tried on 9.0.5 (the tip of the 9.0 branch, 2026-10-16). The code compiles against its headers, but `bitarray.c` refuses to load below 9.1 on purpose (`Tcl_InitStubs(interp, "9.1", 0)`: "version conflict for package tcl: have 9.0.5, need 9.1"). With that check relaxed, 276 of the 282 tests pass; the 6 that fail all use `lappend`, which in the 9.0 core turns the bitarray into a plain list almost everywhere (in 9.1 only inside a proc, see the notes on `lappend` below); the values stay right, but the packed type and the speed are lost.
 * **Headers and the stubs library**: `tcl.h` and `libtclstub.a`, from an installed Tcl or a built source tree. No Tcl 9.1 yet? `extras/CLAUDE_NOTES.md`, section "Setting up from nothing", has the steps to clone and build trunk (about 40 seconds) and then build and test this package.
 * A C compiler (`cc`, tested with gcc) and a POSIX `sh`; on Windows, Visual Studio 2022 and `cmd` (see the next section).
 * Tested on 64-bit Linux and, with Visual Studio 2022, on 64-bit Windows (see below). Not tested anywhere else.
@@ -78,7 +78,7 @@ sh ./run_tests.sh --tclsh /path/to/tcl9.1/bin/tclsh9.1
 sh ./run_sieves.sh --tclsh /path/to/tcl9.1/bin/tclsh9.1   # optional: the prime-sieve benchmark, see below
 ```
 
-Expected last line of the tests: `bitarray.test:	Total	282	Passed	282	Skipped	0	Failed	0`
+Expected last line of the tests: `bitarray.test:	Total	288	Passed	282	Skipped	6	Failed	0`. The 6 skipped tests show the Tcl core's `lappend` type-loss problem (see the notes on `lappend` below) and are run only on request: `./run_tests.sh --testbug`. They fail on Tcl 9.1.1 and pass on a core with the fix in `extras/core_lappend_typeloss.patch`.
 
 (`sh ./script` works even if unpacking lost the executable bit, which happens when a ZIP is made or unpacked on Windows.)
 
@@ -97,8 +97,8 @@ run_sieves.bat --tclsh C:\path\to\tcl9.1\bin\tclsh91.exe     rem optional: the p
 
 `build.bat` finds the headers and the stubs library (`include\tcl.h`, `lib\tclstub.lib`) from the shell you name, or from
 `--tcl-prefix DIR`, finds Visual Studio itself with `vswhere` if `cl` is not already on your `PATH` (so a plain `cmd` window works; it was run that way on 2026-10-13 and set up `vcvars64.bat` itself), and builds the 64-bit or
-32-bit DLL to match the shell. `run_tests.bat` should end with `Total 282  Passed 281  Skipped 1  Failed 0`: one test, which
-reads `/proc`, is skipped on Windows. `--help` on each prints the options.
+32-bit DLL to match the shell. `run_tests.bat` should end with `Total 288  Passed 281  Skipped 7  Failed 0`: one test, which
+reads `/proc`, is skipped on Windows, and so are the 6 `--testbug` tests (to run those: `tclsh91 tests\bitarray.test -constraints coreTypeLoss`). `--help` on each prints the options.
 
 ### Telling `build.sh` where Tcl is
 
@@ -302,7 +302,7 @@ Whether an extension like this counts as a "faithful" entry in Dave's Garage rul
 
 ## Quality checks
 
-* **282 tests** (`tests/bitarray.test`): option parsing, ranges and error messages at every width, every list command on
+* **282 tests** (`tests/bitarray.test`; plus 6 more for the core's `lappend` problem, run with `--testbug`): option parsing, ranges and error messages at every width, every list command on
   every width, copy-on-write, `fill`/`count`/`next`, the bitwise commands, word-boundary cases, memory growth.
 * **Random comparison against plain Tcl lists** (`tests/diff_*.tcl`): thousands of random operations per run, values and error
   messages compared. Last big run: 5 widths × 10 seeds × 100 iterations × 40 steps, 0 differences (the signed widths `-8`, `-16`, `-32` and `-64` were added afterwards: 3 seeds × 150 iterations each, 0 differences). The bitwise commands have their own (`tests/diff_bitops.tcl`: 15,000 random cases over all widths, lengths, forms and both `-length` modes, 0 differences).
@@ -321,7 +321,7 @@ Details and numbers: `RESULTS.txt`.
 
 * Only Tcl 9.1 trunk `3d77be8951` on 64-bit Linux with gcc. **Not tested:** a real 32-bit build (the 32-bit size limits were
   only exercised on a 64-bit build), Windows or MSVC (only 64-bit Windows with Visual Studio 2022 was run; a MinGW cross-compile for 64-bit and 32-bit
-  Windows builds without warnings but was never run), macOS, big-endian machines, threads, Tcl 9.0.x, anything above a few
+  Windows builds without warnings but was never run), macOS, big-endian machines, threads, anything above a few
   hundred MB of array.
 * No bulk copy of a range between arrays, no shifting or rotating of bits, and the bitwise commands never change the length of the first array (`-length` takes `strict` or `zero`; there is no growing mode).
 * The code is written to be portable (`#if SIZE_MAX` selects the size limit; `memcpy` for multi-byte elements) but that is

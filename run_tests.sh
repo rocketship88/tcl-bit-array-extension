@@ -6,18 +6,21 @@
 # Options:
 #   --tclsh FILE    the Tcl 9.1 shell to test with (use the one you built against)
 #   --lib FILE      the extension to load (default: libbitarray.so next to this script)
+#   --testbug       also run the tests that show the Tcl core's lappend type-loss problem (they are skipped
+#                   by default; they fail on Tcl 9.1.1 and pass on a core where the problem is fixed)
 #   -h, --help
-# Expected last line:   bitarray.test:	Total	282	Passed	282	Skipped	0	Failed	0
+# Expected last line:   bitarray.test:	Total	288	Passed	282	Skipped	6	Failed	0   (the 6 skipped are the --testbug tests)
 # If the shell cannot find libtcl9.1.so, put its directory in LD_LIBRARY_PATH; the scripts pass the environment through.
 HERE=$(cd "$(dirname "$0")" && pwd)
 usage() { sed -n '2,/^# If the shell cannot/p' "$0" | sed 's/^# \{0,1\}//'; }
 die() { echo "run_tests.sh: $*" >&2; exit 1; }
 
-TCLSH_ARG= LIB="$HERE/libbitarray.so"
+TCLSH_ARG= EXTRA= LIB="$HERE/libbitarray.so"
 while [ $# -gt 0 ]; do
     case "$1" in
         --tclsh) [ $# -ge 2 ] || die "--tclsh needs an argument"; TCLSH_ARG=$2; shift 2 ;;
         --lib)   [ $# -ge 2 ] || die "--lib needs an argument"; LIB=$2; shift 2 ;;
+        --testbug) EXTRA='-constraints coreTypeLoss'; shift ;;
         -h|--help) usage; exit 0 ;;
         *) echo "run_tests.sh: unknown argument: $1" >&2; usage >&2; exit 2 ;;
     esac
@@ -43,4 +46,4 @@ echo "tclsh: $T   (Tcl $V)"
 echo "lib:   $LIB"
 cd "$HERE" || exit 1
 BITARRAY_LIB="$LIB"; export BITARRAY_LIB
-exec "$T" tests/bitarray.test
+exec "$T" tests/bitarray.test $EXTRA

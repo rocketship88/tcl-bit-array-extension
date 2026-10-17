@@ -1200,4 +1200,33 @@ test signed-1.21 {the arrow form makes a new signed array, and leaves the source
     list [bitarray width $c] [list {*}$c] [bitarray width $d] [list {*}$d] [list {*}$a] [list {*}$b]
 } -result {-8 {3 4 0} -8 {-4 -5 -1} {-1 5 -128} {3 -2 127}}
 
+# The next six tests show a problem in the Tcl core, not in this extension: inside a compiled proc, lappend turns
+# the bitarray into an ordinary list (core ticket 0c82728f85760f36361fe42a15f55453c94d285d; extras/typeloss_ticket.md).
+# They are skipped unless you ask for them:  ./run_tests.sh --testbug   (or:  tclsh tests/bitarray.test -constraints coreTypeLoss)
+# They fail on Tcl 9.1.1 and will pass on a core where the problem is fixed, and then the README note can go.
+proc ::lap_scalar {} {set b [bitarray new 4]; lappend b 1; list [bitarray is $b] $b}
+proc ::lap_literal {} {set b [bitarray new 4]; lappend b {*}{1 0}; list [bitarray is $b] $b}
+proc ::lap_arrelem {} {set b [bitarray new 4]; set A(x) $b; lappend A(x) 1; list [bitarray is $A(x)] $A(x)}
+proc ::lap_arrexp {} {set b [bitarray new 4]; set A(x) $b; set l {1 0}; lappend A(x) {*}$l; list [bitarray is $A(x)] $A(x)}
+proc ::lap_byname {} {set b [bitarray new 4]; set n b; lappend $n 1; list [bitarray is $b] $b}
+proc ::lap_expand {} {set b [bitarray new 4]; set l {1 0}; lappend b {*}$l; list [bitarray is $b] $b}
+test coreTypeLoss-1.1 {lappend of one element in a proc keeps the bitarray type} -constraints coreTypeLoss -body {
+    lap_scalar
+} -result {1 {0 0 0 0 1}}
+test coreTypeLoss-1.2 {lappend {*}$list in a proc keeps the bitarray type} -constraints coreTypeLoss -body {
+    lap_expand
+} -result {1 {0 0 0 0 1 0}}
+test coreTypeLoss-1.3 {lappend {*}{literal list} in a proc keeps the bitarray type} -constraints coreTypeLoss -body {
+    lap_literal
+} -result {1 {0 0 0 0 1 0}}
+test coreTypeLoss-1.4 {lappend to an array element in a proc keeps the bitarray type} -constraints coreTypeLoss -body {
+    lap_arrelem
+} -result {1 {0 0 0 0 1}}
+test coreTypeLoss-1.5 {lappend {*}$list to an array element in a proc keeps the bitarray type} -constraints coreTypeLoss -body {
+    lap_arrexp
+} -result {1 {0 0 0 0 1 0}}
+test coreTypeLoss-1.6 {lappend $varname (name computed at run time) in a proc keeps the bitarray type} -constraints coreTypeLoss -body {
+    lap_byname
+} -result {1 {0 0 0 0 1}}
+
 cleanupTests
