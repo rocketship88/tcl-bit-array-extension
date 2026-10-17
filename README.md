@@ -84,7 +84,7 @@ Expected last line of the tests: `bitarray.test:	Total	288	Passed	282	Skipped	6	
 
 ### On Windows (Visual Studio 2022)
 
-`build.bat`, `run_tests.bat` and `run_sieves.bat` do the same three jobs with Microsoft Visual C. Version 0.7.0 has been built and run on Windows by the repository owner (a 64-bit machine, Visual Studio 2022, Tcl 9.1.1 built from trunk): no build warnings, `Total 282  Passed 281  Skipped 1  Failed 0`, the sieve passed, and `listbench.tcl` ran; the output is saved in `extras/windows_0.7.0_run.txt`. Earlier versions were also run on Windows (see `RESULTS.txt`). A 32-bit build and other Visual Studio versions are untried.
+`build.bat`, `run_tests.bat` and `run_sieves.bat` do the same three jobs with Microsoft Visual C. Version 0.7.0 has been built and run on Windows by the repository owner (a 64-bit machine, Visual Studio 2022, Tcl 9.1.1 built from trunk): no build warnings, `Total 282  Passed 281  Skipped 1  Failed 0`, the sieve passed, and `listbench.tcl` ran; the output is saved in `extras/windows_0.7.0_run.txt`. Version 0.8.0 was also built and run on Windows by the repository owner (same machine and Tcl 9.1.1 as for 0.7.0): no build warnings, `Total 288  Passed 281  Skipped 7  Failed 0` (6 are the `--testbug` tests, 1 is the procfs test), the sieve passed, and `listbench.tcl` ran with the same answers in every column (`extras/windows_0.8.0_run.txt`). Earlier versions were also run on Windows (see `RESULTS.txt`). A 32-bit build and other Visual Studio versions are untried.
 
 Unpack the ZIP anywhere and, from a Command Prompt, go into the unpacked folder and run the three scripts:
 
@@ -181,7 +181,7 @@ that do not mention `$a` or `$w` create their own arrays. With no `value` given,
 | `bitarray new size ?value? ?-width w?` | **Returns** a new bitarray of `size` elements, all `value` (default 0). `-width` may come before or after `value`.<br>`bitarray new 4` => `0 0 0 0`<br>`bitarray new 4 7 -width 8` => `7 7 7 7`<br>`bitarray new 3 -width 16 500` => `500 500 500` |
 | `bitarray newfrom list ?-width w?` | **Returns** a new bitarray packed from a list of integers.<br>`bitarray newfrom {200 5 255} -width 8` => `200 5 255` |
 | `bitarray width array` | **Returns** the element width in bits, as it was given when the array was created: `1`, `8`, `16`, `32`, `64`, or `-8`, `-16`, `-32`, `-64` for the signed ones.<br>`bitarray width [bitarray new 3]` => `1`<br>`bitarray width [bitarray new 3 -width -16]` => `-16` |
-| `bitarray version` | **Returns** the version of the extension, for example `0.7.0` (the same string `package require bitarray` returns). Takes no arguments.<br>`bitarray version` => `0.7.0` |
+| `bitarray version` | **Returns** the version of the extension, for example `0.8.0` (the same string `package require bitarray` returns). Takes no arguments.<br>`bitarray version` => `0.7.0` |
 | `bitarray is value` | **Returns** `1` if `value` currently has the bitarray representation, `0` if not (any value is accepted).<br>`a` -> `{1 0 1 1 0 1 1 1}`<br>`bitarray is $a` => `1`<br>`bitarray is {1 0 1}` => `0` |
 | `bitarray count array ?first ?to? last ?with? ?value??` | **Returns** the number of elements equal to `value`, or the number of non-zero elements if no `value`; whole array or an index range (`end-N` allowed). `value` needs a range. For 1-bit arrays without `value` this is a popcount.<br>`a` -> `{1 0 1 1 0 1 1 1}`<br>`bitarray count $a` => `6`<br>`bitarray count $a 0 3 1` => `3`<br>`bitarray count $a 4 end 0` => `1`<br>`bitarray count $a 2 end-1 1` => `4`<br>`bitarray count $a 0 to 3 with 1` => `3`<br>`bitarray count $a 4 .. end with 0` => `1`<br>`w` -> `{0 7 0 9}`<br>`bitarray count $w` => `2` (value omitted means != 0) |
 | `bitarray next array start ?with? ?value?` | **Returns** the index of the first element **at or after** `start` equal to `value` (non-zero if omitted), or `-1` if there is none.<br>`a` -> `{1 0 1 1 0 1 1 1}`<br>`bitarray next $a 0 0` => `1`<br>`bitarray next $a 2 0` => `4`<br>`bitarray next $a 5 0` => `-1`<br>`bitarray next $a 2 with 0` => `4`<br>`w` -> `{0 7 0 9}`<br>`bitarray next $w 0` => `1` (value omitted means != 0)<br>`bitarray next $w 0 0` => `0` (element 0 is itself 0) |
@@ -211,7 +211,7 @@ built library on `auto_path`, and then `package require bitarray` finds and load
 
 ```tcl
 lappend auto_path /full/path/to/bitarray     ;# the folder with pkgIndex.tcl and libbitarray.so (bitarray.dll on Windows)
-package require bitarray                     ;# returns 0.7.0
+package require bitarray                     ;# returns 0.8.0
 ```
 
 You can also set the environment variable `TCLLIBPATH` to that folder before starting `tclsh`. The two files do not have to stay where
@@ -309,9 +309,9 @@ Whether an extension like this counts as a "faithful" entry in Dave's Garage rul
 * **valgrind** on the whole suite: 0 invalid accesses, 0 definite leaks.
 * **Memory:** `unset` returns the memory (a 953 MiB array: 960 MB → 6.6 MB resident); building and dropping wide arrays in a
   loop leaves memory flat.
-* **Mutation testing** (`extras/mutate5.py`): 206 deliberate bugs inserted into the C code, 184 caught by the tests (one full run of all 206, on 0.7.0); the 22
+* **Mutation testing** (`extras/mutate5.py`): 206 deliberate bugs inserted into the C code, 184 caught by the tests (one full run of all 206, on 0.8.0); the 22
   missed are explained in `RESULTS.txt` (mostly unreachable code, stray bits nobody can read, or checks that are repeated
-  elsewhere on a 64-bit build). `extras/bitarray.mutants` is `bitarray.c` with every one of the 206 bugs applied (from the full run on 0.7.0) and, beside
+  elsewhere on a 64-bit build). `extras/bitarray.mutants` is `bitarray.c` with every one of the 206 bugs applied (from the full run on 0.8.0) and, beside
   each, the tests that caught it, for reading in a side-by-side compare tool (see `extras/README.md`).
 * The same 282 tests also pass with `-DBA_NO_BUILTINS` (portable popcount code) and `-DBA_FORCE_32BIT_LIMITS`.
 

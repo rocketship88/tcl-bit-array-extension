@@ -1,4 +1,4 @@
-RESULTS -- bitarray 0.7.0 (sections 8-13a are the 0.3 results; section 14 is 0.4; section 15 is 0.5; section 16 is 0.5.1; section 17 is 0.6.0) (run 2026-10-13, Linux container, gcc -O2, Tcl trunk 3d77be8951)
+RESULTS -- bitarray 0.8.0 (sections 8-13a are the 0.3 results; section 14 is 0.4; section 15 is 0.5; section 16 is 0.5.1; section 17 is 0.6.0; section 18 is 0.7.0; section 19 is 0.8.0) (run 2026-10-13, Linux container, gcc -O2, Tcl trunk 3d77be8951)
 
 Sections 8-13 are new in 0.3.  Sections 1-7 are the 0.2 results, kept for history; where a number there was for 1-bit
 arrays only it is still true of the 1-bit code, which 0.3 keeps (the 66 old tests pass unchanged apart from "from" ->
@@ -513,3 +513,15 @@ arrays only it is still true of the 1-bit code, which 0.3 keeps (the 66 old test
    sieve (reported by the owner; output not saved).  0.6.0 on one machine: no warnings, Total 251 Passed 250 Skipped 1 (as saved in extras/windows_0.6.0_run.txt; the README had said 259/258, which was wrong), sieve passed, listbench.tcl ran
    (its same-answer check was incomplete in that version; the repaired one also passed, 37 operations; extras/windows_0.6.0_run.txt and
    extras/windows_0.6.0_listbench.txt).  0.7.0: as above.
+
+19. Version 0.8.0: comments and tests only (2026-10-17, Linux container, gcc -O2, Tcl 9.1.1)
+   bitarray.c: 220 short side comments (`   // ...`) on lines that are not obvious, and one comment moved to the function it describes.  The code
+   did not change: `gcc -E -P` of the file gives the same text as 0.7.0 with the comments removed; the line count (1735) is the same.  The version string is 0.8.0
+   (bitarray.c, pkgIndex.tcl).  tests/bitarray.test: six tests (coreTypeLoss-1.1 to 1.6) for the Tcl core's lappend type loss, skipped unless run with
+   `run_tests.sh --testbug` (they fail on Tcl 9.1.1, pass on a core with extras/core_lappend_typeloss.patch applied).  Total 288, Passed 282, Skipped 6, Failed 0.
+   Full mutation run of all 206 mutants on 0.8.0: 184 caught, 22 missed, the same mutants as in 0.7.0 (extras/mutation_round13.txt).  The mutation scripts now find a
+   mutant's text when side comments are present (mutate6.py, function adapt).
+   Windows (2026-10-17, the owner; extras/windows_0.8.0_run.txt): 64-bit, Visual Studio 2022, Tcl 9.1.1: no build warnings, Total 288, Passed 281, Skipped 7 (6 coreTypeLoss, 1 procfs),
+   Failed 0; sieve PASS at every limit; listbench: 42 operations compared, same answers in every column.  Not run: a 32-bit build.
+   Stepper (extras/bitarray_stepper.html): syntax colour, tcl.h and the Tcl declarations one level deep, a Fold box, a Show code / Show memory switch.
+   Tcl core ticket 0c82728f85760f36361fe42a15f55453c94d285d: the patch and tests are in extras/typeloss_ticket_comment.md.

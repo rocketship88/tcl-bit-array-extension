@@ -43,6 +43,28 @@ code = open(ml).read()
 a = code.index('MUT = ['); b = code.index('\n]\n', a) + 3
 ns = {}; exec(code[a:b], ns); MUT = ns['MUT']
 
+# ---- bitarray.c carries short side comments ("   // ...") on many lines.  A mutant's text was written without them, so
+# ---- find it with the comments allowed at each line end, and keep the comment on every line the mutant leaves alone.
+SIDE = re.compile(r' {3,}//[^\n]*')
+def strip_side(s): return SIDE.sub('', s)
+def adapt(MUT, SRC):
+    out = []
+    for name, old, new in MUT:
+        if SRC.count(old) != 1:
+            rx = re.compile(r'(?: {3,}//[^\n]*)?\n'.join(re.escape(x) for x in old.split('\n')))
+            ms = list(rx.finditer(SRC))
+            if len(ms) == 1:
+                m = ms[0].group(0)
+                keep = {}
+                for line in m.split('\n'):
+                    plain = strip_side(line)
+                    if plain != line: keep[plain] = line
+                new = '\n'.join(keep.get(l, l) for l in new.split('\n'))
+                old = m
+        out.append((name, old, new))
+    return out
+MUT = adapt(MUT, SRC)
+
 # ---- automatic classification ----
 TOK = re.compile(r'\s*("(?:[^"\\]|\\.)*"|\'(?:[^\'\\]|\\.)*\'|0[xX][0-9a-fA-F]+|\d+|[A-Za-z_]\w*|<<=|>>=|<<|>>|<=|>=|==|!=|&&|\|\||->|[-+*/%&|^~!<>=?:;,(){}\[\].])')
 def toks(s): return TOK.findall(s)
@@ -79,7 +101,7 @@ CC = os.environ.get('CC', 'cc')
 def run_one(item):
     name, old, new = item
     mid = name.split()[0]
-    rec = dict(id=mid, name=name, old=old, new=new, cls=classify(old, new))
+    rec = dict(id=mid, name=name, old=old, new=new, cls=classify(strip_side(old), strip_side(new)))
     if SRC.count(old) != 1:
         rec.update(result='BADPATTERN', tests=[], line1=0, line2=0); return rec
     rec['line1'], rec['line2'] = lines_of(SRC, old)
@@ -124,7 +146,7 @@ def run_one(item):
 jpath = os.path.join(OUT, 'mutants.json')
 if A.regen:
     RECS = json.load(open(jpath))
-    for r_ in RECS: r_['cls'] = classify(r_['old'], r_['new'])
+    for r_ in RECS: r_['cls'] = classify(strip_side(r_['old']), strip_side(r_['new']))
     json.dump(RECS, open(jpath, 'w'), indent=1)
 else:
     from concurrent.futures import as_completed

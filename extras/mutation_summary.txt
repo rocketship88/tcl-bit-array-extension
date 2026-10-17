@@ -29,10 +29,10 @@ B26   CAUGHT   changed:expression     1270  1         arrow with nothing after i
 G01   CAUGHT   changed:operator       490   2         signed range: upper end one too high
 G02   CAUGHT   changed:operator       490   7         signed range: lowest value refused
 G03   MISSED   deleted:clause         491   -         signed parse: negative value not masked to its width
-G04   CAUGHT   changed:name/variable  277   6         signed 8: read back as unsigned
-G05   CAUGHT   changed:name/variable  278   3         signed 16: read back as unsigned
-G06   CAUGHT   changed:name/variable  279   3         signed 32: read back as unsigned
-G07   CAUGHT   changed:expression     276   10        signed widths never sign-extend
+G04   CAUGHT   changed:name/variable  276   6         signed 8: read back as unsigned
+G05   CAUGHT   changed:name/variable  277   3         signed 16: read back as unsigned
+G06   CAUGHT   changed:name/variable  278   3         signed 32: read back as unsigned
+G07   CAUGHT   changed:expression     275   10        signed widths never sign-extend
 G08   CAUGHT   deleted:clause         209   15        new array never signed
 G09   CAUGHT   changed:expression     639   5         slice loses the sign
 G10   CAUGHT   changed:expression     667   1         reverse loses the sign
@@ -160,15 +160,15 @@ W04   CAUGHT   changed:+tokens        171   5         PutElem 8 ORs instead of a
 W05   CAUGHT   changed:constant       172   1         PutElem 16 wrong offset
 W06   CAUGHT   changed:constant       173   13        PutElem 32 wrong offset
 W07   CAUGHT   changed:constant       174   16        PutElem 64 wrong offset
-W08   CAUGHT   changed:constant       275   3         ElemWide sign only for 32
+W08   CAUGHT   changed:constant       274   3         ElemWide sign only for 32
 W09   CAUGHT   changed:name/variable  288   3         ElemObj 1 returns zero
 W10   CAUGHT   deleted:clause         494   6         ParseValue upper bound off by one
 W11   CAUGHT   changed:expression     494   3         ParseValue accepts -1
 W12   CAUGHT   changed:constant       483   17        ParseValue 64-bit path skipped
 W13   CAUGHT   changed:token          478   1         ParseValue digit fast path too wide
 W14   MISSED   deleted:clause         186   -         NewRep limit ignores width
-W15   CAUGHT   changed:expression     194   0         NewRep allocates for 1-bit only
-W16   CAUGHT   changed:constant       135   10        WORDS_FOR rounds down by one
+W15   CAUGHT   changed:expression     194   1         NewRep allocates for 1-bit only
+W16   CAUGHT   changed:constant       135   13        WORDS_FOR rounds down by one
 W17   CAUGHT   changed:expression     221   1         FreeElems never releases owned elements
 W18   CAUGHT   changed:expression     226   0         FreeElems also releases shared 0/1
 W19   CAUGHT   deleted:statement      739   1         GetElements forgets to take a reference
@@ -209,14 +209,14 @@ W53   CAUGHT   added:code             603   7         index out of range for wid
 
 Tests by number of mutants they failed on (only mutants that ran to completion are counted; crashes list the test running at the time separately)
   diff-1.1        44
-  diff-4.2        43
+  diff-4.2        44
   diff-4.1        37
   bitop-1.4       28
-  diff-3.1        27
+  diff-3.1        28
   rev-2.1         25
   shift-1.1       21
+  bitop-1.3       21
   signed-1.14     21
-  bitop-1.3       20
   range-2.1       20
   signed-1.2      19
   shift-2.1       18
@@ -224,8 +224,8 @@ Tests by number of mutants they failed on (only mutants that ran to completion a
   signed-1.10     17
   signed-1.11     16
   signed-1.21     16
+  diff-2.1        15
   bitop-2.7       14
-  diff-2.1        14
   signed-1.16     14
   bitop-1.2       13
   signed-1.9      13
@@ -490,9 +490,15 @@ Tests by number of mutants they failed on (only mutants that ran to completion a
   bulk-8.6         0
   bulk-1.11        0
   signed-1.20      0
+  coreTypeLoss-1.1   0
+  coreTypeLoss-1.2   0
+  coreTypeLoss-1.3   0
+  coreTypeLoss-1.4   0
+  coreTypeLoss-1.5   0
+  coreTypeLoss-1.6   0
 
-Tests that failed on no mutant: new-1.3 new-1.4 new-1.6 from-1.2 from-1.3 from-1.4 is-1.1 set-1.5 set-1.6 set-1.7 set-1.8 repl-1.2 bitop-1.6 bitop-3.3 bitop-3.4 bitop-3.5 bitop-3.6 version-1.1 version-1.2 count-1.2 fill-1.7 fill-1.8 fill-1.9 fill-1.10 fill-1.11 fill-w.13 fill-w.18 next-w.8 count-w.12 next-w.7 conv-1.2 conv-1.4 conv-1.6 conv-1.7 conv-2.3 conv-2.8 conv-2.9 conv-3.7 conv-3.8 conv-3.9 conv-3.10 conv-4.2 conv-4.4 conv-4.9 misc-0.1 misc-1.1 width-1.1 width-1.6 width-1.7 width-1.8 width-1.9 width-1.10 width-1.12 width-1.13 range-64.2 range-64.3 range-1.4 bulk-8.6 bulk-1.11 signed-1.20
-Mutants that crashed the run (test running at the time): M39:shift-1.1, M40:diff-2.1, M41:diff-1.1, M24:diff-2.1, M28:new-1.2, W05:bitop-1.4, W15:bitop-1.3, W16:diff-3.1, W18:elem-1.16, W19:elem-1.16, W47:width-1.8, W49:shift-2.1, W52:diff-4.1, S15:diff-3.1
+Tests that failed on no mutant: new-1.3 new-1.4 new-1.6 from-1.2 from-1.3 from-1.4 is-1.1 set-1.5 set-1.6 set-1.7 set-1.8 repl-1.2 bitop-1.6 bitop-3.3 bitop-3.4 bitop-3.5 bitop-3.6 version-1.1 version-1.2 count-1.2 fill-1.7 fill-1.8 fill-1.9 fill-1.10 fill-1.11 fill-w.13 fill-w.18 next-w.8 count-w.12 next-w.7 conv-1.2 conv-1.4 conv-1.6 conv-1.7 conv-2.3 conv-2.8 conv-2.9 conv-3.7 conv-3.8 conv-3.9 conv-3.10 conv-4.2 conv-4.4 conv-4.9 misc-0.1 misc-1.1 width-1.1 width-1.6 width-1.7 width-1.8 width-1.9 width-1.10 width-1.12 width-1.13 range-64.2 range-64.3 range-1.4 bulk-8.6 bulk-1.11 signed-1.20 coreTypeLoss-1.1 coreTypeLoss-1.2 coreTypeLoss-1.3 coreTypeLoss-1.4 coreTypeLoss-1.5 coreTypeLoss-1.6
+Mutants that crashed the run (test running at the time): M39:shift-1.1, M40:diff-2.1, M41:diff-1.1, M24:diff-2.1, M28:new-1.2, W05:bitop-1.4, W15:bitop-1.4, W18:elem-1.16, W19:elem-1.16, W47:width-1.8, W49:shift-2.1, W52:diff-4.1, S15:diff-3.1
 
   added      CAUGHT   1
   changed    CAUGHT   112

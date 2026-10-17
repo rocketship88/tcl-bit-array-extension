@@ -9,7 +9,7 @@ changed since this date. Name functions and tests when you cite things, not line
 `bitarray` is an extension-only C package for Tcl 9.1 (trunk `3d77be8951`, 64-bit Linux, gcc): packed arrays of 1, 8, 16, 32
 (unsigned, or signed as -8, -16, -32) or 64 (signed) bit integers that behave like ordinary Tcl lists, through the Tcl 9 abstract-list hooks
 (`Tcl_ObjType` version 2, documented in `doc/ObjectType.3` of the Tcl source), the machinery `lseq` uses. It is loaded
-with `load ./libbitarray.so Bitarray` (it also does `Tcl_PkgProvide bitarray 0.7.0`; the top-level `pkgIndex.tcl` lets `package require bitarray` find it).
+with `load ./libbitarray.so Bitarray` (it also does `Tcl_PkgProvide bitarray 0.8.0`; the top-level `pkgIndex.tcl` lets `package require bitarray` find it).
 A bitarray is an ordinary `Tcl_Obj` of a custom list type: a value, not a handle or a TclOO object.
 Since 0.4, `fill`, `count` and `next` take optional `lseq`-style helper words (`to` or `..`, `with`, `by`); the plain forms still work. The usage strings say `array`. Since 0.5, `frombytes`/`tobytes` (8-bit arrays and binary data) and `fromchars`/`tochars` (code points, widths 8/16/32) convert to and from strings without a temporary list. Since 0.6.0, `and`, `or`, `xor`, `andnot` and `not` combine or flip whole arrays 64 bits at a time (`bitarray and varName ?<-? array ?array?`, `-length strict|zero`; `varName` is a variable name, the arrays are values; see `README.md`).
 
@@ -117,13 +117,15 @@ and what happens when a bitarray is shared (`Tcl_IsShared` then `Tcl_DuplicateOb
 ## Mutation testing, and how to trace one
 
 Each mutant is one deliberate change to `bitarray.c`. The suite is run against it. **CAUGHT** means at least one test fails or
-the run crashes; **MISSED** means every test passed. Current numbers: 206 mutants, 184 caught, 22 missed (one full run on 0.7.0, extras/mutation_round12.txt; M16 was retired in 0.7.0 because the code it mutated was replaced by `HasBit`, whose mutants are H01 to H10).
+the run crashes; **MISSED** means every test passed. Current numbers: 206 mutants, 184 caught, 22 missed (one full run on 0.8.0, extras/mutation_round13.txt; the same 22 missed as in round 12; M16 was retired in 0.7.0 because the code it mutated was replaced by `HasBit`, whose mutants are H01 to H10).
 
 Worked example, M04. `BA_MAX_BITS`, the largest array allowed counted in total bits (elements times width), is
 `1 << 40`; M04 changes it to `1 << 41`. It is caught by exactly three tests, each asking for an array one element over the
 limit: `new-1.5` (2^40 + 1 one-bit elements), `range-x.2` (2^34 + 1 elements at `-width 64`) and `range-x.3` (2^37 + 1
 elements at `-width 8`). With the bug, those requests are no longer refused. The tests check that the limit counts bits, not
 elements, at three widths. (The `x` in `range-x` is only a label for extra range tests.)
+
+`bitarray.c` carries short side comments (`   // ...`, spaces before them, nothing on obvious lines; added 2026-10-17 without changing the code). A mutant's text in `mutate5.py` is written without them: `mutate6.py` finds each pattern with comments allowed at the line ends and keeps the comment on the lines a mutant leaves alone (the `adapt` function). When adding a comment to a line a mutant touches, nothing needs changing; when adding a new mutant, write its text without the comments.
 
 To trace any mutant: find its id in `extras/mutants.json` (its `tests` list) or in `extras/bitarray.mutants` (the changed
 line with a comment at the right), then read those tests in `tests/bitarray.test`.

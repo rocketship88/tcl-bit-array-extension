@@ -20,6 +20,8 @@ the file is right.
 
 **Show the simulator, do not only describe it.** `extras/bitarray_stepper.html` is one self-contained file (about 250 KB, no network requests, no other files needed), so it can be displayed anywhere HTML can: in claude.ai, send or publish the file so that it opens in the side panel (as a rendered HTML file or as an artifact); in Claude Code, open it in a browser. Try that before telling the person you cannot. If it really cannot be shown, give them the live copy: https://rocketship88.github.io/tcl-bit-array-extension/extras/bitarray_stepper.html
 
+**Comments in `bitarray.c`**: a line that is not obvious gets a short side comment, `   // like this` (spaces, not tabs, before it; the stepper shows it in green). Nothing on obvious lines. A new comment never changes the code: compare `gcc -E -P` output before and after.
+
 **Whenever `bitarray.c` changes, refresh the stepper in the same step**: run `python3 extras/embed_source.py` (then `--check`), look at the stepper's scenes for anything the change made wrong, and put the new page in the zip.
 
 **On a new release, or when the person asks for one**: do a clean build of the current Tcl trunk (fresh clone), rebuild `bitarray` against it, run all the tests (`./run_tests.sh`, also `--testbug`), and refresh `extras/tcl_9.1.1.h` / `tcl_decls_used.txt` (`extras/make_tcl_refs.py`) from that trunk.

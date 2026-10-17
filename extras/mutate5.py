@@ -238,6 +238,28 @@ MUT = [
  ("H09 HasBit: empty array not handled", "if (b->len == 0) return 0;\n    lw", "lw"),
  ("H10 BAInOper: 1-bit value letter inverted", "HasBit(b, s[0] == '1')", "HasBit(b, s[0] == '0')"),
 ]
+
+# ---- bitarray.c carries short side comments ("   // ...") on many lines.  A mutant's text was written without them, so
+# ---- find it with the comments allowed at each line end, and keep the comment on every line the mutant leaves alone.
+SIDE = re.compile(r' {3,}//[^\n]*')
+def strip_side(s): return SIDE.sub('', s)
+def adapt(MUT, SRC):
+    out = []
+    for name, old, new in MUT:
+        if SRC.count(old) != 1:
+            rx = re.compile(r'(?: {3,}//[^\n]*)?\n'.join(re.escape(x) for x in old.split('\n')))
+            ms = list(rx.finditer(SRC))
+            if len(ms) == 1:
+                m = ms[0].group(0)
+                keep = {}
+                for line in m.split('\n'):
+                    plain = strip_side(line)
+                    if plain != line: keep[plain] = line
+                new = '\n'.join(keep.get(l, l) for l in new.split('\n'))
+                old = m
+        out.append((name, old, new))
+    return out
+MUT = adapt(MUT, SRC)
 only = sys.argv[1:]
 out=[]
 for name, old, new in MUT:
