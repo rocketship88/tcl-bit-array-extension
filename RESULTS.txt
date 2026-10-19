@@ -576,3 +576,5 @@ arrays only it is still true of the 1-bit code, which 0.3 keeps (the 66 old test
    looks as if it can fall off its end.  gcc knows, so gcc -Wall -Wextra was clean.  Fix: BA_IMPOSSIBLE is (Tcl_Panic(...), abort()); abort() is never reached.  Checked on Linux by compiling with a
    Tcl_Panic that gcc cannot treat as noreturn (-O2 -Wall -Wextra): 2 -Wreturn-type warnings (the same two functions) before, 0 after.  Total 315 (bitarray.test), Passed 309, Skipped 6, Failed 0;
    faultinject.test 29 of 29; coverage unchanged (extras/coverage_0.8.5.txt: 98.51% of 1008, 15 never run, 3 panics).  Mutation not repeated.  Not run here: MSVC itself (ET's Windows rerun).
+   2026-10-19, stepper page only (bitarray.c unchanged): the Right / Left arrow keys now call preventDefault, so they no longer also scroll the focused code pane sideways (long lines make it scrollable).
+   Checked with Playwright: code pane focused, 4 x ArrowRight: scrollLeft 3 before, 0 after.

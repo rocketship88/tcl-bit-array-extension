@@ -5681,7 +5681,7 @@ document.addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
   if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); if (!e.repeat) $('b-play').click(); return; }   /* always toggles Auto-play; never scrolls or presses the focused button */
   if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && timer) { stop(); e.preventDefault(); return; }   /* during Auto-play an arrow only pauses; the next one moves */
-  if (e.key === 'ArrowRight') { advance(); } else if (e.key === 'ArrowLeft') { retreat(); }
+  if (e.key === 'ArrowRight') { e.preventDefault(); advance(); } else if (e.key === 'ArrowLeft') { e.preventDefault(); retreat(); }   /* preventDefault: otherwise the arrow also scrolls the focused code pane sideways (long lines make it scrollable) */
 });
 /* ---- source viewer: bitarray.c is embedded in the page (script#csrc), so no file has to be read ---- */
 let KIND = new Map(), HDR = new Map(), HDRL = [], DECL = new Map(), colorOn = true, foldOn = false, openFolds = new Set();
