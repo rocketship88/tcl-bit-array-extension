@@ -1,0 +1,3 @@
+# mutation_round14: a full run of all 210 mutants on 0.8.1 (2026-10-18), after the braces reformat, 26 new tests and the lpop fix.
+# 210 mutants: 188 CAUGHT, 22 MISSED: the same 22 as in mutation_round12 and 13 (see mutation_round12.txt for why each is missed).  The 4 new mutants L01-L04 (lpop l INDEX) are all caught (L02 and L04 crash).  Run: python3 extras/mutate6.py --jobs 2
+# The record is in mutants.json, mutation_summary.txt and bitarray.mutants.  The patterns of 63 older mutants were rewritten for the braced code (same bugs, new text).

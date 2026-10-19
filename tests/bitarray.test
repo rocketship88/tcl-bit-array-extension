@@ -1229,4 +1229,94 @@ test coreTypeLoss-1.6 {lappend $varname (name computed at run time) in a proc ke
     lap_byname
 } -result {1 {0 0 0 0 1}}
 
+# ---- lpop with an index (0.8.1: this used to crash, the hook received no value) ----
+test lpop-1.1 {lpop l end} -body {
+    set l [bitarray newfrom {1 0 1 1 0}]; set p [lpop l end]; list $p $l [bitarray is $l]
+} -result {0 {1 0 1 1} 1}
+test lpop-1.2 {lpop l 0} -body {
+    set l [bitarray newfrom {1 0 1 1 0}]; set p [lpop l 0]; list $p $l [bitarray is $l]
+} -result {1 {0 1 1 0} 1}
+test lpop-1.3 {lpop l 2 and end-1} -body {
+    set l [bitarray newfrom {1 0 1 1 0}]; set a [lpop l 2]; set b [lpop l end-1]; list $a $b $l [bitarray is $l]
+} -result {1 1 {1 0 0} 1}
+test lpop-1.4 {lpop with no index still works} -body {
+    set l [bitarray newfrom {1 0 1}]; set p [lpop l]; list $p $l [bitarray is $l]
+} -result {1 {1 0} 1}
+test lpop-1.5 {a value shared with another variable or list is not changed} -body {
+    set l [bitarray newfrom {1 0 1}]; set r [list $l]; set k $l
+    lpop l 1; lappend r x; list $l $k $r
+} -result {{1 1} {1 0 1} {{1 0 1} x}}
+test lpop-1.6 {index out of range} -returnCodes error -body {
+    set l [bitarray newfrom {1 0 1}]; lpop l 3
+} -result {index "3" out of range}
+test lpop-1.7 {bad index} -returnCodes error -body {
+    set l [bitarray newfrom {1 0 1}]; lpop l foo
+} -result {bad index "foo": must be integer?[+-]integer? or end?[+-]integer?}
+test lpop-1.8 {empty array} -returnCodes error -body {
+    set l [bitarray new 0]; lpop l 0
+} -result {index "0" out of range}
+test lpop-1.9 {pop every element, one at a time} -body {
+    set l [bitarray newfrom {1 0 1 1}]; set got {}
+    for {set i 0} {$i < 4} {incr i} {lappend got [lpop l 0]}
+    list $got [llength $l]
+} -result {{1 0 1 1} 0}
+test lpop-1.10 {every width} -body {
+    set r {}
+    foreach w {1 8 16 32 64 -8 -16 -32 -64} {
+	set l [bitarray newfrom {1 0 1} -width $w]; set p [lpop l 1]; lappend r $p $l [bitarray width $l]
+    }
+    set r
+} -result {0 {1 1} 1 0 {1 1} 8 0 {1 1} 16 0 {1 1} 32 0 {1 1} 64 0 {1 1} -8 0 {1 1} -16 0 {1 1} -32 0 {1 1} -64}
+test lpop-1.11 {after the pop the result grows and works as before} -body {
+    set l [bitarray newfrom {1 0 1 1}]; lpop l 1; lappend l 1; lset l 0 0; list $l [bitarray is $l]
+} -result {{0 1 1 1} 1}
+
+# ---- gcov, 0.8.1: lines of bitarray.c that no test ran (see extras/coverage_0.8.0.txt) ----
+test cov-1.1 {bitarray with no subcommand} -returnCodes error -body {bitarray} -result {wrong # args: should be "bitarray subcommand ?arg ...?"}
+test cov-1.2 {new without size} -returnCodes error -body {bitarray new} -result {wrong # args: should be "bitarray new size ?value? ?-width w?"}
+test cov-1.3 {newfrom without a list} -returnCodes error -body {bitarray newfrom} -result {wrong # args: should be "bitarray newfrom list ?-width w?"}
+test cov-1.4 {is with no or two arguments} -body {
+    list [catch {bitarray is} m1] $m1 [catch {bitarray is a b} m2] $m2
+} -result {1 {wrong # args: should be "bitarray is value"} 1 {wrong # args: should be "bitarray is value"}}
+test cov-1.5 {newfrom with a malformed list} -returnCodes error -body {bitarray newfrom "a \{b"} -result {unmatched open brace in list}
+test cov-1.6 {fill with no last index, also after "to"} -body {
+    set b [bitarray new 4]
+    list [catch {bitarray fill b 1} m1] $m1 [catch {bitarray fill b 1 to} m2] $m2
+} -result {1 {wrong # args: should be "bitarray fill varName first ?to? last ?with? value ?by? ?step?"} 1 {wrong # args: should be "bitarray fill varName first ?to? last ?with? value ?by? ?step?"}}
+test cov-1.7 {fill with a step that is not an integer} -returnCodes error -body {
+    set b [bitarray new 4]; bitarray fill b 0 2 with 1 by x
+} -result {expected integer but got "x"}
+test cov-1.8 {next, tochars and count on a value that is not a bitarray} -body {
+    list [catch {bitarray next notba 0} m1] $m1 [catch {bitarray tochars notba} m2] $m2 [catch {bitarray count notba} m3] $m3
+} -result {1 {not a bitarray: "notba"} 1 {not a bitarray: "notba"} 1 {not a bitarray: "notba"}}
+test cov-1.9 {next with a bad start index} -returnCodes error -body {
+    bitarray next [bitarray newfrom {1 0 1}] foo
+} -result {bad index "foo": must be integer?[+-]integer? or end?[+-]integer?}
+test cov-1.10 {a destination form with a first or second operand that is not a bitarray} -body {
+    set b [bitarray newfrom {1 0 1}]
+    list [catch {bitarray and x <- notba $b} m1] $m1 [catch {bitarray and x <- $b notba} m2] $m2
+} -result {1 {not a bitarray: "notba"} 1 {not a bitarray: "notba"}}
+test cov-1.11 {in place: second operand not a bitarray} -body {
+    set x [bitarray newfrom {1 0 1}]
+    list [catch {bitarray and x notba} m1] $m1
+} -result {1 {not a bitarray: "notba"}}
+test cov-1.12 {new with a size that is not an integer} -returnCodes error -body {bitarray new x} -result {expected integer but got "x"}
+test cov-2.1 {next with a negative start (every width)} -body {
+    set r {}
+    foreach w {1 8 16 32 64} {lappend r [bitarray next [bitarray newfrom {0 0 1 0} -width $w] -5 with 1]}
+    set r
+} -result {2 2 2 2 2}
+test cov-2.2 {lrange clamps FROM and TO; an empty range} -body {
+    set b [bitarray newfrom {1 0 1 1 0 0 1}]
+    list [lrange $b -5 2] [lrange $b 1 999] "<[lrange $b 5 2]>" "<[lrange $b -5 -1]>"
+} -result {{1 0 1} {0 1 1 0 0 1} <> <>}
+test cov-2.3 {lreplace clamps} -body {
+    set b [bitarray newfrom {1 0 1 1 0 0 1}]
+    list [lreplace $b -3 -1 1] [lreplace $b 20 30 1] [lreplace $b 2 0 1] [lreplace $b 1 -2 1]
+} -result {{1 1 0 1 1 0 0 1} {1 0 1 1 0 0 1 1} {1 0 1 1 1 0 0 1} {1 1 0 1 1 0 0 1}}
+test cov-2.4 {lset: bad index, index past the end, index == length appends} -body {
+    set b [bitarray newfrom {1 0 1}]
+    list [catch {lset b foo 1} m1] $m1 [catch {lset b 99 1} m2] $m2 [lset b 3 1]
+} -result {1 {bad index "foo": must be integer?[+-]integer? or end?[+-]integer?} 1 {index "99" out of range} {1 0 1 1}}
+
 cleanupTests

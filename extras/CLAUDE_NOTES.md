@@ -9,7 +9,7 @@ changed since this date. Name functions and tests when you cite things, not line
 `bitarray` is an extension-only C package for Tcl 9.1 (trunk `3d77be8951`, 64-bit Linux, gcc): packed arrays of 1, 8, 16, 32
 (unsigned, or signed as -8, -16, -32) or 64 (signed) bit integers that behave like ordinary Tcl lists, through the Tcl 9 abstract-list hooks
 (`Tcl_ObjType` version 2, documented in `doc/ObjectType.3` of the Tcl source), the machinery `lseq` uses. It is loaded
-with `load ./libbitarray.so Bitarray` (it also does `Tcl_PkgProvide bitarray 0.8.0`; the top-level `pkgIndex.tcl` lets `package require bitarray` find it).
+with `load ./libbitarray.so Bitarray` (it also does `Tcl_PkgProvide bitarray 0.8.5`; the top-level `pkgIndex.tcl` lets `package require bitarray` find it).
 A bitarray is an ordinary `Tcl_Obj` of a custom list type: a value, not a handle or a TclOO object.
 Since 0.4, `fill`, `count` and `next` take optional `lseq`-style helper words (`to` or `..`, `with`, `by`); the plain forms still work. The usage strings say `array`. Since 0.5, `frombytes`/`tobytes` (8-bit arrays and binary data) and `fromchars`/`tochars` (code points, widths 8/16/32) convert to and from strings without a temporary list. Since 0.6.0, `and`, `or`, `xor`, `andnot` and `not` combine or flip whole arrays 64 bits at a time (`bitarray and varName ?<-? array ?array?`, `-length strict|zero`; `varName` is a variable name, the arrays are values; see `README.md`).
 
@@ -27,7 +27,7 @@ Garage "Primes" drag race, included unchanged. Say so plainly when asked who wro
 | Build, run the tests, run the sieve benchmark | `build.sh`, `run_tests.sh`, `run_sieves.sh` (Windows: the `.bat` equivalents) |
 | No Tcl 9.1 installed: clone, build, test from nothing | this file, "Setting up from nothing" |
 | Walk through the code | this file, "Walking someone through the code", and the interactive `extras/bitarray_stepper.html` |
-| The tests (282) | `tests/bitarray.test`; random comparisons against plain lists: `tests/diff_*.tcl`; memory growth: `tests/leak_check.tcl` |
+| The tests (315) | `tests/bitarray.test`; random comparisons against plain lists: `tests/diff_*.tcl`; memory growth: `tests/leak_check.tcl`; size-limit and out-of-memory paths: `tests/faultinject.test` (test build only, run by `extras/coverage.sh`) |
 | All measured results, with the commands that produced them | `RESULTS.txt` |
 | The sieve variants A-F and Frank's file | `sieve/` (`sieve/README.md`) |
 | Mutation testing: the 206 deliberate bugs | `extras/mutate5.py` (the list), `extras/mutate6.py` (runner and report) |
@@ -58,7 +58,7 @@ Route A, straight from the build directory (nothing installed):
 
     cd W/bitarray
     ./build.sh --include W/tcl/generic --stub W/build/libtclstub.a
-    sh ./run_tests.sh --tclsh W/build/tclsh      # expect: Total 282 Passed 282 Failed 0
+    sh ./run_tests.sh --tclsh W/build/tclsh      # expect: Total 315 Passed 309 Skipped 6 Failed 0
 
 Route B, installed into a prefix:
 
@@ -117,7 +117,7 @@ and what happens when a bitarray is shared (`Tcl_IsShared` then `Tcl_DuplicateOb
 ## Mutation testing, and how to trace one
 
 Each mutant is one deliberate change to `bitarray.c`. The suite is run against it. **CAUGHT** means at least one test fails or
-the run crashes; **MISSED** means every test passed. Current numbers: 206 mutants, 184 caught, 22 missed (one full run on 0.8.0, extras/mutation_round13.txt; the same 22 missed as in round 12; M16 was retired in 0.7.0 because the code it mutated was replaced by `HasBit`, whose mutants are H01 to H10).
+the run crashes; **MISSED** means every test passed. Current numbers: 210 mutants, 188 caught, 22 missed (one full run on 0.8.1, extras/mutation_round14.txt; the same 22 missed as in rounds 12 and 13; M16 was retired in 0.7.0 because the code it mutated was replaced by `HasBit`, whose mutants are H01 to H10).
 
 Worked example, M04. `BA_MAX_BITS`, the largest array allowed counted in total bits (elements times width), is
 `1 << 40`; M04 changes it to `1 << 41`. It is caught by exactly three tests, each asking for an array one element over the
@@ -142,7 +142,7 @@ it as a rough label. Almost all mutants delete or edit existing code; only one (
 
 ## What was and was not checked
 
-Checked: 282 tests pass natively and with `-DBA_NO_BUILTINS` and `-DBA_FORCE_32BIT_LIMITS`; valgrind clean (no invalid
+Checked: 315 tests pass natively and with `-DBA_NO_BUILTINS` and `-DBA_FORCE_32BIT_LIMITS`; valgrind clean (no invalid
 accesses, nothing definitely lost); a 200,000-step random comparison against plain lists across all five widths with no
 differences; flat memory over 16 million `lindex` calls.
 

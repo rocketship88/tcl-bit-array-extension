@@ -78,13 +78,13 @@ sh ./run_tests.sh --tclsh /path/to/tcl9.1/bin/tclsh9.1
 sh ./run_sieves.sh --tclsh /path/to/tcl9.1/bin/tclsh9.1   # optional: the prime-sieve benchmark, see below
 ```
 
-Expected last line of the tests: `bitarray.test:	Total	288	Passed	282	Skipped	6	Failed	0`. The 6 skipped tests show the Tcl core's `lappend` type-loss problem (see the notes on `lappend` below) and are run only on request: `./run_tests.sh --testbug`. They fail on Tcl 9.1.1 and pass on a core with the fix in `extras/core_lappend_typeloss.patch`.
+Expected last line of the tests: `bitarray.test:	Total	315	Passed	309	Skipped	6	Failed	0`. The 6 skipped tests show the Tcl core's `lappend` type-loss problem (see the notes on `lappend` below) and are run only on request: `./run_tests.sh --testbug`. They fail on Tcl 9.1.1 and pass on a core with the fix in `extras/core_lappend_typeloss.patch`.
 
 (`sh ./script` works even if unpacking lost the executable bit, which happens when a ZIP is made or unpacked on Windows.)
 
 ### On Windows (Visual Studio 2022)
 
-`build.bat`, `run_tests.bat` and `run_sieves.bat` do the same three jobs with Microsoft Visual C. Version 0.7.0 has been built and run on Windows by the repository owner (a 64-bit machine, Visual Studio 2022, Tcl 9.1.1 built from trunk): no build warnings, `Total 282  Passed 281  Skipped 1  Failed 0`, the sieve passed, and `listbench.tcl` ran; the output is saved in `extras/windows_0.7.0_run.txt`. Version 0.8.0 was also built and run on Windows by the repository owner (same machine and Tcl 9.1.1 as for 0.7.0): no build warnings, `Total 288  Passed 281  Skipped 7  Failed 0` (6 are the `--testbug` tests, 1 is the procfs test), the sieve passed, and `listbench.tcl` ran with the same answers in every column (`extras/windows_0.8.0_run.txt`). Earlier versions were also run on Windows (see `RESULTS.txt`). A 32-bit build and other Visual Studio versions are untried.
+`build.bat`, `run_tests.bat` and `run_sieves.bat` do the same three jobs with Microsoft Visual C. Version 0.7.0 has been built and run on Windows by the repository owner (a 64-bit machine, Visual Studio 2022, Tcl 9.1.1 built from trunk): no build warnings, `Total 282  Passed 281  Skipped 1  Failed 0`, the sieve passed, and `listbench.tcl` ran; the output is saved in `extras/windows_0.7.0_run.txt`. Version 0.8.0 was also built and run on Windows by the repository owner (same machine and Tcl 9.1.1 as for 0.7.0): no build warnings, `Total 315  Passed 308  Skipped 7  Failed 0` (the last Windows run was 0.8.0, with 288 tests) (6 are the `--testbug` tests, 1 is the procfs test), the sieve passed, and `listbench.tcl` ran with the same answers in every column (`extras/windows_0.8.0_run.txt`). Earlier versions were also run on Windows (see `RESULTS.txt`). A 32-bit build and other Visual Studio versions are untried.
 
 Unpack the ZIP anywhere and, from a Command Prompt, go into the unpacked folder and run the three scripts:
 
@@ -97,7 +97,7 @@ run_sieves.bat --tclsh C:\path\to\tcl9.1\bin\tclsh91.exe     rem optional: the p
 
 `build.bat` finds the headers and the stubs library (`include\tcl.h`, `lib\tclstub.lib`) from the shell you name, or from
 `--tcl-prefix DIR`, finds Visual Studio itself with `vswhere` if `cl` is not already on your `PATH` (so a plain `cmd` window works; it was run that way on 2026-10-13 and set up `vcvars64.bat` itself), and builds the 64-bit or
-32-bit DLL to match the shell. `run_tests.bat` should end with `Total 288  Passed 281  Skipped 7  Failed 0`: one test, which
+32-bit DLL to match the shell. `run_tests.bat` should end with `Total 315  Passed 308  Skipped 7  Failed 0` (the last Windows run was 0.8.0, with 288 tests): one test, which
 reads `/proc`, is skipped on Windows, and so are the 6 `--testbug` tests (to run those: `tclsh91 tests\bitarray.test -constraints coreTypeLoss`). `--help` on each prints the options.
 
 ### Telling `build.sh` where Tcl is
@@ -181,7 +181,7 @@ that do not mention `$a` or `$w` create their own arrays. With no `value` given,
 | `bitarray new size ?value? ?-width w?` | **Returns** a new bitarray of `size` elements, all `value` (default 0). `-width` may come before or after `value`.<br>`bitarray new 4` => `0 0 0 0`<br>`bitarray new 4 7 -width 8` => `7 7 7 7`<br>`bitarray new 3 -width 16 500` => `500 500 500` |
 | `bitarray newfrom list ?-width w?` | **Returns** a new bitarray packed from a list of integers.<br>`bitarray newfrom {200 5 255} -width 8` => `200 5 255` |
 | `bitarray width array` | **Returns** the element width in bits, as it was given when the array was created: `1`, `8`, `16`, `32`, `64`, or `-8`, `-16`, `-32`, `-64` for the signed ones.<br>`bitarray width [bitarray new 3]` => `1`<br>`bitarray width [bitarray new 3 -width -16]` => `-16` |
-| `bitarray version` | **Returns** the version of the extension, for example `0.8.0` (the same string `package require bitarray` returns). Takes no arguments.<br>`bitarray version` => `0.7.0` |
+| `bitarray version` | **Returns** the version of the extension, for example `0.8.5` (the same string `package require bitarray` returns). Takes no arguments.<br>`bitarray version` => `0.7.0` |
 | `bitarray is value` | **Returns** `1` if `value` currently has the bitarray representation, `0` if not (any value is accepted).<br>`a` -> `{1 0 1 1 0 1 1 1}`<br>`bitarray is $a` => `1`<br>`bitarray is {1 0 1}` => `0` |
 | `bitarray count array ?first ?to? last ?with? ?value??` | **Returns** the number of elements equal to `value`, or the number of non-zero elements if no `value`; whole array or an index range (`end-N` allowed). `value` needs a range. For 1-bit arrays without `value` this is a popcount.<br>`a` -> `{1 0 1 1 0 1 1 1}`<br>`bitarray count $a` => `6`<br>`bitarray count $a 0 3 1` => `3`<br>`bitarray count $a 4 end 0` => `1`<br>`bitarray count $a 2 end-1 1` => `4`<br>`bitarray count $a 0 to 3 with 1` => `3`<br>`bitarray count $a 4 .. end with 0` => `1`<br>`w` -> `{0 7 0 9}`<br>`bitarray count $w` => `2` (value omitted means != 0) |
 | `bitarray next array start ?with? ?value?` | **Returns** the index of the first element **at or after** `start` equal to `value` (non-zero if omitted), or `-1` if there is none.<br>`a` -> `{1 0 1 1 0 1 1 1}`<br>`bitarray next $a 0 0` => `1`<br>`bitarray next $a 2 0` => `4`<br>`bitarray next $a 5 0` => `-1`<br>`bitarray next $a 2 with 0` => `4`<br>`w` -> `{0 7 0 9}`<br>`bitarray next $w 0` => `1` (value omitted means != 0)<br>`bitarray next $w 0 0` => `0` (element 0 is itself 0) |
@@ -211,7 +211,7 @@ built library on `auto_path`, and then `package require bitarray` finds and load
 
 ```tcl
 lappend auto_path /full/path/to/bitarray     ;# the folder with pkgIndex.tcl and libbitarray.so (bitarray.dll on Windows)
-package require bitarray                     ;# returns 0.8.0
+package require bitarray                     ;# returns 0.8.5
 ```
 
 You can also set the environment variable `TCLLIBPATH` to that folder before starting `tclsh`. The two files do not have to stay where
@@ -302,18 +302,19 @@ Whether an extension like this counts as a "faithful" entry in Dave's Garage rul
 
 ## Quality checks
 
-* **282 tests** (`tests/bitarray.test`; plus 6 more for the core's `lappend` problem, run with `--testbug`): option parsing, ranges and error messages at every width, every list command on
+* **315 tests** (`tests/bitarray.test`; plus 6 more for the core's `lappend` problem, run with `--testbug`): option parsing, ranges and error messages at every width, every list command on
   every width, copy-on-write, `fill`/`count`/`next`, the bitwise commands, word-boundary cases, memory growth.
 * **Random comparison against plain Tcl lists** (`tests/diff_*.tcl`): thousands of random operations per run, values and error
   messages compared. Last big run: 5 widths × 10 seeds × 100 iterations × 40 steps, 0 differences (the signed widths `-8`, `-16`, `-32` and `-64` were added afterwards: 3 seeds × 150 iterations each, 0 differences). The bitwise commands have their own (`tests/diff_bitops.tcl`: 15,000 random cases over all widths, lengths, forms and both `-length` modes, 0 differences).
 * **valgrind** on the whole suite: 0 invalid accesses, 0 definite leaks.
 * **Memory:** `unset` returns the memory (a 953 MiB array: 960 MB → 6.6 MB resident); building and dropping wide arrays in a
   loop leaves memory flat.
-* **Mutation testing** (`extras/mutate5.py`): 206 deliberate bugs inserted into the C code, 184 caught by the tests (one full run of all 206, on 0.8.0); the 22
+* **Mutation testing** (`extras/mutate5.py`): 217 deliberate bugs inserted into the C code, 196 caught by the tests (one full run of all 217, on 0.8.3, with the test build and both test files; not repeated for 0.8.4 and 0.8.5, whose code differs only in comments, the name of the test command, the lpop panic and an abort() in the BA_IMPOSSIBLE macro); the 21
   missed are explained in `RESULTS.txt` (mostly unreachable code, stray bits nobody can read, or checks that are repeated
-  elsewhere on a 64-bit build). `extras/bitarray.mutants` is `bitarray.c` with every one of the 206 bugs applied (from the full run on 0.8.0) and, beside
+  elsewhere on a 64-bit build). `extras/bitarray.mutants` is `bitarray.c` with every one of the 217 bugs applied (from the full run on 0.8.3) and, beside
   each, the tests that caught it, for reading in a side-by-side compare tool (see `extras/README.md`).
-* The same 282 tests also pass with `-DBA_NO_BUILTINS` (portable popcount code) and `-DBA_FORCE_32BIT_LIMITS`.
+* **Line coverage** (gcov, `extras/coverage_0.8.5.txt`, repeat it with `extras/coverage.sh`): 98.5% of the 1008 lines of `bitarray.c` outside the test support code; the 15 lines that never run (3 of them `BA_IMPOSSIBLE` panics, which are meant never to run) are listed there, each with the reason. `tests/faultinject.test` (29 tests, test build only: a small size limit, allocations that fail on request, a process that panics) runs the error paths for that.
+* The same 315 tests also pass with `-DBA_NO_BUILTINS` (portable popcount code) and `-DBA_FORCE_32BIT_LIMITS`.
 
 Details and numbers: `RESULTS.txt`.
 

@@ -1,0 +1,172 @@
+# faultinject.test --
+#   Tests that make the size limit small and make memory allocations fail, to run the error paths of bitarray.c.
+#   They need the TEST build of the extension (-DBA_TEST), which has the extra command "bitarray_test":
+#       bitarray_test maxbits N          the size limit in bits (the normal build: 2^40)
+#       bitarray_test failalloc K ?T?    the allocation after K more successful ones fails, T times in a row (-1: off)
+#   extras/coverage.sh builds that version, runs this file and tests/bitarray.test, and runs gcov.
+#   With a normal build every test here is skipped.
+package require tcltest
+namespace import ::tcltest::*
+set libfile [expr {[info exists ::env(BITARRAY_LIB)] ? $::env(BITARRAY_LIB) : [file join [pwd] libbitarray.so]}]
+load $libfile Bitarray
+testConstraint faultbuild [expr {[llength [info commands bitarray_test]] > 0}]
+set BIG 1099511627776
+set me [info nameofexecutable]
+
+# A script run in a separate process: the allocation failure leads to Tcl_Panic, which aborts the process.
+# Returns {panic or the exit status, first line of the output}.
+proc panicRun {body} {
+    global me libfile
+    set f [file join [expr {[info exists ::env(TMPDIR)] ? $::env(TMPDIR) : "/tmp"}] fault_[pid]_[incr ::nrun].tcl]
+    set c [open $f w]
+    puts $c [list load $libfile Bitarray]
+    puts $c $body
+    close $c
+    set rc [catch {exec $me $f 2>@1} out opts]
+    file delete $f
+    set status ok
+    if {$rc} {
+        set ec [dict get $opts -errorcode]
+        if {[lindex $ec 0] eq "CHILDSTATUS"} {
+            set status [lindex $ec 2]
+            # Tcl_Panic ends the process with SIGILL (132) or SIGABRT (134), depending on the build
+            if {$status in {132 134}} {set status panic}
+        } else {
+            set status $ec
+        }
+    }
+    # on an abnormal exit exec adds its own line ("child process exited abnormally") after the message: take the first line
+    list $status [lindex [split [string trim $out] \n] 0]
+}
+set nrun 0
+
+# ---- the size limit (a small limit set with bitarray_test maxbits) ----
+test fi-1.1 {frombytes: the result would be over the limit} -constraints faultbuild -setup {bitarray_test maxbits 1000} -cleanup {bitarray_test maxbits $BIG} -returnCodes error -body {
+    bitarray frombytes [string repeat x 200]
+} -result {bitarray size out of range}
+test fi-1.2 {fromchars: the result would be over the limit} -constraints faultbuild -setup {bitarray_test maxbits 1000} -cleanup {bitarray_test maxbits $BIG} -returnCodes error -body {
+    bitarray fromchars [string repeat x 200]
+} -result {bitarray size out of range}
+test fi-1.3 {lset at the end of an array that is at the limit} -constraints faultbuild -setup {bitarray_test maxbits 1000} -cleanup {bitarray_test maxbits $BIG} -body {
+    set b [bitarray new 1000]
+    list [catch {lset b 1000 1} m] $m [llength $b]
+} -result {1 {bitarray size out of range} 1000}
+test fi-1.4 {growth is capped at the limit} -constraints faultbuild -setup {bitarray_test maxbits 1000} -cleanup {bitarray_test maxbits $BIG} -body {
+    set b [bitarray new 640]
+    lset b 640 1
+    list [llength $b] [bitarray count $b]
+} -result {641 1}
+test fi-1.5 {linsert and lreplace over the limit} -constraints faultbuild -setup {bitarray_test maxbits 1000} -cleanup {bitarray_test maxbits $BIG} -body {
+    apply {{} {
+        set b [bitarray new 1000]
+        list [catch {linsert $b 5 1 1} m1] $m1 [catch {lreplace $b 0 0 1 1} m2] $m2 [llength $b]
+    }}
+} -result {1 {bitarray size out of range} 1 {bitarray size out of range} 1000}
+
+# ---- an allocation fails and an error comes back ----
+foreach {n script} {
+    2.1 {bitarray new 5}
+    2.2 {bitarray newfrom {1 0 1}}
+    2.3 {bitarray frombytes abc}
+    2.4 {bitarray fromchars abc}
+    2.5 {bitarray and x <- $p $q}
+    2.6 {lrange $p 1 2}
+} {
+    test fi-$n "out of memory: $script" -constraints faultbuild -cleanup {bitarray_test failalloc -1} -body "
+        set p \[bitarray newfrom {1 0 1 1}\]
+        set q \[bitarray newfrom {1 1 0 0}\]
+        bitarray_test failalloc 0
+        list \[catch {$script} m\] \$m
+    " -result {1 {out of memory}}
+}
+test fi-2.7 {out of memory in lreverse: the core still reverses (as an ordinary list)} -constraints faultbuild -cleanup {bitarray_test failalloc -1} -body {
+    set b [bitarray newfrom {1 0 1 1}]
+    bitarray_test failalloc 0
+    set r [lreverse $b]
+    bitarray_test failalloc -1
+    list $r $b [bitarray is $b]
+} -result {{1 1 0 1} {1 0 1 1} 1}
+foreach {n script} {
+    3.1 {lsort $b}
+    3.2 {join $b ,}
+    3.3 {lsearch $b 1}
+    3.4 {list {*}$b}
+} {
+    test fi-$n "out of memory when the element list is built: $script" -constraints faultbuild -cleanup {bitarray_test failalloc -1} -body "
+        set b \[bitarray newfrom {1 0 1 1}\]
+        bitarray_test failalloc 0
+        list \[catch {$script} m\] \$m
+    " -result {1 {out of memory}}
+}
+test fi-4.1 {growth fails, and so does the retry with the smaller size: error, array unchanged} -constraints faultbuild -cleanup {bitarray_test failalloc -1} -body {
+    set b [bitarray new 256]
+    bitarray_test failalloc 0 2
+    list [catch {lset b 256 1} m] $m [llength $b] [bitarray count $b]
+} -result {1 {out of memory} 256 0}
+test fi-4.2 {the doubled size fails, the retry with the needed size works} -constraints faultbuild -cleanup {bitarray_test failalloc -1} -body {
+    set b [bitarray new 256]
+    bitarray_test failalloc 0 1
+    lset b 256 1
+    list [llength $b] [bitarray count $b]
+} -result {257 1}
+
+test fi-4.3 {the same on a shared array (a copy is made first and thrown away): error, the original is unchanged} -constraints faultbuild -cleanup {bitarray_test failalloc -1} -body {
+    set b [bitarray new 256]
+    set c $b
+    bitarray_test failalloc 1 2
+    list [catch {lset b 256 1} m] $m [llength $b] [llength $c]
+} -result {1 {out of memory} 256 256}
+test fi-4.4 {the test command checks its arguments} -constraints faultbuild -returnCodes error -body {
+    bitarray_test failalloc
+} -result {wrong # args: should be "bitarray_test maxbits N | failalloc K ?times? | getelem WIDTH | putelem WIDTH"}
+
+# ---- an allocation fails where there is no way to report it: Tcl_Panic, the process aborts (run in a separate process) ----
+test fi-5.1 {duplicate fails: panic (foreach copies the array)} -constraints faultbuild -body {
+    panicRun {
+        set b [bitarray newfrom {1 0 1 1}]
+        bitarray_test failalloc 0
+        foreach x $b {}
+        puts "not reached"
+    }
+} -result {panic {bitarray: out of memory in dup}}
+test fi-5.2 {duplicate fails: panic (lset of a shared array)} -constraints faultbuild -body {
+    panicRun {
+        set b [bitarray newfrom {1 0 1 1}]
+        set c $b
+        bitarray_test failalloc 0
+        lset b 0 0
+        puts "not reached"
+    }
+} -result {panic {bitarray: out of memory in dup}}
+test fi-5.3 {lpop l INDEX copies the array: panic when that fails} -constraints faultbuild -body {
+    panicRun {
+        set b [bitarray newfrom {1 0 1 1}]
+        bitarray_test failalloc 0
+        lpop b 1
+        puts "not reached"
+    }
+} -result {panic {bitarray: out of memory in dup}}
+
+# ---- BA_IMPOSSIBLE: internal checks that cannot fail if the code is right; the test build can call GetElem / PutElem with a bad width ----
+foreach {n what script expect} {
+    6.1 {GetElem with width 1 (the callers never do that)} {bitarray_test getelem 1} {*internal error in GetElem: bad width 1 (*bitarray.c:*)}
+    6.2 {GetElem with width 3} {bitarray_test getelem 3} {*internal error in GetElem: bad width 3 (*bitarray.c:*)}
+    6.3 {PutElem with width 3} {bitarray_test putelem 3} {*internal error in PutElem: bad width 3 (*bitarray.c:*)}
+} {
+    test fi-$n "panic message: $what" -constraints faultbuild -body "
+        lassign \[panicRun {$script}\] status msg
+        list \$status \[string match {$expect} \$msg\]
+    " -result {panic 1}
+}
+test fi-6.4 {PutElem with width 1 is allowed (it is the normal 1-bit case)} -constraints faultbuild -body {
+    bitarray_test putelem 1
+} -result {}
+test fi-6.5 {the test command checks its first word} -constraints faultbuild -returnCodes error -body {
+    bitarray_test nonsense 1
+} -result {wrong # args: should be "bitarray_test maxbits N | failalloc K ?times? | getelem WIDTH | putelem WIDTH"}
+test fi-6.6 {the test command itself reports an allocation failure} -constraints faultbuild -cleanup {bitarray_test failalloc -1} -returnCodes error -body {
+    bitarray_test failalloc 0
+    bitarray_test getelem 8
+} -result {out of memory}
+
+cleanupTests

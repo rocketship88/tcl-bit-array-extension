@@ -1,0 +1,2118 @@
+/*
+ * bitarray.c --
+ *
+ *	A packed array of small integers that looks like a Tcl list
+ *	(llength, lindex, lset, lrange, lreverse, lreplace, foreach, "in",
+ *	string representation), built on the Tcl 9 abstract-list hooks of
+ *	Tcl_ObjType.  Extension only: no core changes.
+ *
+ *	Element width (chosen when the array is created, fixed afterwards):
+ *	    1   bit      values 0 and 1
+ *	    8   bits     unsigned, 0 .. 255          -8   signed, -128 .. 127
+ *	    16  bits     unsigned, 0 .. 65535        -16  signed, -32768 .. 32767
+ *	    32  bits     unsigned, 0 .. 4294967295   -32  signed, -2^31 .. 2^31-1
+ *	    64  bits     signed,   -2^63 .. 2^63-1   (-64 is accepted too)
+ *	A minus sign in the width means signed.  The stored bits are the same
+ *	either way; the sign only changes how a value is read and written.
+ *
+ *	Written by Claude (an AI model made by Anthropic) for Eric Taylor.
+ *
+ * Commands (subcommands of the global command "bitarray"; README.md has the full syntax):
+ *	new SIZE ?VALUE? ?-width W?        newfrom LIST ?-width W?
+ *	width BA      is VALUE      version      frombytes DATA      tobytes BA
+ *	fromchars STRING ?-width W?      tochars BA
+ *	count BA ?FIRST ?to? LAST ?with? ?VALUE??     next BA START ?with? ?VALUE?
+ *	fill VAR FIRST ?to? LAST ?with? VALUE ?by? ?STEP?   (in place, like lset)
+ *	and|or|xor|andnot ?-length strict|zero? VAR ?<-? BA ?BA?   (bitwise, 64 bits at a time)
+ *	not VAR ?<- BA?                  (flip every bit)
+ *	VAR is a variable name (that array is changed in place, or, after "<-" with two
+ *	arrays, created); BA, DATA and STRING are values.  The other operations are
+ *	the ordinary list commands, which the abstract-list hooks below implement.
+ *	fill and the bitwise commands return the empty string.
+ */
+
+#include <tcl.h>
+#define BA_VERSION "0.8.5"	/* the one place the version is set (also in pkgIndex.tcl) */
+#include <stdint.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#ifdef BA_TEST
+#   include <signal.h>
+#   include <unistd.h>
+#endif
+
+/*
+ * 32-bit / 64-bit.  Tcl_Size has the width of a pointer, so on a 32-bit build
+ * it is 32 bits.  BA_MAX_BITS is the largest array we allow, counted in TOTAL
+ * BITS of storage (elements times element width); sizes are always checked as
+ * 64-bit values BEFORE they are narrowed to Tcl_Size.
+ *   64-bit: 2^40 bits (128 GiB).
+ *   32-bit: 2^30 - 1 bits (128 MiB), so that 2*len-1 (the string
+ *           representation) and len+63 cannot overflow a signed 32-bit size.
+ */
+#if SIZE_MAX > 0xFFFFFFFFu && !defined(BA_FORCE_32BIT_LIMITS)
+#   define BA_MAX_BITS_NORMAL	((Tcl_WideInt)1 << 40)
+#else
+#   define BA_MAX_BITS_NORMAL	((Tcl_WideInt)0x3FFFFFFF)
+#endif
+#if defined(BA_TEST)
+static Tcl_WideInt baTestMax = BA_MAX_BITS_NORMAL;   /* test build only: "bitarray_test maxbits N" changes it */
+#   define BA_MAX_BITS	baTestMax
+#else
+#   define BA_MAX_BITS	BA_MAX_BITS_NORMAL
+#endif
+
+/*
+ * Test build only (-DBA_TEST, see extras/coverage.sh): the allocations that are allowed to fail go through
+ * BA_ALLOC / BA_REALLOC, and "bitarray_test failalloc K" makes the allocation after K more successful ones
+ * return NULL (N times in a row if "failalloc K N").  A normal build has none of this: BA_ALLOC is Tcl_AttemptAlloc itself.
+ */
+#if defined(BA_TEST)
+static int baFailAfter = -1;   /* -1: never fail; K >= 0: fail after K more successes */
+static int baFailCount = 1;    /* how many allocations in a row fail */
+static int baFailNow(void)
+{
+    if (baFailAfter == 0) {
+	if (--baFailCount <= 0) {
+	    baFailAfter = -1;
+	}
+	return 1;
+    }
+    if (baFailAfter > 0) {
+	baFailAfter--;
+    }
+    return 0;
+}
+static void *baTestAlloc(size_t n)
+{
+    return baFailNow() ? NULL : Tcl_AttemptAlloc(n);
+}
+static void *baTestRealloc(void *p, size_t n)
+{
+    return baFailNow() ? NULL : Tcl_AttemptRealloc(p, n);
+}
+#   define BA_ALLOC(n)		baTestAlloc(n)
+#   define BA_REALLOC(p, n)	baTestRealloc(p, n)
+#else
+#   define BA_ALLOC(n)		Tcl_AttemptAlloc(n)
+#   define BA_REALLOC(p, n)	Tcl_AttemptRealloc(p, n)
+#endif
+
+/*
+ * Population count and count-trailing-zeros on a 64-bit word.  GCC and clang
+ * have builtins; anywhere else (or with -DBA_NO_BUILTINS) use plain C.
+ */
+#if (defined(__GNUC__) || defined(__clang__)) && !defined(BA_NO_BUILTINS)
+#   define BA_POPCOUNT(x)	__builtin_popcountll(x)
+#   define BA_CTZ(x)		__builtin_ctzll(x)
+#else
+static int
+BaPopcount(uint64_t x)
+{
+    x = x - ((x >> 1) & 0x5555555555555555ULL);
+    x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL);
+    x = (x + (x >> 4)) & 0x0F0F0F0F0F0F0F0FULL;
+    return (int)((x * 0x0101010101010101ULL) >> 56);
+}
+static int
+BaCtz(uint64_t x)		/* x must be non-zero */
+{
+    int n = 0;
+
+    if (!(x & 0xFFFFFFFFULL)) {
+        n += 32;
+        x >>= 32;
+    }
+    if (!(x & 0xFFFFULL)) {
+        n += 16;
+        x >>= 16;
+    }
+    if (!(x & 0xFFULL)) {
+        n += 8;
+        x >>= 8;
+    }
+    if (!(x & 0xFULL)) {
+        n += 4;
+        x >>= 4;
+    }
+    if (!(x & 0x3ULL)) {
+        n += 2;
+        x >>= 2;
+    }
+    if (!(x & 0x1ULL)) {
+        n += 1;
+    }
+    return n;
+}
+#   define BA_POPCOUNT(x)	BaPopcount(x)
+#   define BA_CTZ(x)		BaCtz(x)
+#endif
+
+typedef struct BitArr {
+    Tcl_Size len;		/* Number of elements. */
+    Tcl_Size nwords;		/* 64-bit words in use: (len*width + 63) / 64. */
+    Tcl_Size capWords;		/* Words allocated (>= nwords); every bit at or
+				 * beyond the end of the data, up to the
+				 * capacity, is 0. */
+    unsigned char width;	/* Bits per element: 1, 8, 16, 32 or 64. */
+    unsigned char isSigned;	/* 1 if the width was given with a minus sign
+				 * (-8, -16, -32 or -64). */
+    Tcl_Obj *zero, *one;	/* Shared element values handed out by index. */
+    Tcl_Obj **elems;		/* Lazily built element vector, or NULL. */
+    Tcl_Size elemsLen;		/* Number of entries in elems. */
+    uint64_t words[1];		/* Storage (at least one word is always
+				 * present).  Width 1: bit i is bit (i&63) of
+				 * word i>>6.  Wider: elements packed as bytes
+				 * in host order, read and written only through
+				 * GetElem/PutElem. */
+} BitArr;
+
+static Tcl_ObjTypeLengthProc	BALength;
+static Tcl_ObjTypeIndexProc	BAIndex;
+static Tcl_ObjTypeSliceProc	BASlice;
+static Tcl_ObjTypeReverseProc	BAReverse;
+static Tcl_ObjTypeGetElements	BAGetElements;
+static Tcl_ObjTypeSetElement	BASetElement;
+static Tcl_ObjTypeReplaceProc	BAReplace;
+static Tcl_ObjTypeInOperatorProc BAInOper;
+static Tcl_FreeInternalRepProc	BAFree;
+static Tcl_DupInternalRepProc	BADup;
+static Tcl_UpdateStringProc	BAUpdateString;
+
+static const Tcl_ObjType bitarrayType = {
+    "bitarray", BAFree, BADup, BAUpdateString, NULL,
+    TCL_OBJTYPE_V2(BALength, BAIndex, BASlice, BAReverse, BAGetElements,
+	    BASetElement, BAReplace, BAInOper)
+};
+
+/*
+ * A check of our own invariants that can never fail if the code is right (the callers have already ruled the case out).  If one does
+ * fail it is a bug here, so say where and stop, which is how Tcl reports an internal error; returning a plausible value would hide it.
+ * gcov shows these lines as never run, and that is what is meant: they are not branches to be tested.
+ * The abort() is never reached (Tcl_Panic does not return); it is there for compilers that do not know that, MSVC among them,
+ * which would otherwise warn "not all control paths return a value" (C4715) in the functions that end with a panic.
+ */
+#define BA_IMPOSSIBLE(what, num) \
+    (Tcl_Panic("bitarray: internal error in %s: %s %d (%s:%d)", __func__, (what), (int)(num), __FILE__, __LINE__), abort())
+
+#define GETREP(o)	((BitArr *)(o)->internalRep.twoPtrValue.ptr1)
+#define ISBA(o)		((o)->typePtr == &bitarrayType)
+#define GETBIT(b,i)	(((b)->words[(i) >> 6] >> ((i) & 63)) & 1)
+#define SETBIT(b,i)	((b)->words[(i) >> 6] |= (uint64_t)1 << ((i) & 63))
+#define CLRBIT(b,i)	((b)->words[(i) >> 6] &= ~((uint64_t)1 << ((i) & 63)))
+#define BYTES(b)	((unsigned char *)(b)->words)
+#define EBYTES(b)	((size_t)(b)->width / 8)    /* width > 1 only */
+
+/* Words needed for LEN elements of WIDTH bits (caller has range-checked). */
+#define WORDS_FOR(len, width) \
+	((Tcl_Size)(((Tcl_WideInt)(len) * (width) + 63) / 64))
+
+/* ---------------------------------------------------------------- */
+
+/*
+ * Read or write element I.  The value is the raw unsigned bit pattern; the
+ * caller reinterprets it as signed for width 64 and the signed widths
+ * (ElemWide).  Multi-byte elements go
+ * through memcpy, which compilers turn into a single load or store and which
+ * avoids strict-aliasing and alignment problems.
+ */
+static uint64_t
+GetElem(const BitArr *b, Tcl_Size i)
+{
+    const unsigned char *p = (const unsigned char *)b->words;
+
+    switch (b->width) {   // not 1: 1-bit arrays are read with GETBIT by every caller
+    case 8:  return p[i];
+    case 16: { uint16_t v; memcpy(&v, p + 2 * (size_t)i, 2); return v; }   // memcpy, not a cast: no alignment or aliasing problem
+    case 32: { uint32_t v; memcpy(&v, p + 4 * (size_t)i, 4); return v; }
+    case 64: { uint64_t v; memcpy(&v, p + 8 * (size_t)i, 8); return v; }
+    default: BA_IMPOSSIBLE("bad width", b->width);                          // not reached: the widths are 8, 16, 32 and 64 here
+    }
+}
+
+static void
+PutElem(BitArr *b, Tcl_Size i, uint64_t val)
+{
+    unsigned char *p = BYTES(b);
+
+    if (b->width == 1) {
+	if (val) {                               // 1-bit: set or clear the one bit
+	    SETBIT(b, i);
+	} else {
+	    CLRBIT(b, i);
+	}
+	return;
+    }
+    switch (b->width) {
+    case 8:  p[i] = (unsigned char)val; break;
+    case 16: { uint16_t v = (uint16_t)val; memcpy(p + 2 * (size_t)i, &v, 2); break; }
+    case 32: { uint32_t v = (uint32_t)val; memcpy(p + 4 * (size_t)i, &v, 4); break; }
+    case 64: memcpy(p + 8 * (size_t)i, &val, 8); break;
+    default:
+        BA_IMPOSSIBLE("bad width", b->width);   // not reached: the widths are 8, 16, 32 and 64 here (1 was handled above)
+    }
+}
+
+static BitArr *
+NewRep(Tcl_Interp *interp, Tcl_Size len, int width, int isSigned)
+{
+    Tcl_Size nwords;
+    size_t bytes;
+    BitArr *b;
+
+    if (len < 0 || (Tcl_WideInt)len * width > BA_MAX_BITS) {   // the size limit counts total bits, not elements
+	if (interp) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "bitarray size out of range", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "SIZE", NULL);
+	}
+	return NULL;
+    }
+    nwords = WORDS_FOR(len, width);                                          // whole 64-bit words, rounded up
+    bytes = sizeof(BitArr) + (nwords ? nwords - 1 : 0) * sizeof(uint64_t);   // header plus the extra words (words[] holds one)
+    b = (BitArr *)BA_ALLOC(bytes);                                   // may fail: NULL, not a panic
+    if (b == NULL) {
+	if (interp) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("out of memory", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	}
+	return NULL;
+    }
+    memset(b, 0, bytes);              // every bit 0, the unused ones past the end too
+    b->len = len;
+    b->nwords = nwords;
+    b->capWords = nwords;             // no spare room yet
+    b->width = (unsigned char)width;
+    b->isSigned = (unsigned char)(isSigned != 0);
+    b->zero = Tcl_NewWideIntObj(0);   // shared objects handed out for the values 0 and 1
+    b->one = Tcl_NewWideIntObj(1);
+    Tcl_IncrRefCount(b->zero);        // we hold one reference to each until FreeRep
+    Tcl_IncrRefCount(b->one);
+    return b;
+}
+
+static void
+FreeElems(BitArr *b)
+{
+    if (b->elems) {
+	if (b->width != 1) {   // 1-bit elements are all the shared 0 and 1
+	    Tcl_Size i;
+
+	    /* Entries other than the shared 0/1 objects are owned by us. */
+	    for (i = 0; i < b->elemsLen; i++) {
+		if (b->elems[i] != b->zero && b->elems[i] != b->one) {
+		    Tcl_DecrRefCount(b->elems[i]);
+		}
+	    }
+	}
+	Tcl_Free(b->elems);
+	b->elems = NULL;
+	b->elemsLen = 0;
+    }
+}
+
+static void
+FreeRep(BitArr *b)
+{
+    FreeElems(b);   // give back our references to the shared 0 and 1
+    Tcl_DecrRefCount(b->zero);
+    Tcl_DecrRefCount(b->one);
+    Tcl_Free(b);    // the block itself, words included
+}
+
+static Tcl_Obj *
+WrapRep(BitArr *b)
+{
+    Tcl_Obj *obj = Tcl_NewObj();                     // reference count 0, as the caller expects
+    Tcl_ObjInternalRep ir;
+
+    Tcl_InvalidateStringRep(obj);                    // no text yet, not even the default ""
+    ir.twoPtrValue.ptr1 = b;                         // the object owns the block (BAFree releases it)
+    ir.twoPtrValue.ptr2 = NULL;                      // second pointer unused
+    Tcl_StoreInternalRep(obj, &bitarrayType, &ir);   // setting the type is what makes the core call our hooks
+    return obj;
+}
+
+static void
+Touch(Tcl_Obj *obj)
+{
+    FreeElems(GETREP(obj));         // the cached element objects are stale after a change
+    Tcl_InvalidateStringRep(obj);   // and so is the string form
+}
+
+/*
+ * ElemWide --
+ *	The number an element stands for: the stored bits VAL (width > 1),
+ *	sign-extended for the signed widths.
+ */
+static Tcl_WideInt
+ElemWide(const BitArr *b, uint64_t val)
+{
+    if (b->width == 64) {                                // 64 is always signed
+        return (Tcl_WideInt)(int64_t)val;
+    }
+    if (b->isSigned) {
+	if (b->width == 8) {                               // the cast to the signed type of that width sign-extends
+	    return (Tcl_WideInt)(int8_t)val;
+	}
+	if (b->width == 16) {
+	    return (Tcl_WideInt)(int16_t)val;
+	}
+	return (Tcl_WideInt)(int32_t)val;
+    }
+    return (Tcl_WideInt)val;   // unsigned: the bits as they are
+}
+
+/* Element VAL as a Tcl value (new object, reference count 0, unless 0 or 1). */
+static Tcl_Obj *
+ElemObj(const BitArr *b, uint64_t val)
+{
+    if (val == 0) {
+        return b->zero;
+    }
+    if (val == 1) {
+        return b->one;
+    }
+    return Tcl_NewWideIntObj(ElemWide(b, val));
+}
+
+/* The width as the user wrote it: negative for the signed widths. */
+static int
+SignedWidth(const BitArr *b)
+{
+    return b->isSigned ? -(int)b->width : (int)b->width;
+}
+
+/* Does the array hold signed numbers?  Width 64 always does. */
+static int
+SignedBits(const BitArr *b)
+{
+    return b->isSigned || b->width == 64;
+}
+
+static void
+SetRangeOnes(BitArr *b, Tcl_Size first, Tcl_Size last, int val)
+{
+    Tcl_Size fw = first >> 6, lw = last >> 6, i;        // first word and last word
+    uint64_t fm = ~(uint64_t)0 << (first & 63);         // first word: bits from FIRST up
+    uint64_t lm = ~(uint64_t)0 >> (63 - (last & 63));   // last word: bits up to LAST
+
+    if (fw == lw) {                                     // all inside one word: both masks apply
+	if (val) {
+	    b->words[fw] |= (fm & lm);
+	} else {
+	    b->words[fw] &= ~(fm & lm);
+	}
+	return;
+    }
+    if (val) {                                            // partial first word
+        b->words[fw] |= fm;
+    } else {
+        b->words[fw] &= ~fm;
+    }
+    for (i = fw + 1; i < lw; i++) {                          // whole words in between
+	b->words[i] = val ? ~(uint64_t)0 : 0;
+    }
+    if (val) {                                            // partial last word
+        b->words[lw] |= lm;
+    } else {
+        b->words[lw] &= ~lm;
+    }
+}
+
+static Tcl_WideInt
+CountRange(BitArr *b, Tcl_Size first, Tcl_Size last)
+{
+    Tcl_Size fw, lw, i;
+    uint64_t fm, lm;
+    Tcl_WideInt total;
+
+    if (first > last) {        // empty range
+        return 0;
+    }
+    fw = first >> 6; lw = last >> 6;
+    fm = ~(uint64_t)0 << (first & 63);                // first word: bits from FIRST up
+    lm = ~(uint64_t)0 >> (63 - (last & 63));          // last word: bits up to LAST
+    if (fw == lw) {
+	return BA_POPCOUNT(b->words[fw] & fm & lm);   // one word: the 1 bits inside both masks
+    }
+    total = BA_POPCOUNT(b->words[fw] & fm);           // partial first word
+    for (i = fw + 1; i < lw; i++) {
+	total += BA_POPCOUNT(b->words[i]);
+    }
+    return total + BA_POPCOUNT(b->words[lw] & lm);   // plus the partial last word
+}
+
+static Tcl_Size
+NextBit(BitArr *b, Tcl_Size start, int val)
+{
+    Tcl_Size w;
+    uint64_t cur;
+
+    if (start < 0) {
+        start = 0;
+    }
+    if (start >= b->len) {         // nothing at or after START
+        return -1;
+    }
+    w = start >> 6;
+    cur = (val ? b->words[w] : ~b->words[w]) & (~(uint64_t)0 << (start & 63));   // bits below START cleared; for 0, flipped
+    for (;;) {
+	if (cur) {
+	    Tcl_Size idx = (w << 6) + BA_CTZ(cur);                               // lowest wanted bit in this word
+	    return idx < b->len ? idx : -1;                                      // a hit in the padding past the end is no hit
+	}
+	if (++w >= b->nwords) {         // on to the next word
+	    return -1;
+	}
+	cur = val ? b->words[w] : ~b->words[w];
+    }
+}
+
+/*
+ * Counting and searching for widths above 1.  ANYNZ means "any non-zero
+ * element"; otherwise elements equal to VAL (a raw bit pattern).
+ */
+static Tcl_WideInt
+CountWide(const BitArr *b, Tcl_Size first, Tcl_Size last, int anyNZ,
+	uint64_t val)
+{
+    Tcl_WideInt total = 0;
+    Tcl_Size i;
+
+    if (first > last) {
+        return 0;
+    }
+    if (b->width == 8) {   // bytes: read directly
+	const unsigned char *p = (const unsigned char *)b->words;
+
+	if (anyNZ) {
+	    for (i = first; i <= last; i++) {
+	        total += (p[i] != 0);
+	    }
+	} else {
+	    unsigned char c = (unsigned char)val;
+
+	    for (i = first; i <= last; i++) {
+	        total += (p[i] == c);
+	    }
+	}
+	return total;
+    }
+    for (i = first; i <= last; i++) {   // 16, 32 and 64 bits: one element at a time
+	uint64_t e = GetElem(b, i);
+
+	total += anyNZ ? (e != 0) : (e == val);
+    }
+    return total;
+}
+
+static Tcl_Size
+NextWide(const BitArr *b, Tcl_Size start, int anyNZ, uint64_t val)
+{
+    Tcl_Size i;
+
+    if (start < 0) {
+        start = 0;
+    }
+    if (start >= b->len) {
+        return -1;
+    }
+    if (b->width == 8) {
+	const unsigned char *p = (const unsigned char *)b->words;
+
+	if (!anyNZ) {
+	    const unsigned char *q = (const unsigned char *)memchr(p + start,   // memchr finds the byte
+		    (int)val, (size_t)(b->len - start));
+
+	    return q ? (Tcl_Size)(q - p) : -1;
+	}
+	i = start;
+	for (; i < b->len && (i & 7); i++) {   // single bytes until i is a multiple of 8
+	    if (p[i]) {
+	        return i;
+	    }
+	}
+	for (; i + 8 <= b->len; i += 8) {      // then 8 bytes at a time while they are all zero
+	    uint64_t w;
+
+	    memcpy(&w, p + i, 8);
+	    if (w) {     // a non-zero word: the loop below finds which byte
+	        break;
+	    }
+	}
+	for (; i < b->len; i++) {   // the rest, or the word that holds the hit
+	    if (p[i]) {
+	        return i;
+	    }
+	}
+	return -1;
+    }
+    for (i = start; i < b->len; i++) {   // 16, 32 and 64 bits: one element at a time
+	uint64_t e = GetElem(b, i);
+
+	if (anyNZ ? (e != 0) : (e == val)) {
+	    return i;
+	}
+    }
+    return -1;
+}
+
+static int
+ParseBit(Tcl_Interp *interp, Tcl_Obj *obj, int *bitPtr)
+{
+    Tcl_WideInt v;
+
+    /* Fast path: a literal 0 or 1 that already has a string representation. */
+    if (obj->bytes != NULL && obj->length == 1
+	    && (obj->bytes[0] == '0' || obj->bytes[0] == '1')) {
+	*bitPtr = obj->bytes[0] - '0';
+	return TCL_OK;
+    }
+    if (Tcl_GetWideIntFromObj(NULL, obj, &v) != TCL_OK || (v != 0 && v != 1)) {   // NULL: no error message from here
+	if (interp) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "expected 0 or 1 but got \"%s\"", Tcl_GetString(obj)));
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
+	}
+	return TCL_ERROR;
+    }
+    *bitPtr = (int)v;
+    return TCL_OK;
+}
+
+/*
+ * Parse an element value for an array of WIDTH bits into its raw bit pattern.
+ * Widths 8, 16 and 32 are unsigned, or signed if ISSIGNED (-8, -16, -32: the
+ * value is stored as its low WIDTH bits); width 64 is always signed.
+ */
+static int
+ParseValue(Tcl_Interp *interp, Tcl_Obj *obj, int width, int isSigned,
+	uint64_t *vp)
+{
+    Tcl_WideInt v;
+
+    if (width == 1) {
+	int bit;
+
+	if (ParseBit(interp, obj, &bit) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	*vp = (uint64_t)bit;
+	return TCL_OK;
+    }
+    if (obj->bytes != NULL && obj->length == 1   // fast path: one digit 0-9 fits every width
+	    && obj->bytes[0] >= '0' && obj->bytes[0] <= '9') {
+	*vp = (uint64_t)(obj->bytes[0] - '0');
+	return TCL_OK;
+    }
+    if (Tcl_GetWideIntFromObj(NULL, obj, &v) == TCL_OK) {   // a number: range-check it for this width
+	if (width == 64) {                                  // any 64-bit value is valid
+	    *vp = (uint64_t)v;
+	    return TCL_OK;
+	}
+	if (isSigned) {
+	    Tcl_WideInt lim = (Tcl_WideInt)1 << (width - 1);                     // the signed range is -lim .. lim-1
+
+	    if (v >= -lim && v < lim) {
+		*vp = (uint64_t)v & (((uint64_t)1 << width) - 1);                // keep the low WIDTH bits (two's complement)
+		return TCL_OK;
+	    }
+	} else if (v >= 0 && v <= (Tcl_WideInt)(((uint64_t)1 << width) - 1)) {   // unsigned: 0 .. 2^width - 1
+	    *vp = (uint64_t)v;
+	    return TCL_OK;
+	}
+    }
+    if (interp) {   // reached for a non-number or a value out of range
+	if (width == 64) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "expected integer in range -9223372036854775808..9223372036854775807"
+		    " but got \"%s\"", Tcl_GetString(obj)));
+	} else if (isSigned) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "expected integer in range %lld..%lld but got \"%s\"",
+		    -(long long)((uint64_t)1 << (width - 1)),
+		    (long long)(((uint64_t)1 << (width - 1)) - 1),
+		    Tcl_GetString(obj)));
+	} else {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "expected integer in range 0..%lld but got \"%s\"",
+		    (long long)(((uint64_t)1 << width) - 1), Tcl_GetString(obj)));
+	}
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
+    }
+    return TCL_ERROR;
+}
+
+static void
+IndexError(Tcl_Interp *interp, Tcl_Obj *idxObj)
+{
+    if (interp) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("index \"%s\" out of range",
+		Tcl_GetString(idxObj)));
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "OUTOFRANGE", NULL);
+    }
+}
+
+/* ------------------------- type hooks ----------------------------- */
+
+static void
+BAFree(Tcl_Obj *objPtr)
+{
+    FreeRep(GETREP(objPtr));
+    objPtr->typePtr = NULL;   // the object is no longer a bitarray
+}
+
+static void
+BADup(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr)
+{
+    BitArr *s = GETREP(srcPtr), *d = NewRep(NULL, s->len, s->width, s->isSigned);   // own copy of the words
+    Tcl_ObjInternalRep ir;
+
+    if (d == NULL) {                                           // a dup hook cannot report an error
+        Tcl_Panic("bitarray: out of memory in dup");
+    }
+    memcpy(d->words, s->words, (size_t)s->nwords * sizeof(uint64_t));
+    ir.twoPtrValue.ptr1 = d;
+    ir.twoPtrValue.ptr2 = NULL;
+    Tcl_StoreInternalRep(copyPtr, &bitarrayType, &ir);
+}
+
+static void
+BAUpdateString(Tcl_Obj *objPtr)
+{
+    BitArr *b = GETREP(objPtr);
+    char *p;
+    Tcl_Size i;
+
+    if (b->len == 0) {   // an empty array: the empty string
+	Tcl_InitStringRep(objPtr, NULL, 0);
+	return;
+    }
+    if (b->width == 1) {
+	p = Tcl_InitStringRep(objPtr, NULL, 2 * b->len - 1);   // n digits and n-1 spaces
+	if (p == NULL) {
+	    Tcl_Panic("bitarray: out of memory in string rep");   // no test reaches this (Tcl's own allocator failed); kept, there is no way to report it   // no coverage
+	}
+	for (i = 0; i < b->len; i++) {
+	    *p++ = (char)('0' + GETBIT(b, i));                 // '0' or '1'
+	    if (i + 1 < b->len) {          // a space between elements, none after the last
+	        *p++ = ' ';
+	    }
+	}
+    } else {
+	Tcl_DString ds;
+	char buf[32];
+	int n;
+
+	Tcl_DStringInit(&ds);
+	for (i = 0; i < b->len; i++) {
+	    uint64_t v = GetElem(b, i);
+
+	    if (i) {
+	        Tcl_DStringAppend(&ds, " ", 1);
+	    }
+	    n = snprintf(buf, sizeof(buf), "%lld", (long long)ElemWide(b, v));   // a signed width prints its negative values
+	    Tcl_DStringAppend(&ds, buf, n);
+	}
+	Tcl_InitStringRep(objPtr, Tcl_DStringValue(&ds),                         // copy it into the object's own buffer
+		(Tcl_Size)Tcl_DStringLength(&ds));
+	Tcl_DStringFree(&ds);
+    }
+}
+
+static Tcl_Size
+BALength(Tcl_Obj *objPtr)
+{
+    return GETREP(objPtr)->len;
+}
+
+static int
+BAIndex(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size index, Tcl_Obj **elemPtr)
+{
+    BitArr *b = GETREP(objPtr);
+
+    (void)interp;                                         // unused
+    if (index < 0 || index >= b->len) {
+	*elemPtr = NULL;                                  // out of range: NULL tells the core there is no such element
+    } else if (b->width == 1) {
+	*elemPtr = GETBIT(b, index) ? b->one : b->zero;   // the shared 0 or 1 object
+    } else {
+	*elemPtr = ElemObj(b, GetElem(b, index));         // a new object, or the shared 0 or 1
+    }
+    return TCL_OK;
+}
+
+static uint64_t GetBits(const BitArr *b, Tcl_Size p, int n);
+
+/* Reverse the order of the 64 bits of X (bit 0 becomes bit 63). */
+static uint64_t
+Rev64(uint64_t x)
+{
+    x = ((x >> 1) & 0x5555555555555555ULL) | ((x & 0x5555555555555555ULL) << 1);     // swap neighbouring bits
+    x = ((x >> 2) & 0x3333333333333333ULL) | ((x & 0x3333333333333333ULL) << 2);     // then pairs
+    x = ((x >> 4) & 0x0F0F0F0F0F0F0F0FULL) | ((x & 0x0F0F0F0F0F0F0F0FULL) << 4);     // nibbles
+    x = ((x >> 8) & 0x00FF00FF00FF00FFULL) | ((x & 0x00FF00FF00FF00FFULL) << 8);     // bytes
+    x = ((x >> 16) & 0x0000FFFF0000FFFFULL) | ((x & 0x0000FFFF0000FFFFULL) << 16);   // 16-bit halves
+    return (x >> 32) | (x << 32);                                                    // and the 32-bit halves
+}
+
+/*
+ * lrange.  This is the sliceProc of the type: only the core calls it (the range code in tclListTypes.c), and the core has already
+ * normalized the range: FROM and TO are inside the array and FROM <= TO, because an empty or out-of-range slice
+ * is answered by the core itself.  The tests cannot reach the checks below for that reason (gcov shows them as never
+ * run).  They stay as a defense: the manual page of Tcl_ObjType does not say that the range arrives normalized, and
+ * the core's own sliceProc (LrangeSlice) normalizes it again.  No extension is expected to call this function: it is
+ * static, and the only way to it is through the type's table.
+ */
+static int
+BASlice(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size from, Tcl_Size to,
+	Tcl_Obj **newObjPtr)
+{
+    BitArr *b = GETREP(objPtr), *n;
+    Tcl_Size i, len;
+
+    if (from < 0) {        // clamp the range to the array
+        from = 0;   // not reached: the core clamps first; harmless to check anyway   // no coverage
+    }
+    if (to >= b->len) {
+        to = b->len - 1;   // not reached: the core clamps first; harmless to check anyway   // no coverage
+    }
+    if (from > to || from >= b->len) {   // empty range: an empty list
+	*newObjPtr = Tcl_NewObj();   // not reached: the core answers an empty range itself; harmless to check anyway   // no coverage
+	return TCL_OK;   // not reached (see above)   // no coverage
+    }
+    len = to - from + 1;
+    if ((n = NewRep(interp, len, b->width, b->isSigned)) == NULL) {
+        return TCL_ERROR;
+    }
+    if (b->width != 1) {             // wider elements are whole bytes: one copy
+	memcpy(BYTES(n), BYTES(b) + (size_t)from * EBYTES(b),
+		(size_t)len * EBYTES(b));
+    } else if ((from & 63) == 0) {   // 1-bit, starting on a word boundary: copy whole words
+	memcpy(n->words, &b->words[from >> 6],
+		(size_t)n->nwords * sizeof(uint64_t));
+	if (len & 63) {              // clear the unused bits of the last word
+	    n->words[n->nwords - 1] &= ~(~(uint64_t)0 << (len & 63));
+	}
+    } else {
+	/* Unaligned start: read 64 bits at a time; GetBits masks the last chunk. */
+	for (i = 0; i < len; i += 64) {
+	    int m = (len - i >= 64) ? 64 : (int)(len - i);
+
+	    n->words[i >> 6] = GetBits(b, from + i, m);
+	}
+    }
+    *newObjPtr = WrapRep(n);
+    return TCL_OK;
+}
+
+static int
+BAReverse(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Obj **newObjPtr)
+{
+    BitArr *b = GETREP(objPtr), *n;
+    Tcl_Size i;
+
+    if ((n = NewRep(interp, b->len, b->width, b->isSigned)) == NULL) {
+        return TCL_ERROR;
+    }
+    if (b->width == 1) {
+	/*
+	 * Result bits i..i+m-1 are source bits L-i-m..L-i-1 in reverse order:
+	 * read that run, reverse all 64 bits and drop the unused low end.
+	 */
+	for (i = 0; i < b->len; i += 64) {
+	    int m = (b->len - i >= 64) ? 64 : (int)(b->len - i);
+
+	    n->words[i >> 6] = Rev64(GetBits(b, b->len - i - m, m)) >> (64 - m);
+	}
+    } else if (b->width == 8) {
+	const unsigned char *src = BYTES(b);
+	unsigned char *dst = BYTES(n);
+
+	for (i = 0; i < b->len; i++) {                            // copy the elements back to front
+	    dst[i] = src[b->len - 1 - i];
+	}
+    } else if (b->width == 16) {
+	for (i = 0; i < b->len; i++) {
+	    uint16_t v;
+
+	    memcpy(&v, BYTES(b) + 2 * (size_t)(b->len - 1 - i), 2);
+	    memcpy(BYTES(n) + 2 * (size_t)i, &v, 2);
+	}
+    } else if (b->width == 32) {
+	for (i = 0; i < b->len; i++) {
+	    uint32_t v;
+
+	    memcpy(&v, BYTES(b) + 4 * (size_t)(b->len - 1 - i), 4);
+	    memcpy(BYTES(n) + 4 * (size_t)i, &v, 4);
+	}
+    } else {   // 64 bits
+	for (i = 0; i < b->len; i++) {
+	    uint64_t v;
+
+	    memcpy(&v, BYTES(b) + 8 * (size_t)(b->len - 1 - i), 8);
+	    memcpy(BYTES(n) + 8 * (size_t)i, &v, 8);
+	}
+    }
+    *newObjPtr = WrapRep(n);
+    return TCL_OK;
+}
+
+static int
+BAGetElements(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size *objcPtr,
+	Tcl_Obj ***objvPtr)
+{
+    BitArr *b = GETREP(objPtr);
+    Tcl_Size i;
+
+    if (b->elems == NULL) {                                          // the element vector is built the first time it is asked for
+	if ((size_t)b->len > (size_t)-1 / sizeof(Tcl_Obj *) / 2) {   // would the size of the vector overflow?
+	    if (interp) {   // not reached on 64-bit (needs more than 2^60 elements; only a 32-bit build can get here)   // no coverage
+		Tcl_SetObjResult(interp, Tcl_NewStringObj("out of memory", -1));   // not reached (see above)   // no coverage
+	    }
+	    return TCL_ERROR;   // not reached (see above)   // no coverage
+	}
+	b->elems = (Tcl_Obj **)BA_ALLOC(   // one slot per element (at least one, no zero-size allocation)
+		(size_t)(b->len ? b->len : 1) * sizeof(Tcl_Obj *));
+	if (b->elems == NULL) {
+	    if (interp) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj("out of memory", -1));
+	    }
+	    return TCL_ERROR;
+	}
+	if (b->width == 1) {
+	    for (i = 0; i < b->len; i++) {
+		b->elems[i] = GETBIT(b, i) ? b->one : b->zero;   // the shared 0 or 1 object
+	    }
+	} else {
+	    for (i = 0; i < b->len; i++) {
+		Tcl_Obj *e = ElemObj(b, GetElem(b, i));
+
+		if (e != b->zero && e != b->one) {                   // we own a reference to each new object
+		    Tcl_IncrRefCount(e);
+		}
+		b->elems[i] = e;
+	    }
+	}
+	b->elemsLen = b->len;   // FreeElems needs the count
+    }
+    *objcPtr = b->len;
+    *objvPtr = b->elems;
+    return TCL_OK;
+}
+
+/*
+ * The setElementProc: lset l INDEX VALUE, and lpop l INDEX when VALUE is NULL.  The core passes the index
+ * arguments as objects, and we read them again here.  The core has already checked their syntax (TclIndexEncode in
+ * lset and lpop: `lset b foo 1` is reported by the core), so the failing return after Tcl_GetIntForIndex never runs
+ * in the tests (gcov: never run).  It stays because the hook has to give an error, not crash, for any index.
+ */
+static Tcl_Obj *
+BASetElement(Tcl_Interp *interp, Tcl_Obj *listPtr, Tcl_Size indexCount,
+	Tcl_Obj *const indexArray[], Tcl_Obj *valueObj)
+{
+    BitArr *b;
+    Tcl_Size idx;
+    uint64_t val;
+    Tcl_Obj *obj = listPtr;
+
+    if (indexCount != 1) {   // an element is a number, so only one index makes sense
+	if (interp) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "bitarray elements are not lists", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
+	}
+	return NULL;
+    }
+    b = GETREP(listPtr);
+    if (Tcl_GetIntForIndex(interp, indexArray[0], b->len - 1, &idx) != TCL_OK) {   // accepts end, end-1, 3+1 and so on
+	return NULL;   // not reached: the core has checked the index syntax; harmless to check anyway   // no coverage
+    }
+    if (idx == TCL_SIZE_MAX && b->len == 0) {
+	idx = 0;		/* Same special case as the core's TclLsetFlat. */
+    }
+    if (idx < 0 || idx > b->len) {   // idx == len is allowed: it appends
+	IndexError(interp, indexArray[0]);
+	return NULL;
+    }
+    if (valueObj == NULL) {                                                                 // lpop l INDEX: the core passes no value, we delete the element
+	if (idx >= b->len) {
+	    IndexError(interp, indexArray[0]);
+	    return NULL;
+	}
+	obj = Tcl_DuplicateObj(obj);                                                        // always a new object (reference count 0): lpop's undo-ref-count step expects one
+	if (BAReplace(interp, obj, idx, 1, 0, NULL) != TCL_OK) {
+	    BA_IMPOSSIBLE("lpop: deleting one element failed", 0);   // not reached: deleting never grows the array, so BAReplace cannot fail
+	}
+	return obj;
+    }
+    if (ParseValue(interp, valueObj, b->width, b->isSigned, &val) != TCL_OK) {           // check the value first
+        return NULL;
+    }
+    if (Tcl_IsShared(obj)) {                                                                // never change a shared object: work on a copy
+	obj = Tcl_DuplicateObj(obj);
+    }
+    if (idx == GETREP(obj)->len) {
+	/* lset on a list with index == length appends. */
+	if (BAReplace(interp, obj, idx, 0, 1, &valueObj) != TCL_OK) {
+	    if (obj != listPtr) {                       // throw the copy away, if we made one
+	        Tcl_BounceRefCount(obj);
+	    }
+	    return NULL;
+	}
+	return obj;
+    }
+    b = GETREP(obj);   // the copy has a block of its own
+    PutElem(b, idx, val);
+    Touch(obj);        // string form and element cache are out of date
+    return obj;
+}
+
+/*
+ * Read N bits (1..64) starting at bit position P, and return them in the low
+ * end of the result.  Touches only the words that hold those bits, so it
+ * never reads past the end of the data.
+ */
+static uint64_t
+GetBits(const BitArr *b, Tcl_Size p, int n)
+{
+    Tcl_Size k = p >> 6;
+    int s = (int)(p & 63);
+    uint64_t v = b->words[k] >> s;                           // the bits from P to the end of its word
+
+    if (s + n > 64) {                                // the run spills into the next word: add its low bits above
+        v |= b->words[k + 1] << (64 - s);
+    }
+    return (n == 64) ? v : (v & (((uint64_t)1 << n) - 1));   // n == 64: a shift by 64 is undefined, so no mask
+}
+
+/*
+ * Store the low N bits (1..64) of V at bit position P, leaving every other
+ * bit as it was.  Like GetBits, it touches only the words involved.
+ */
+static void
+PutBits(BitArr *b, Tcl_Size p, uint64_t v, int n)
+{
+    Tcl_Size k = p >> 6;
+    int s = (int)(p & 63);
+    uint64_t m = (n == 64) ? ~(uint64_t)0 : (((uint64_t)1 << n) - 1);   // mask of N ones
+
+    v &= m;
+    b->words[k] = (b->words[k] & ~(m << s)) | (v << s);                 // clear the N bits, put V in
+    if (s + n > 64) {                                                   // the run spills into the next word
+	uint64_t mh = ((uint64_t)1 << (s + n - 64)) - 1;                // mask for the bits that land in the next word
+
+	b->words[k + 1] = (b->words[k + 1] & ~mh) | (v >> (64 - s));
+    }
+}
+
+/* Clear COUNT bits starting at bit position FROM (width-1 arrays). */
+static void
+ClearBits(BitArr *b, Tcl_Size from, Tcl_Size count)
+{
+    while (count > 0) {
+	int n = (count >= 64) ? 64 : (int)count;   // at most 64 bits a step
+
+	PutBits(b, from, 0, n);
+	from += n;
+	count -= n;
+    }
+}
+
+/*
+ * Copy COUNT elements from FROM to TO within one array, as memmove would.
+ * Wider elements use memmove.  Width-1 arrays move up to 64 bits at a time;
+ * as with memmove, the direction depends on the overlap: moving left works
+ * from the front, moving right works from the back, so no bit is overwritten
+ * before it has been copied.
+ */
+static void
+MoveElems(BitArr *b, Tcl_Size from, Tcl_Size to, Tcl_Size count)
+{
+    if (from == to || count <= 0) {      // nothing to move
+        return;
+    }
+    if (b->width != 1) {
+	memmove(BYTES(b) + (size_t)to * EBYTES(b),   // wider elements: memmove copes with any overlap
+		BYTES(b) + (size_t)from * EBYTES(b), (size_t)count * EBYTES(b));
+	return;
+    }
+    if (to < from) {
+	/*
+	 * Moving left.  A partial first destination word, then whole
+	 * destination words built from two source words (one store each, no
+	 * read of the destination), then the partial last word.  Destination
+	 * words never lie beyond the source words still to be read.
+	 */
+	Tcl_Size d = to, q = from, cnt = count;
+
+	if (d & 63) {                                                           // partial first destination word
+	    int h = (cnt >= 64 - (d & 63)) ? (int)(64 - (d & 63)) : (int)cnt;   // bits left in that word, or fewer
+
+	    PutBits(b, d, GetBits(b, q, h), h);
+	    d += h; q += h; cnt -= h;
+	}
+	while (cnt >= 64) {   // whole destination words
+	    Tcl_Size kq = q >> 6;
+	    int sh = (int)(q & 63);
+
+	    b->words[d >> 6] = sh ? ((b->words[kq] >> sh)   // 64 source bits starting at q: two words shifted together
+		    | (b->words[kq + 1] << (64 - sh))) : b->words[kq];
+	    d += 64; q += 64; cnt -= 64;
+	}
+	if (cnt > 0) {                                                // partial last word
+	    PutBits(b, d, GetBits(b, q, (int)cnt), (int)cnt);
+	}
+    } else {                                                             // moving right: from the back, last chunk first
+	Tcl_Size left = count;
+
+	while (left > 0) {
+	    int n = (left >= 64) ? 64 : (int)left;
+
+	    left -= n;
+	    PutBits(b, to + left, GetBits(b, from + left, n), n);
+	}
+    }
+}
+
+/*
+ * lreplace / linsert / lappend.  Edits the array in place.  The array keeps
+ * spare capacity and doubles it when full, so appending one element at a time
+ * costs O(1) on average, as it does for a list.  The caller guarantees the
+ * object is not shared.  The list-replace call of the C API (ListObj.3) hands its arguments to this
+ * function as they are, before it clamps anything (it clamps only for ordinary lists), and its manual page says what
+ * they mean: FIRST <= 0 is the start, FIRST >= the length appends, a count <= 0 deletes nothing.  So the four clamps
+ * below are our job.  The commands lreplace and linsert clamp the indexes before they call, so the tests run two
+ * of the four; the other two (FIRST above the length, a negative count) need a C caller of that call, and
+ * gcov shows them as never run.
+ */
+static int
+BAReplace(Tcl_Interp *interp, Tcl_Obj *listObj, Tcl_Size first,
+	Tcl_Size numToDelete, Tcl_Size numToInsert, Tcl_Obj *const insertObjs[])
+{
+    BitArr *b = GETREP(listObj);
+    Tcl_Size i, newLen, oldLen = b->len, needWords;
+    Tcl_WideInt wideLen;
+    uint64_t val;
+
+    if (first < 0) {         // clamp FIRST and the delete count to the array
+        first = 0;
+    }
+    if (first > oldLen) {
+        first = oldLen;   // not reached by scripts (lreplace / linsert clamp first); needed for a C caller of the list-replace API   // no coverage
+    }
+    if (numToDelete < 0) {
+        numToDelete = 0;   // same: not reached by scripts, but the list-replace API is documented to accept it   // no coverage
+    }
+    if (numToDelete > oldLen - first) {
+        numToDelete = oldLen - first;
+    }
+    for (i = 0; i < numToInsert; i++) {   // check every new value first, so an error changes nothing
+	if (ParseValue(interp, insertObjs[i], b->width, b->isSigned, &val) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+    }
+    wideLen = (Tcl_WideInt)oldLen - numToDelete + numToInsert;   // the new length, in 64 bits: cannot overflow
+    if (wideLen > BA_MAX_BITS / b->width) {                      // would it go over the size limit?
+	if (interp) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "bitarray size out of range", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "SIZE", NULL);
+	}
+	return TCL_ERROR;
+    }
+    newLen = (Tcl_Size)wideLen;
+    needWords = WORDS_FOR(newLen, b->width);
+
+    /* Grow the allocation (doubling) if the new length does not fit. */
+    if (needWords > b->capWords) {
+	Tcl_Size maxWords = (Tcl_Size)((BA_MAX_BITS + 63) / 64);   // no more words than the size limit allows
+	Tcl_Size newCap = b->capWords * 2, oldCap = b->capWords;   // double the capacity
+	BitArr *nb;
+
+	if (newCap < 4) {          // at least 4 words
+	    newCap = 4;
+	}
+	if (newCap < needWords) {
+	    newCap = needWords;
+	}
+	if (newCap > maxWords) {
+	    newCap = maxWords;
+	}
+	nb = (BitArr *)BA_REALLOC(b,
+		sizeof(BitArr) + (size_t)(newCap - 1) * sizeof(uint64_t));
+	if (nb == NULL && newCap > needWords) {   // the doubled size failed: try just what is needed
+	    newCap = needWords;
+	    nb = (BitArr *)BA_REALLOC(b,
+		    sizeof(BitArr) + (size_t)(newCap - 1) * sizeof(uint64_t));
+	}
+	if (nb == NULL) {
+	    if (interp) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj("out of memory", -1));
+		Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	    }
+	    return TCL_ERROR;
+	}
+	b = nb;
+	memset(&b->words[oldCap], 0,                 // the new words start as 0
+		(size_t)(newCap - oldCap) * sizeof(uint64_t));
+	b->capWords = newCap;
+	listObj->internalRep.twoPtrValue.ptr1 = b;   // the object points at the block, which may have moved
+    }
+
+    /* The element cache refers to the old contents; drop it first. */
+    FreeElems(b);
+
+    /* Slide the tail, write the inserted values, clear what was vacated. */
+    MoveElems(b, first + numToDelete, first + numToInsert,
+	    oldLen - (first + numToDelete));
+    for (i = 0; i < numToInsert; i++) {
+	ParseValue(NULL, insertObjs[i], b->width, b->isSigned, &val);   // cannot fail: the values were checked above
+	PutElem(b, first + i, val);
+    }
+    if (newLen < oldLen) {                                              // shorter: zero the bits the tail left behind
+	if (b->width == 1) {
+	    ClearBits(b, newLen, oldLen - newLen);
+	} else {
+	    memset(BYTES(b) + (size_t)newLen * EBYTES(b), 0,
+		    (size_t)(oldLen - newLen) * EBYTES(b));
+	}
+    }
+    b->len = newLen;
+    b->nwords = needWords;
+    Tcl_InvalidateStringRep(listObj);   // the old text is stale
+    return TCL_OK;
+}
+
+/*
+ * HasBit --
+ *	True if some element of the 1-bit array B equals VAL (0 or 1).  Tests
+ *	whole words and stops at the first word that holds the wanted bit: a
+ *	word that is not 0 holds a 1, a word that is not all ones holds a 0.
+ *	The last word is padded with ones for the unused bits past the end,
+ *	so they never count as zeros.
+ */
+static int
+HasBit(BitArr *b, int val)
+{
+    Tcl_Size i, lw;
+    uint64_t lm, w;
+
+    if (b->len == 0) {        // an empty array holds neither 0 nor 1
+        return 0;
+    }
+    lw = (b->len - 1) >> 6;      // index of the last word in use
+    lm = ~(uint64_t)0 >> (63 - ((b->len - 1) & 63));	/* bits in use */
+    for (i = 0; i < lw; i++) {   // the whole words before the last one
+	w = b->words[i];
+	if (val ? (w != 0) : (w != ~(uint64_t)0)) {
+	    return 1;
+	}
+    }
+    w = b->words[lw];   // the last word: ignore the unused bits (see above)
+    return val ? ((w & lm) != 0) : ((w | ~lm) != ~(uint64_t)0);
+}
+
+static int
+BAInOper(Tcl_Interp *interp, Tcl_Obj *valueObj, Tcl_Obj *listObj, int *resPtr)
+{
+    BitArr *b = GETREP(listObj);
+    const char *s = Tcl_GetString(valueObj);
+
+    (void)interp;
+    *resPtr = 0;
+    if (b->width == 1) {
+	if (s[0] && !s[1] && (s[0] == '0' || s[0] == '1')) {   // only the text "0" or "1" can be an element
+	    *resPtr = HasBit(b, s[0] == '1');
+	}
+    } else {
+	/*
+	 * "in" compares string forms, so only the canonical decimal spelling
+	 * of an element matches ("007" does not match 7).
+	 */
+	uint64_t val;
+	char buf[32];
+
+	if (ParseValue(NULL, valueObj, b->width, b->isSigned, &val) == TCL_OK) {
+	    snprintf(buf, sizeof(buf), "%lld", (long long)ElemWide(b, val));   // the canonical text of the value
+	    if (strcmp(buf, s) == 0) {                                         // it must be spelled exactly like that
+		*resPtr = (NextWide(b, 0, 0, val) >= 0);                       // is any element equal to the value?
+	    }
+	}
+    }
+    return TCL_OK;
+}
+
+/* --------------------------- commands ----------------------------- */
+
+/*
+ * IsWord --
+ *	True if the string form of OBJ is exactly the word W (used for the
+ *	optional helper words "to", "..", "with" and "by").
+ */
+static int
+IsWord(Tcl_Obj *obj, const char *w)
+{
+    Tcl_Size n;
+    const char *s = Tcl_GetStringFromObj(obj, &n);
+
+    return (size_t)n == strlen(w) && memcmp(s, w, (size_t)n) == 0;   // the same length and the same bytes
+}
+
+static int
+NeedBA(Tcl_Interp *interp, Tcl_Obj *obj, BitArr **bPtr)
+{
+    if (!ISBA(obj)) {   // an ordinary list of 0s and 1s is refused
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("not a bitarray: \"%.40s\"",
+		Tcl_GetString(obj)));
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
+	return TCL_ERROR;
+    }
+    *bPtr = GETREP(obj);
+    return TCL_OK;
+}
+
+static int
+ParseWidthArg(Tcl_Interp *interp, Tcl_Obj *obj, int *widthPtr,
+	int *signedPtr)
+{
+    Tcl_WideInt w;
+
+    if (Tcl_GetWideIntFromObj(NULL, obj, &w) != TCL_OK   // the nine widths: 1, 8, 16, 32, 64 and the negative ones
+	    || (w != 1 && w != 8 && w != 16 && w != 32 && w != 64
+	    && w != -8 && w != -16 && w != -32 && w != -64)) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"bad width \"%s\": must be 1, 8, 16, 32, 64, -8, -16, -32 or -64"
+		" (a minus sign means signed)", Tcl_GetString(obj)));
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
+	return TCL_ERROR;
+    }
+    *signedPtr = (w < 0);   // a minus sign means signed
+    *widthPtr = (int)(w < 0 ? -w : w);
+    return TCL_OK;
+}
+
+/*
+ * Scan the optional arguments of "new" and "newfrom" starting at objv[FROM]:
+ * "-width W" anywhere, and (for "new" only) one bare VALUE.
+ */
+static int
+ParseCreateArgs(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[],
+	Tcl_Size from, int allowValue, int *widthPtr, int *signedPtr,
+	Tcl_Obj **valuePtr, const char *usage)
+{
+    Tcl_Size i;
+
+    *widthPtr = 1;
+    *signedPtr = 0;
+    *valuePtr = NULL;
+    for (i = from; i < objc; i++) {
+	if (strcmp(Tcl_GetString(objv[i]), "-width") == 0) {
+	    if (i + 1 >= objc) {               // "-width" with nothing after it
+	        goto usageError;
+	    }
+	    if (ParseWidthArg(interp, objv[++i], widthPtr, signedPtr) != TCL_OK) {   // ++i: the width value is used up too
+		return TCL_ERROR;
+	    }
+	} else if (allowValue && *valuePtr == NULL) {                                // the first other word is the VALUE (new only)
+	    *valuePtr = objv[i];
+	} else {
+	    goto usageError;                                                         // a second value, or a value where none is allowed
+	}
+    }
+    return TCL_OK;
+
+  usageError:
+    Tcl_WrongNumArgs(interp, 2, objv, usage);
+    return TCL_ERROR;
+}
+
+/* ------------------- bitwise operations (0.6.0) -------------------- */
+
+enum { BO_AND, BO_OR, BO_XOR, BO_ANDNOT, BO_NOT };
+
+/*
+ * BitOpWords --
+ *	dst = x OP y, a word at a time.  Words of y beyond its end count as 0.
+ *	dst may be the same as x.  Y is NULL for NOT.  Only the first
+ *	dst->nwords words are written; the caller then calls MaskTail.
+ */
+#define BO_LOOP(FROM, TO, YEXPR, EXPR) \
+    for (k = (FROM); k < (TO); k++) { \
+	uint64_t xv = x->words[k], yv = (YEXPR); \
+	dst->words[k] = (EXPR); \
+    }
+
+static void
+BitOpWords(BitArr *dst, const BitArr *x, const BitArr *y, int op)
+{
+    Tcl_Size k, n = dst->nwords, m;
+
+    if (op == BO_NOT) {
+	for (k = 0; k < n; k++) {
+	    dst->words[k] = ~x->words[k];
+	}
+	return;
+    }
+    m = (y->nwords < n) ? y->nwords : n;	/* words where y exists */
+    switch (op) {
+    case BO_AND:
+	BO_LOOP(0, m, y->words[k], xv & yv)   // the words y has
+	BO_LOOP(m, n, 0, xv & yv)             // beyond y: its words count as 0
+	break;
+    case BO_OR:
+	BO_LOOP(0, m, y->words[k], xv | yv)
+	BO_LOOP(m, n, 0, xv | yv)
+	break;
+    case BO_XOR:
+	BO_LOOP(0, m, y->words[k], xv ^ yv)
+	BO_LOOP(m, n, 0, xv ^ yv)
+	break;
+    default:	/* BO_ANDNOT */
+	BO_LOOP(0, m, y->words[k], xv & ~yv)
+	BO_LOOP(m, n, 0, xv & ~yv)
+	break;
+    }
+}
+
+/*
+ * MaskTail --
+ *	Zero every bit past the end of the data in the last word, restoring
+ *	the invariant that count, next and equality rely on.  Width 1 uses a
+ *	value mask (bit i is bit i&63 of word i>>6); wider arrays are packed
+ *	bytes, so the unused bytes are cleared by address (host-endian safe).
+ */
+static void
+MaskTail(BitArr *b)
+{
+    Tcl_WideInt bits = (Tcl_WideInt)b->len * b->width;
+
+    if (b->nwords == 0) {
+        return;
+    }
+    if (b->width == 1) {
+	int r = (int)(bits & 63);                                          // bits in use in the last word (0 means all 64)
+
+	if (r) {                                                   // keep those bits, clear the rest
+	    b->words[b->nwords - 1] &= (((uint64_t)1 << r) - 1);
+	}
+    } else {
+	size_t used = (size_t)(bits / 8), total = (size_t)b->nwords * 8;   // bytes in use, bytes in the words
+
+	if (total > used) {
+	    memset(BYTES(b) + used, 0, total - used);
+	}
+    }
+}
+
+/*
+ * IsArrow --
+ *	True if OBJ is the word "<-".  A bitarray value is never the word, and
+ *	asking for its string form would build a long string, so it is skipped.
+ */
+static int
+IsArrow(Tcl_Obj *obj)
+{
+    return !ISBA(obj) && IsWord(obj, "<-");
+}
+
+static int
+BitOpCompat(Tcl_Interp *interp, const char *name, const BitArr *x,
+	const BitArr *y, int zero)
+{
+    if (x->width != y->width || SignedBits(x) != SignedBits(y)) {   // same width and the same signedness (64 and -64 are the same)
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"bitarray %s: arrays differ in width (%d vs %d)",
+		name, SignedWidth(x), SignedWidth(y)));
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
+	return TCL_ERROR;
+    }
+    if (!zero && x->len != y->len) {   // lengths must match unless -length zero
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"bitarray %s: arrays differ in length (%" TCL_SIZE_MODIFIER
+		"d vs %" TCL_SIZE_MODIFIER "d); use -length zero to allow it",
+		name, x->len, y->len));
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
+	return TCL_ERROR;
+    }
+    return TCL_OK;
+}
+
+/*
+ * BitOpCmd --
+ *	bitarray and|or|xor|andnot ?-length strict|zero? var array
+ *	bitarray and|or|xor|andnot ?-length strict|zero? var <- array
+ *	bitarray and|or|xor|andnot ?-length strict|zero? var <- array1 array2
+ *	bitarray not var
+ *	bitarray not var <- array
+ *
+ *	VAR is a variable name; the arrays are values.  With one array the
+ *	variable is both first input and result (changed in place).  With two
+ *	arrays after the arrow the variable only receives array1 OP array2,
+ *	which are left alone.  The result always has the length of the first
+ *	input.  Width must match; length must match unless -length zero, which
+ *	treats missing bits of the second array as 0 and ignores extra ones.
+ */
+static int
+BitOpCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[], int op)
+{
+    static const char *const modes[] = { "strict", "zero", NULL };
+    const char *name = Tcl_GetString(objv[1]);             // for the error messages
+    int zero = 0, mode, inPlace, isNot = (op == BO_NOT);   // zero: -length zero was given
+    Tcl_Size idx = 2, rest;
+    Tcl_Obj *dstName, *srcA = NULL, *srcB = NULL, *obj, *work;
+    BitArr *x = NULL, *y = NULL, *d;
+
+    if (!isNot && idx < objc && IsWord(objv[idx], "-length")) {   // optional -length strict|zero (not for not)
+	if (idx + 1 >= objc) {
+	    goto usage;
+	}
+	if (Tcl_GetIndexFromObj(interp, objv[idx + 1], modes, "length mode",
+		TCL_EXACT, &mode) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	zero = mode;     // strict is index 0, zero is index 1
+	idx += 2;
+    }
+    rest = objc - idx;   // the words left: var ?<-? array ?array?
+    if (isNot) {
+	if (rest == 1) {
+	    inPlace = 1; dstName = objv[idx];
+	} else if (rest == 3 && IsArrow(objv[idx + 1])) {
+	    inPlace = 0; dstName = objv[idx]; srcA = objv[idx + 2];
+	} else {
+	    goto usage;
+	}
+    } else if (rest == 2 && IsArrow(objv[idx + 1])) {
+	goto usage;		/* "bitarray and a <-": nothing follows the arrow */
+    } else if (rest == 2) {
+	inPlace = 1; dstName = objv[idx]; srcB = objv[idx + 1];
+    } else if ((rest == 3 || rest == 4) && IsArrow(objv[idx + 1])) {
+	dstName = objv[idx];
+	if (rest == 3) {
+	    inPlace = 1; srcB = objv[idx + 2];
+	} else {
+	    inPlace = 0; srcA = objv[idx + 2]; srcB = objv[idx + 3];
+	}
+    } else {
+	goto usage;
+    }
+
+    if (IsWord(dstName, "<-")) {   // "<-" is not a variable name
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"bitarray %s: \"<-\" cannot be used as a variable name", name));
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
+	return TCL_ERROR;
+    }
+    if (inPlace) {
+	obj = Tcl_ObjGetVar2(interp, dstName, NULL, TCL_LEAVE_ERR_MSG);   // in place: read the variable
+	if (obj == NULL) {
+	    return TCL_ERROR;
+	}
+	if (NeedBA(interp, obj, &x) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (srcB != NULL) {
+	    if (NeedBA(interp, srcB, &y) != TCL_OK) {
+	        return TCL_ERROR;
+	    }
+	    if (BitOpCompat(interp, name, x, y, zero) != TCL_OK) {
+	        return TCL_ERROR;
+	    }
+	}
+	work = Tcl_IsShared(obj) ? Tcl_DuplicateObj(obj) : obj;   // a shared value is copied first, never changed in place
+	d = GETREP(work);
+	BitOpWords(d, d, y, op);                                  // d = d OP y (y is NULL for not)
+	MaskTail(d);                                              // clear the bits past the end
+	Touch(work);                                              // string form and element cache are out of date
+    } else {
+	if (NeedBA(interp, srcA, &x) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (srcB != NULL) {
+	    if (NeedBA(interp, srcB, &y) != TCL_OK) {
+	        return TCL_ERROR;
+	    }
+	    if (BitOpCompat(interp, name, x, y, zero) != TCL_OK) {
+	        return TCL_ERROR;
+	    }
+	}
+	if ((d = NewRep(interp, x->len, x->width, x->isSigned)) == NULL) {                // new result: first array's length, width, sign
+	    return TCL_ERROR;
+	}
+	BitOpWords(d, x, y, op);
+	MaskTail(d);
+	work = WrapRep(d);
+    }
+    Tcl_IncrRefCount(work);                                                 // keep the result alive until the variable has it
+    obj = Tcl_ObjSetVar2(interp, dstName, NULL, work, TCL_LEAVE_ERR_MSG);   // the variable now holds the result
+    Tcl_DecrRefCount(work);
+    return obj ? TCL_OK : TCL_ERROR;
+
+  usage:
+    Tcl_WrongNumArgs(interp, 2, objv, isNot ? "varName ?<- array?"
+	    : "?-length strict|zero? varName ?<-? array ?array?");
+    return TCL_ERROR;
+}
+
+static int
+BitarrayCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+{
+    static const char *const subs[] = {
+	"new", "newfrom", "width", "is", "count", "next", "fill",
+	"frombytes", "tobytes", "fromchars", "tochars",
+	"and", "or", "xor", "andnot", "not", "version", NULL
+    };
+    enum { S_NEW, S_NEWFROM, S_WIDTH, S_IS, S_COUNT, S_NEXT, S_FILL,
+	   S_FROMBYTES, S_TOBYTES, S_FROMCHARS, S_TOCHARS,
+	   S_AND, S_OR, S_XOR, S_ANDNOT, S_NOT, S_VERSION };
+    int sub, bit, width, isSigned = 0;
+    BitArr *b = NULL, *n;
+    Tcl_Size i, first, last;
+    Tcl_WideInt w;
+    uint64_t val;
+    Tcl_Obj *valObj;
+
+    (void)cd;   // unused
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "subcommand ?arg ...?");
+	return TCL_ERROR;
+    }
+    if (Tcl_GetIndexFromObj(interp, objv[1], subs, "subcommand", 0, &sub)   // an unambiguous abbreviation of the name is accepted
+	    != TCL_OK) {
+	return TCL_ERROR;
+    }
+    switch (sub) {   // the bitwise ones have their own function
+    case S_AND:    return BitOpCmd(interp, objc, objv, BO_AND);
+    case S_OR:     return BitOpCmd(interp, objc, objv, BO_OR);
+    case S_XOR:    return BitOpCmd(interp, objc, objv, BO_XOR);
+    case S_ANDNOT: return BitOpCmd(interp, objc, objv, BO_ANDNOT);
+    case S_NOT:    return BitOpCmd(interp, objc, objv, BO_NOT);
+    case S_VERSION:
+	if (objc != 2) {
+	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(BA_VERSION, -1));
+	return TCL_OK;
+    case S_NEW:
+	if (objc < 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "size ?value? ?-width w?");
+	    return TCL_ERROR;
+	}
+	if (Tcl_GetWideIntFromObj(interp, objv[2], &w) != TCL_OK) {                // the size, as a 64-bit number
+	    return TCL_ERROR;
+	}
+	if (ParseCreateArgs(interp, objc, objv, 3, 1, &width, &isSigned, &valObj,
+		"size ?value? ?-width w?") != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	val = 0;   // the default value is 0
+	if (valObj != NULL && ParseValue(interp, valObj, width, isSigned, &val) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (w < 0 || w > BA_MAX_BITS / width) {   // too many bits? checked in 64 bits before narrowing
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "bitarray size out of range", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "SIZE", NULL);
+	    return TCL_ERROR;
+	}
+	if ((n = NewRep(interp, (Tcl_Size)w, width, isSigned)) == NULL) {
+	    return TCL_ERROR;
+	}
+	if (val && n->len > 0) {   // a non-zero start value: fill; zero is there already
+	    if (width == 1) {
+		SetRangeOnes(n, 0, n->len - 1, 1);
+	    } else if (width == 8) {
+		memset(n->words, (int)val, (size_t)n->len);   // 8-bit: every byte the same
+	    } else {
+		for (i = 0; i < n->len; i++) {
+		    PutElem(n, i, val);
+		}
+	    }
+	}
+	Tcl_SetObjResult(interp, WrapRep(n));
+	return TCL_OK;
+    case S_NEWFROM: {
+	Tcl_Size ec;
+	Tcl_Obj **ev;
+
+	if (objc < 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "list ?-width w?");
+	    return TCL_ERROR;
+	}
+	if (ParseCreateArgs(interp, objc, objv, 3, 0, &width, &isSigned, &valObj,
+		"list ?-width w?") != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (Tcl_ListObjGetElements(interp, objv[2], &ec, &ev) != TCL_OK) {   // any list (a bitarray answers via BAGetElements)
+	    return TCL_ERROR;
+	}
+	for (i = 0; i < ec; i++) {                                           // check every value first, then build
+	    if (ParseValue(interp, ev[i], width, isSigned, &val) != TCL_OK) {
+	        return TCL_ERROR;
+	    }
+	}
+	if ((n = NewRep(interp, ec, width, isSigned)) == NULL) {
+	    return TCL_ERROR;
+	}
+	for (i = 0; i < ec; i++) {
+	    ParseValue(NULL, ev[i], width, isSigned, &val);   // cannot fail now
+	    if (val) {                  // the array starts as all 0
+	        PutElem(n, i, val);
+	    }
+	}
+	Tcl_SetObjResult(interp, WrapRep(n));
+	return TCL_OK;
+    }
+    case S_WIDTH:
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "array");
+	    return TCL_ERROR;
+	}
+	if (NeedBA(interp, objv[2], &b) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(SignedWidth(b)));
+	return TCL_OK;
+    case S_IS:
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "value");
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(ISBA(objv[2])));
+	return TCL_OK;
+    case S_COUNT: {
+	int anyNZ = 1;
+	Tcl_WideInt cnt;
+
+	int kc = 4, hasVal = 0;                                           // kc: the next argument to look at
+	Tcl_Obj *valObj = NULL;
+
+	if (objc < 3 || objc == 4) {               // "count BA FIRST" with no LAST is incomplete
+	    goto countUsage;
+	}
+	if (NeedBA(interp, objv[2], &b) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	first = 0; last = b->len - 1;                                     // the default range is the whole array
+	if (objc >= 5) {
+	    Tcl_Obj *lastObj;
+	    if (IsWord(objv[kc], "to") || IsWord(objv[kc], "..")) {    // optional "to" or ".."
+	        kc++;
+	    }
+	    if (kc >= objc) {
+	        goto countUsage;
+	    }
+	    lastObj = objv[kc++];
+	    if (kc < objc && IsWord(objv[kc], "with")) {                  // optional "with"
+		kc++;
+		if (kc >= objc) {
+		    goto countUsage;
+		}
+	    }
+	    if (kc < objc) {                   // the value to count
+	        valObj = objv[kc++];
+	    }
+	    if (kc != objc) {               // anything left over is a usage error
+	        goto countUsage;
+	    }
+	    hasVal = (valObj != NULL);
+	    if (Tcl_GetIntForIndex(interp, objv[3], b->len - 1, &first) != TCL_OK
+		    || Tcl_GetIntForIndex(interp, lastObj, b->len - 1, &last)
+		    != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (first < 0) {         // clamp to the array
+	        first = 0;
+	    }
+	    if (last >= b->len) {
+	        last = b->len - 1;
+	    }
+	}
+	val = 1;                        // no value given: count the 1s (or the non-zero elements)
+	if (hasVal) {
+	    if (ParseValue(interp, valObj, b->width, b->isSigned, &val) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    anyNZ = 0;
+	}
+	if (b->width == 1) {
+	    cnt = CountRange(b, first, last);   // the number of 1 bits
+	    if (!anyNZ && val == 0) {           // zeros wanted: the length of the range minus the ones
+		cnt = (first > last) ? 0 : (Tcl_WideInt)(last - first + 1) - cnt;
+	    }
+	} else {
+	    cnt = CountWide(b, first, last, anyNZ, val);
+	}
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(cnt));
+	return TCL_OK;
+    countUsage:
+	Tcl_WrongNumArgs(interp, 2, objv, "array ?first ?to? last ?with? ?value??");
+	return TCL_ERROR;
+    }
+    case S_NEXT: {
+	int anyNZ = 1;
+
+	int kn = 4;                                    // kn: the next argument to look at
+	Tcl_Obj *valObjN = NULL;
+
+	if (objc < 4) {              // next BA START ?with? ?VALUE?
+	    goto nextUsage;
+	}
+	if (NeedBA(interp, objv[2], &b) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (kn < objc && IsWord(objv[kn], "with")) {   // optional "with"
+	    kn++;
+	    if (kn >= objc) {
+	        goto nextUsage;
+	    }
+	}
+	if (kn < objc) {
+	    valObjN = objv[kn++];
+	}
+	if (kn != objc) {
+	    goto nextUsage;
+	}
+	if (Tcl_GetIntForIndex(interp, objv[3], b->len - 1, &first) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	val = 1;   // no value given: the next 1 (or non-zero element)
+	if (valObjN != NULL) {
+	    if (ParseValue(interp, valObjN, b->width, b->isSigned, &val) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    anyNZ = 0;
+	}
+	if (b->width == 1) {
+	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
+		    NextBit(b, first, (int)val)));
+	} else {
+	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
+		    NextWide(b, first, anyNZ, val)));
+	}
+	return TCL_OK;
+    nextUsage:
+	Tcl_WrongNumArgs(interp, 2, objv, "array start ?with? ?value?");
+	return TCL_ERROR;
+    }
+    case S_FROMBYTES: {
+	const unsigned char *bytes;
+	Tcl_Size nb;
+
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "data");
+	    return TCL_ERROR;
+	}
+	bytes = Tcl_GetBytesFromObj(interp, objv[2], &nb);              // an error unless the value is a byte string
+	if (bytes == NULL) {
+	    return TCL_ERROR;
+	}
+	if ((n = NewRep(interp, nb, 8, 0)) == NULL) {                // one 8-bit element per byte
+	    return TCL_ERROR;
+	}
+	if (nb > 0) {                                   // the bytes are the elements, as they are
+	    memcpy(n->words, bytes, (size_t)nb);
+	}
+	Tcl_SetObjResult(interp, WrapRep(n));
+	return TCL_OK;
+    }
+    case S_TOBYTES:
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "array");
+	    return TCL_ERROR;
+	}
+	if (NeedBA(interp, objv[2], &b) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (b->width != 8 || b->isSigned) {   // only unsigned 8-bit arrays are bytes
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "tobytes: array has width %d; only width 8 can be written as bytes",
+		    SignedWidth(b)));
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(   // one byte per element
+		(const unsigned char *)b->words, b->len));
+	return TCL_OK;
+    case S_FROMCHARS: {
+	Tcl_Size nc;
+	int ch;
+	uint64_t maxv;
+
+	if (objc != 3 && objc != 5) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "string ?-width w?");
+	    return TCL_ERROR;
+	}
+	width = 8;                                                 // the default width
+	if (objc == 5) {
+	    if (strcmp(Tcl_GetString(objv[3]), "-width") != 0) {   // the only option is -width
+		Tcl_WrongNumArgs(interp, 2, objv, "string ?-width w?");
+		return TCL_ERROR;
+	    }
+	    if (ParseWidthArg(interp, objv[4], &width, &isSigned) != TCL_OK) {
+	        return TCL_ERROR;
+	    }
+	}
+	if (isSigned || (width != 8 && width != 16 && width != 32)) {   // not signed, and 8, 16 or 32 only
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "fromchars: -width must be 8, 16 or 32", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
+	    return TCL_ERROR;
+	}
+	maxv = ((uint64_t)1 << width) - 1;         // the largest code that fits
+	nc = Tcl_GetCharLength(objv[2]);           // the number of characters, not bytes
+	for (i = 0; i < nc; i++) {
+	    ch = Tcl_GetUniChar(objv[2], i);       // the character code
+	    if (ch < 0 || (uint64_t)ch > maxv) {   // the code must fit the width
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"character U+%04X at index %" TCL_SIZE_MODIFIER "d does not fit in width %d",
+			ch, i, width));
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
+		return TCL_ERROR;
+	    }
+	}
+	if ((n = NewRep(interp, nc, width, 0)) == NULL) {
+	    return TCL_ERROR;
+	}
+	for (i = 0; i < nc; i++) {
+	    ch = Tcl_GetUniChar(objv[2], i);
+	    if (ch) {                           // zero is there already
+	        PutElem(n, i, (uint64_t)ch);
+	    }
+	}
+	Tcl_SetObjResult(interp, WrapRep(n));
+	return TCL_OK;
+    }
+    case S_TOCHARS: {
+	Tcl_UniChar *buf;
+	uint64_t v;
+
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "array");
+	    return TCL_ERROR;
+	}
+	if (NeedBA(interp, objv[2], &b) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if ((b->width != 8 && b->width != 16 && b->width != 32) || b->isSigned) {   // unsigned 8, 16 or 32 only
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "tochars: array has width %d; need width 8, 16 or 32", SignedWidth(b)));
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
+	    return TCL_ERROR;
+	}
+	for (i = 0; i < b->len; i++) {
+	    v = GetElem(b, i);
+	    if (v > 0x10FFFF || (v >= 0xD800 && v <= 0xDFFF)) {   // beyond Unicode, or a surrogate half
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"element %" TCL_SIZE_MODIFIER "d (%" TCL_LL_MODIFIER "u) is not a valid character code",
+			i, (unsigned long long)v));
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
+		return TCL_ERROR;
+	    }
+	}
+	buf = (Tcl_UniChar *)Tcl_Alloc((size_t)(b->len > 0 ? b->len : 1) * sizeof(Tcl_UniChar));   // at least 1: no zero-size alloc
+	for (i = 0; i < b->len; i++) {
+	    buf[i] = (Tcl_UniChar)GetElem(b, i);
+	}
+	Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(buf, b->len));                                  // builds the string, copying buf
+	Tcl_Free(buf);
+	return TCL_OK;
+    }
+    case S_FILL: {
+	Tcl_Obj *obj, *work;
+	Tcl_WideInt step = 1;
+	Tcl_Obj *firstObj, *lastObj, *valueObj;
+	Tcl_Size k;
+
+	/*
+	 * bitarray fill varName first ?to? last ?with? value ?by? ?step?
+	 * The helper words "to" (or "..") "with" and "by" are optional; the step
+	 * may also follow the value with no "by".
+	 */
+	if (objc < 6) {              // the shortest form is fill var first last value
+	    goto fillUsage;
+	}
+	k = 3;                          // k walks the optional words
+	firstObj = objv[k++];
+	if (IsWord(objv[k], "to") || IsWord(objv[k], "..")) {
+	    k++;
+	}
+	if (k >= objc) {
+	    BA_IMPOSSIBLE("objc too small", objc);   // not reached: objc is at least 6 and k at most 5 here
+	}
+	lastObj = objv[k++];
+	if (k < objc && IsWord(objv[k], "with")) {
+	    k++;
+	}
+	if (k >= objc) {
+	    goto fillUsage;
+	}
+	valueObj = objv[k++];
+	if (k < objc && IsWord(objv[k], "by")) {   // "by STEP", or just STEP, or nothing
+	    k++;
+	    if (k != objc - 1) {
+	        goto fillUsage;
+	    }
+	} else if (k < objc - 1) {
+	    goto fillUsage;
+	}
+	obj = Tcl_ObjGetVar2(interp, objv[2], NULL, TCL_LEAVE_ERR_MSG);   // the variable's value
+	if (obj == NULL) {
+	    return TCL_ERROR;
+	}
+	if (NeedBA(interp, obj, &b) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (Tcl_GetIntForIndex(interp, firstObj, b->len - 1, &first) != TCL_OK
+		|| Tcl_GetIntForIndex(interp, lastObj, b->len - 1, &last)
+		!= TCL_OK
+		|| ParseValue(interp, valueObj, b->width, b->isSigned, &val) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (k < objc) {
+	    if (Tcl_GetWideIntFromObj(interp, objv[k], &step) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (step < 1) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"step must be >= 1", -1));
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
+		return TCL_ERROR;
+	    }
+	}
+	if (first > last) {             // an empty range: nothing to do, not an error
+	    return TCL_OK;
+	}
+	if (first < 0 || last >= b->len) {   // out of range is an error
+	    IndexError(interp, first < 0 ? firstObj : lastObj);
+	    return TCL_ERROR;
+	}
+	if (step > (Tcl_WideInt)last - first + 1) {
+	    step = (Tcl_WideInt)last - first + 1;	/* same result, and it fits Tcl_Size */
+	}
+	work = Tcl_IsShared(obj) ? Tcl_DuplicateObj(obj) : obj;   // work on a copy if the value is shared
+	b = GETREP(work);
+	bit = (int)val;                                           // for width 1
+	if (b->width == 1) {
+	    if (step == 1) {                                      // a solid run: whole words at a time
+		SetRangeOnes(b, first, last, bit);
+	    } else {
+		for (i = first; ; i += (Tcl_Size)step) {
+		    if (bit) {
+		        SETBIT(b, i);
+		    } else {
+		        CLRBIT(b, i);
+		    }
+		    if (last - i < step) {     // i + step could pass the end, and overflow, so test last - i
+		        break;
+		    }
+		}
+	    }
+	} else if (b->width == 8) {
+	    unsigned char *p = BYTES(b), c = (unsigned char)val;
+
+	    if (step == 1) {
+		memset(p + first, c, (size_t)(last - first + 1));
+	    } else {
+		for (i = first; ; i += (Tcl_Size)step) {
+		    p[i] = c;
+		    if (last - i < step) {
+		        break;
+		    }
+		}
+	    }
+	} else {
+	    for (i = first; ; i += (Tcl_Size)step) {
+		PutElem(b, i, val);
+		if (last - i < step) {
+		    break;
+		}
+	    }
+	}
+	Touch(work);              // string form and element cache are out of date
+	Tcl_IncrRefCount(work);   // keep it alive until the variable has it
+	obj = Tcl_ObjSetVar2(interp, objv[2], NULL, work, TCL_LEAVE_ERR_MSG);
+	Tcl_DecrRefCount(work);
+	return obj ? TCL_OK : TCL_ERROR;
+
+      fillUsage:
+	Tcl_WrongNumArgs(interp, 2, objv,
+		"varName first ?to? last ?with? value ?by? ?step?");
+	return TCL_ERROR;
+    }
+    }
+    BA_IMPOSSIBLE("no case matched", 0);   // not reached: every case returns
+}
+
+#ifdef BA_TEST
+/* Test build only: "bitarray_test maxbits N" sets the size limit, "bitarray_test failalloc K" makes one allocation fail,
+ * "bitarray_test getelem W" / "putelem W" call GetElem / PutElem with the width W (to run the BA_IMPOSSIBLE panics). */
+#ifdef BA_GCOV
+extern void __gcov_dump(void);   // only when built with --coverage -DBA_GCOV (extras/coverage.sh)
+#endif
+static void baAbort(int sig)
+{
+#ifdef BA_GCOV
+    __gcov_dump();   // the coverage counts of this process would be lost otherwise
+#endif
+    _exit(128 + sig);   // no coverage
+}
+static int
+BitarrayTestCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+{
+    Tcl_WideInt w;
+    Tcl_WideInt times = 1;
+
+    (void)cd;
+
+    const char *cmd = objc > 1 ? Tcl_GetString(objv[1]) : "";
+
+    if ((objc != 3 && objc != 4) || Tcl_GetWideIntFromObj(interp, objv[2], &w) != TCL_OK
+	    || (objc == 4 && Tcl_GetWideIntFromObj(interp, objv[3], &times) != TCL_OK)
+	    || (strcmp(cmd, "maxbits") && strcmp(cmd, "failalloc") && strcmp(cmd, "getelem") && strcmp(cmd, "putelem"))) {
+	Tcl_WrongNumArgs(interp, 1, objv, "maxbits N | failalloc K ?times? | getelem WIDTH | putelem WIDTH");
+	return TCL_ERROR;
+    }
+    if (strcmp(cmd, "maxbits") == 0) {
+	baTestMax = w;
+    } else if (strcmp(cmd, "failalloc") == 0) {
+	baFailAfter = (int)w;
+	baFailCount = (int)times;
+    } else {   // getelem / putelem: call GetElem / PutElem on an array whose width has been changed to WIDTH
+	BitArr *b = NewRep(interp, 4, 8, 0);
+
+	if (b == NULL) {
+	    return TCL_ERROR;   // fi-6.6: "failalloc 0" first makes this allocation fail
+	}
+	b->width = (unsigned char)w;
+	if (strcmp(cmd, "getelem") == 0) {
+	    (void)GetElem(b, 0);
+	} else {
+	    PutElem(b, 0, 1);
+	}
+	b->width = 8;
+	FreeRep(b);
+    }
+    return TCL_OK;
+}
+#endif
+
+DLLEXPORT int
+Bitarray_Init(Tcl_Interp *interp)
+{
+    if (Tcl_InitStubs(interp, "9.1", 0) == NULL) {                // Tcl 9.1 or newer: the abstract-list hooks need it
+        return TCL_ERROR;   // not reached: only a Tcl older than 9.1 gets here   // no coverage
+    }
+    Tcl_CreateObjCommand2(interp, "bitarray", BitarrayCmd, NULL, NULL);   // the Tcl_Size (64-bit) form of the command procedure
+#ifdef BA_TEST
+    Tcl_CreateObjCommand2(interp, "bitarray_test", BitarrayTestCmd, NULL, NULL);   // test build only
+    signal(SIGABRT, baAbort);   // Tcl_Panic kills the process (SIGILL or SIGABRT): save the coverage counts first
+    signal(SIGILL, baAbort);
+    signal(SIGSEGV, baAbort);
+#endif
+    return Tcl_PkgProvide(interp, "bitarray", BA_VERSION);
+}

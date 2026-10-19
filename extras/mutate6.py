@@ -34,6 +34,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.environ.get('BITARRAY_ROOT', os.path.dirname(HERE))      # the folder holding bitarray.c and tests/
 SRC = open(os.path.join(ROOT, 'bitarray.c')).read()
 TESTFILE = os.path.join(ROOT, 'tests', 'bitarray.test')
+FAULTFILE = os.path.join(ROOT, 'tests', 'faultinject.test')      # needs the test build (-DBA_TEST): size limit, failing allocations, BA_IMPOSSIBLE panics
 OUT = os.path.abspath(A.out or HERE)
 os.makedirs(OUT, exist_ok=True)
 
@@ -110,19 +111,23 @@ def run_one(item):
     try:
         open(d + '/bitarray.c', 'w').write(SRC.replace(old, new))
         INC = [os.environ['BITARRAY_INCLUDE']] + ([os.environ['BITARRAY_INCLUDE2']] if 'BITARRAY_INCLUDE2' in os.environ else [])
-        cmd = [CC, '-O2', '-fPIC', '-shared', '-DUSE_TCL_STUBS'] + ['-I' + i for i in INC] + [d + '/bitarray.c', os.environ['BITARRAY_STUBLIB'], '-o', d + '/libbitarray.so']
+        cmd = [CC, '-O2', '-fPIC', '-shared', '-DUSE_TCL_STUBS', '-DBA_TEST'] + ['-I' + i for i in INC] + [d + '/bitarray.c', os.environ['BITARRAY_STUBLIB'], '-o', d + '/libbitarray.so']
         c = subprocess.run(cmd, capture_output=True, text=True)
         if c.returncode:
             rec.update(result='NOCOMPILE', tests=[], detail=c.stderr[-300:]); return rec
         env = dict(os.environ, BITARRAY_LIB=d + '/libbitarray.so')
-        try:
-            r = subprocess.run([os.environ['BITARRAY_TCLSH'], TESTFILE, '-verbose', 'body start'], cwd=d, env=env,
-                               capture_output=True, text=True, timeout=300)
-        except subprocess.TimeoutExpired as e:
-            out = (e.stdout or b'')
-            out = out.decode('utf-8', 'replace') if isinstance(out, bytes) else out
-            starts = re.findall(r'^---- (\S+) start$', out, re.M)
-            rec.update(result='CAUGHT', how='timeout', tests=[], running=starts[-1] if starts else None); return rec
+        for tf in (TESTFILE, FAULTFILE):
+            try:
+                r = subprocess.run([os.environ['BITARRAY_TCLSH'], tf, '-verbose', 'body start'], cwd=d, env=env,
+                                   capture_output=True, text=True, timeout=300)
+            except subprocess.TimeoutExpired as e:
+                out = (e.stdout or b'')
+                out = out.decode('utf-8', 'replace') if isinstance(out, bytes) else out
+                starts = re.findall(r'^---- (\S+) start$', out, re.M)
+                rec.update(result='CAUGHT', how='timeout', tests=[], running=starts[-1] if starts else None); return rec
+            m_ = re.search(r'Total\s+(\d+)\s+Passed\s+(\d+).*Failed\s+(\d+)', r.stdout)
+            if r.returncode != 0 or not m_ or int(m_.group(3)) > 0:
+                break          # caught by this file: no need to run the next
         out = r.stdout
         failed = []
         for t in re.findall(r'^==== (\S+) FAILED$', out, re.M):

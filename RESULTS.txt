@@ -1,4 +1,4 @@
-RESULTS -- bitarray 0.8.0 (sections 8-13a are the 0.3 results; section 14 is 0.4; section 15 is 0.5; section 16 is 0.5.1; section 17 is 0.6.0; section 18 is 0.7.0; section 19 is 0.8.0) (run 2026-10-13, Linux container, gcc -O2, Tcl trunk 3d77be8951)
+RESULTS -- bitarray 0.8.2 (sections 8-13a are the 0.3 results; section 14 is 0.4; section 15 is 0.5; section 16 is 0.5.1; section 17 is 0.6.0; section 18 is 0.7.0; section 19 is 0.8.0; section 20 is 0.8.1; section 21 is 0.8.2) (run 2026-10-13, Linux container, gcc -O2, Tcl trunk 3d77be8951)
 
 Sections 8-13 are new in 0.3.  Sections 1-7 are the 0.2 results, kept for history; where a number there was for 1-bit
 arrays only it is still true of the 1-bit code, which 0.3 keeps (the 66 old tests pass unchanged apart from "from" ->
@@ -525,3 +525,54 @@ arrays only it is still true of the 1-bit code, which 0.3 keeps (the 66 old test
    Failed 0; sieve PASS at every limit; listbench: 42 operations compared, same answers in every column.  Not run: a 32-bit build.
    Stepper (extras/bitarray_stepper.html): syntax colour, tcl.h and the Tcl declarations one level deep, a Fold box, a Show code / Show memory switch.
    Tcl core ticket 0c82728f85760f36361fe42a15f55453c94d285d: the patch and tests are in extras/typeloss_ticket_comment.md.
+
+20. Version 0.8.1: lpop fix, braces, 26 tests (2026-10-18, Linux container, gcc -O2, Tcl 9.1.1)
+   Bug fixed: `lpop l INDEX` (for example `lpop l end`) on a bitarray crashed: the core calls the setElementProc hook with a NULL value for lpop and BASetElement
+   read it.  The hook now checks the index, deletes the element from a copy of the array and returns the copy (always a copy: Tcl_LpopObjCmd lowers the reference count of the
+   hook's result, TclLsetList does not; see extras/DESIGN_LOG.md).  Tests lpop-1.1 to 1.11, every width, shared values, error cases; valgrind clean.
+   Style: every if/else/for/while body in bitarray.c is braced and on its own line(s) (one script run; objdump -d of the object file at -O2 is byte-identical before and
+   after).  Reason: gcov counts per line.  gcov (extras/coverage_0.8.1.txt): 94.3% of 1017 lines run by the tests (92.8% of 1008 before); the 29 untested lines that a script can
+   reach got tests cov-1.1 to cov-2.4; the rest is out-of-memory / size-limit code and code the core makes unreachable.
+   Tests: Total 314, Passed 308, Skipped 6 (coreTypeLoss), Failed 0; the same with -DBA_NO_BUILTINS, -DBA_FORCE_32BIT_LIMITS and -Wall -Wextra (no warnings); with --testbug the
+   6 coreTypeLoss tests fail as before (Tcl 9.1.1 without extras/core_lappend_typeloss.patch).  Random comparison scripts (diff_lists, diff_bulk, diff_bitops, diff_grow,
+   diff_width at 1, 8, -16 and 64): no mismatches in short runs.
+   Full mutation run of all 210 mutants on 0.8.1: 188 caught, 22 missed, the same 22 as before; the 4 new ones (L01-L04, lpop) are caught (extras/mutation_round14.txt).
+   The patterns of 63 older mutants in mutate5.py were rewritten for the braced text (the same bugs).
+   Not run: Windows (0.8.0 was run on 2026-10-17), a 32-bit build.
+
+21. Version 0.8.2: test hooks and fault-injection tests (2026-10-18, Linux container, gcc, Tcl 9.1.1)
+   bitarray.c: new code only under #ifdef BA_TEST (a test build: bitarray_test maxbits N, bitarray_test failalloc K ?T?, signal handlers that save the gcov counts when
+   Tcl_Panic ends the process) and the two allocation calls that may fail go through the macros BA_ALLOC / BA_REALLOC (= Tcl_AttemptAlloc / Tcl_AttemptRealloc in a normal build).
+   A normal build is unchanged: objdump -d of the object file at -O2 is byte-identical to 0.8.1 (only the version string differs).  Total 315 (one test added to bitarray.test,
+   cov-1.12: `bitarray new x`), Passed 309, Skipped 6, Failed 0; also with -DBA_NO_BUILTINS and -DBA_FORCE_32BIT_LIMITS.  All 210 mutant patterns still match, so the mutation
+   result of 0.8.1 (188 caught, 22 missed) stands for this code; the mutation run was not repeated.
+   New: tests/faultinject.test (23 tests, skipped unless the library is the test build) and extras/coverage.sh (builds the test build, runs both test files, runs gcov).
+   Line coverage (extras/coverage_0.8.2.txt): 97.73% of the 1014 production lines (was 94.30% in 0.8.1 and 92.76% in 0.8.0); the 23 lines that never run are listed there
+   with the reason for each (mostly code the core makes unreachable, plus one Tcl_Panic in Tcl's own allocator).
+   Not run: Windows (0.8.0 was run on 2026-10-17; the test build is Linux only), a 32-bit build.
+
+22. Version 0.8.3: can't-happen branches are panics; mutation run on the test build (2026-10-18, Linux container, gcc, Tcl 9.1.1)
+   bitarray.c: BA_IMPOSSIBLE(what, num) (Tcl_Panic with the function, reason, number, file and line) replaces the unreachable branches in GetElem, PutElem, fill and the end of BitarrayCmd;
+   the width-1 return in GetElem is gone; the test build gets "bitarray_test getelem W / putelem W"; the size limit is defined once (BA_MAX_BITS_NORMAL) and the test build's
+   variable starts from it; __gcov_dump is called only with -DBA_GCOV (coverage.sh).  Total 315 (bitarray.test), Passed 309, Skipped 6, Failed 0; tests/faultinject.test 28 of 28 with the test build.
+   Line coverage (extras/coverage_0.8.3.txt): 98.41% of the 1008 production lines; 16 never run, 2 of them BA_IMPOSSIBLE panics that no script can reach.
+   Mutation (extras/mutation_round15.txt): 217 mutants (7 new: I01-I07, the impossible checks), run with the test build and both test files: 196 CAUGHT, 21 MISSED.
+   Compared with 0.8.1: M34, M35 and W14 (size-limit and growth mutants) are now caught by faultinject.test; I03 and I04 are missed (equivalent: no script reaches those checks).
+   Not run: Windows (the test build is Linux only), a 32-bit build.
+
+23. Version 0.8.4: comments, one more panic, test command renamed (2026-10-18, Linux container, gcc, Tcl 9.1.1)
+   bitarray.c: comments in front of BASlice, BAReplace and BASetElement saying what the core guarantees (checked in the Tcl source: Tcl_ListObjRange normalizes the range before it calls
+   the slice hook; Tcl_ListObjReplace does not clamp before it calls the replace hook, and its manual page defines the clamping, so BAReplace's four clamps are needed; the core checks the
+   index syntax of lset / lpop first); a "not reached" comment on every line the tests never run; the failure of the one-element delete in lpop (BASetElement) is a BA_IMPOSSIBLE panic
+   (deleting never allocates); BaTestCmd is BitarrayTestCmd.  tests/faultinject.test: fi-6.6 (29 tests).  Total 315 (bitarray.test), Passed 309, Skipped 6, Failed 0; faultinject.test 29 of 29.
+   Line coverage (extras/coverage_0.8.4.txt): 98.51% of the 1008 production lines; 15 never run, 3 of them BA_IMPOSSIBLE panics.
+   Mutation: NOT repeated for 0.8.4; the 0.8.3 result stands for the unchanged code (196 of 217 caught), all 217 patterns still match the 0.8.4 text, and the lpop panic has no mutant yet.
+   Also in this round: a draft ticket for the Tcl core (extras/abstractlist_inconsistencies_ticket.md) on apparent inconsistencies in the abstract list API, tested on the core's own lstring type
+   in a tcltest shell: Tcl_ListObjReplace passes unclamped arguments to a replace hook (lstring then gives a negative length for first=3, count=99), lpop leaves an lstring with one reference too few.
+   Not run: Windows, a 32-bit build.
+
+24. Version 0.8.5: MSVC warning C4715 (2026-10-19, Linux container, gcc, Tcl 9.1.1; the warning was seen by ET on Windows, MSVC x64, with 0.8.4)
+   "warning C4715: 'GetElem': not all control paths return a value" and the same for 'BitarrayCmd': on MSVC Tcl_Panic is not known to be noreturn, so a function that ends in BA_IMPOSSIBLE
+   looks as if it can fall off its end.  gcc knows, so gcc -Wall -Wextra was clean.  Fix: BA_IMPOSSIBLE is (Tcl_Panic(...), abort()); abort() is never reached.  Checked on Linux by compiling with a
+   Tcl_Panic that gcc cannot treat as noreturn (-O2 -Wall -Wextra): 2 -Wreturn-type warnings (the same two functions) before, 0 after.  Total 315 (bitarray.test), Passed 309, Skipped 6, Failed 0;
+   faultinject.test 29 of 29; coverage unchanged (extras/coverage_0.8.5.txt: 98.51% of 1008, 15 never run, 3 panics).  Mutation not repeated.  Not run here: MSVC itself (ET's Windows rerun).

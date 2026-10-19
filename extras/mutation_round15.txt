@@ -1,0 +1,5 @@
+# mutation_round15: a full run of all 217 mutants on 0.8.3 (2026-10-18), built with -DBA_TEST and judged by tests/bitarray.test and then tests/faultinject.test.
+# 217 mutants: 196 CAUGHT, 21 MISSED.  The 19 old misses are the ones explained in mutation_round12.txt (M34, M35 and W14 of the old 22 are now caught by faultinject.test).
+# New: I01-I07 (the BA_IMPOSSIBLE checks): I01, I02, I05, I06, I07 caught (fi-6.1 to fi-6.3, crashes); I03 (fill) and I04 (end of BitarrayCmd) are MISSED because no Tcl script reaches those two checks (equivalent mutants).
+# The record is in mutants.json, mutation_summary.txt and bitarray.mutants.  Run: python3 extras/mutate6.py --jobs 2 (the output of a run is a new folder; it resumes from mutants.partial.jsonl)
+# Since then (0.8.4, 0.8.5): bitarray.mutants / mutation_summary.txt were re-laid out on the 0.8.4 text (same 217 mutants, same results, new line numbers); the run itself was not repeated, and the lpop panic in BASetElement has no mutant yet.

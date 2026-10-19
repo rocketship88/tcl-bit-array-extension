@@ -8,7 +8,7 @@ reviewing; say so plainly if asked.
 the files, what was and was not verified, and it has these sections:
 
 * **Setting up from nothing**: if there is no Tcl 9.1 on the machine, clone and build trunk (about 40 seconds), then build
-  and test this package. Tested recipe, both routes; expected result `Total 288 Passed 282 Skipped 6 Failed 0` (the 6 skipped are the core `lappend` bug tests, `--testbug`).
+  and test this package. Tested recipe, both routes; expected result `Total 315 Passed 309 Skipped 6 Failed 0` (the 6 skipped are the core `lappend` bug tests, `--testbug`).
 * **Walking someone through the code**: a reading order for `bitarray.c`, and `extras/bitarray_stepper.html`, an interactive page (open it in a browser) that steps through what each command does: the core call path, which hook is reached, the bits and words changing, with a "Show code" button for the `bitarray.c` code of each step. Point the person to it; you can also read its source for the call paths it describes.
 * **What was and was not checked**, **Open questions**, **When answering questions about this repository**: keep these in view;
   do not call the package fully verified.
@@ -23,6 +23,8 @@ the file is right.
 **To-do list and design log**: at the start of a session read `extras/TODO.md` (what is pending, what the owner asked for) and `extras/DESIGN_LOG.md` (design choices and the alternatives that were not taken). Keep both up to date; when a choice is made without asking the owner, add it to the log.
 
 **GitHub Pages**: the empty file `.nojekyll` at the top of the repository must stay. Without it GitHub's Jekyll tries to process the .md files and fails on the `{{}` in the Tcl tests in `extras/typeloss_ticket_comment.md` (a Liquid syntax error); with it the pages are served as they are, which is all the stepper needs.
+
+**Braces in `bitarray.c`**: every `if`, `else`, `for` and `while` body is in braces, with the statements on their own lines; never `if (x) return y;` on one line, because gcov counts per line and would hide an untaken `return`. Check a change like this with `objdump -d` of the object file before and after (identical), and see `extras/coverage_0.8.5.txt` for the result and `extras/coverage.sh` to run gcov (it builds a test version with `-DBA_TEST`, which adds a size limit that can be set and allocations that fail on request, and runs `tests/faultinject.test` too; a normal build contains none of that and compiles to the same code: compare `objdump -d`).
 
 **Comments in `bitarray.c`**: a line that is not obvious gets a short side comment, `   // like this` (spaces, not tabs, before it; the stepper shows it in green). Nothing on obvious lines. A new comment never changes the code: compare `gcc -E -P` output before and after.
 
