@@ -34,7 +34,7 @@
  */
 
 #include <tcl.h>
-#define BA_VERSION "0.9.3"	/* the one place the version is set (also in pkgIndex.tcl) */
+#define BA_VERSION "0.9.4"	/* the one place the version is set (also in pkgIndex.tcl) */
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -1591,6 +1591,8 @@ static const struct {
     {"ge", BO_GE},         {">=", BO_GE},
     {NULL, 0}
 };
+static const char *const opMsgNames[] = { "op and", "op or", "op xor", "op andnot", "op not", "op land", "op lor", "op lnot",
+    "op eq", "op ne", "op lt", "op le", "op gt", "op ge" };   // the same, as error messages name them ("bitarray op and: ...")
 static const char *const opNames[] = { "and", "or", "xor", "andnot", "not", "land", "lor", "lnot",
     "eq", "ne", "lt", "le", "gt", "ge" };   // the name of each BO_ code (the first five are subcommands)
 
@@ -1622,8 +1624,8 @@ OpValue(Tcl_Interp *interp, int op, const BitArr *x, const BitArr *y, int zero)
     BitArr *d;
     Tcl_Size i;
 
-    if (y != NULL && (op >= BO_LAND ? BitLenCompat(interp, opNames[op], x, y, zero)
-	    : BitOpCompat(interp, opNames[op], x, y, zero)) != TCL_OK) {
+    if (y != NULL && (op >= BO_LAND ? BitLenCompat(interp, opMsgNames[op], x, y, zero)
+	    : BitOpCompat(interp, opMsgNames[op], x, y, zero)) != TCL_OK) {
 	return NULL;
     }
     if (op < BO_LAND) {
@@ -1802,7 +1804,7 @@ RelValue(Tcl_Interp *interp, int op, Tcl_Obj *objA, Tcl_Obj *objB, int hasLength
 	return NULL;
     }
     if (x != NULL && y != NULL) {
-	if (BitLenCompat(interp, opNames[op], x, y, zero) != TCL_OK) {
+	if (BitLenCompat(interp, opMsgNames[op], x, y, zero) != TCL_OK) {
 	    return NULL;
 	}
     } else if (hasLength) {
@@ -1881,6 +1883,59 @@ ScalarApply(BitArr *dst, const BitArr *x, uint64_t pat, int op, int scalarFirst)
     }
 }
 
+static int
+OpUsage(Tcl_Interp *interp)
+{
+    return OpError(interp, Tcl_NewStringObj("wrong # args: should be \"bitarray op ?-length strict|zero? ?varName =? array1 operator array2\""
+	    " or \"bitarray op ?-length strict|zero? ?varName =? operator array\" (a wrong operator lists the valid ones)", -1));
+}
+
+/*
+ * OpPositionError --
+ *	The word where bitarray op expects an operator is not one.  Say what the user most likely did, from the other
+ *	words: the operator is there but a word is missing or out of place, or the word is simply a bad operator (only then
+ *	are all the operators listed).  FIRST is the index of the first word of the expression; REST is the number of words
+ *	(2 or 4: the operator comes first, 3 or 5: it is in the middle).
+ */
+static int
+OpPositionError(Tcl_Interp *interp, Tcl_Obj *const objv[], Tcl_Size first, Tcl_Size rest)
+{
+    int front = (rest == 2 || rest == 4);                   // the operator should be the first word of the expression
+    const char *pre = (rest >= 4) ? "varName = " : "";
+    Tcl_Obj *w0 = objv[first], *w1 = objv[first + 1], *bad;
+    int k;
+    Tcl_WideInt probe;
+
+    if (front) {
+	if ((k = FindOperator(w1)) >= 0 && !IS_UNARY(opWords[k].op)) {   // "foo = bar and": a binary operator with its first operand only
+	    int o = opWords[k].op;
+
+	    return OpError(interp, Tcl_ObjPrintf("bitarray op: \"%s\" needs two %s: %s%s %s %s",
+		    opWords[k].word, o >= BO_EQ ? "operands" : "arrays", pre, o >= BO_EQ ? "operand1" : "array1",
+		    opWords[k].word, o >= BO_EQ ? "operand2" : "array2"));
+	}
+	if (k >= 0) {                                              // "foo = bar not": the one-array operator goes in front
+	    return OpError(interp, Tcl_ObjPrintf("bitarray op: \"%s\" goes in front of its array: %s%s array",
+		    opWords[k].word, pre, opWords[k].word));
+	}
+	if (ISBA(w0)) {   // an array where the operator belongs: the words are in the wrong places
+	    return OpUsage(interp);
+	}
+	// neither word is an operator: blame the second if it is a plain word (a value or an array is not the operator), else the first
+	bad = (!ISBA(w1) && Tcl_GetWideIntFromObj(NULL, w1, &probe) != TCL_OK) ? w1 : w0;
+    } else {
+	if ((k = FindOperator(w0)) >= 0) {                         // "and $a $b": the operator is in front of both arrays
+	    return OpError(interp, Tcl_ObjPrintf("bitarray op: \"%s\" goes between the arrays: %sarray1 %s array2",
+		    opWords[k].word, pre, opWords[k].word));
+	}
+	if (ISBA(w1)) {   // an array where the operator belongs: the words are in the wrong places
+	    return OpUsage(interp);
+	}
+	bad = w1;
+    }
+    return OpError(interp, Tcl_ObjPrintf("bad operator \"%.40s\": must be one of: and  &  or  |  xor  ^  andnot  &~  &!  not  ~  land  &&  lor  ||  lnot  !  eq  ==  ne  !=  lt  <  le  <=  gt  >  ge  >=", Tcl_GetString(bad)));
+}
+
 /*
  * OpCmd --
  *	bitarray op ?-length strict|zero? varName = array1 operator array2
@@ -1921,6 +1976,10 @@ OpCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     if (rest < 2 || rest > 5) {
 	goto usage;
     }
+    if (rest <= 3 && !ISBA(objv[idx + 1]) && IsWord(objv[idx + 1], "=")) {   // "foo =" or "foo = bar": nothing to compute
+	return OpError(interp, Tcl_ObjPrintf("bitarray op: after \"%.40s =\" expected \"array1 operator array2\" or \"operator array\"",
+		Tcl_GetString(objv[idx])));
+    }
     if (rest >= 4) {   // the variable form: varName = ...
 	if (ISBA(objv[idx + 1]) || !IsWord(objv[idx + 1], "=")) {
 	    goto usage;
@@ -1934,7 +1993,7 @@ OpCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     }
     if (rest == 2 || rest == 4) {   // one array: the operator comes before it and must be a one-array operator
 	if ((k = FindOperator(objv[first])) < 0) {
-	    goto badOperator;
+	    return OpPositionError(interp, objv, first, rest);
 	}
 	op = opWords[k].op;
 	if (!IS_UNARY(op)) {
@@ -1945,7 +2004,7 @@ OpCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	srcA = objv[first + 1];
     } else {   // two arrays: the operator is between them
 	if ((k = FindOperator(objv[first + 1])) < 0) {
-	    goto badOperator;
+	    return OpPositionError(interp, objv, first, rest);
 	}
 	op = opWords[k].op;
 	if (IS_UNARY(op)) {
@@ -1972,9 +2031,13 @@ OpCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	} else if (!aArr && !bArr && !sameName) {   // neither is an array: two integers, or something that is neither
 	    Tcl_WideInt probeA, probeB;
 
-	    if (Tcl_GetWideIntFromObj(NULL, srcA, &probeA) == TCL_OK && Tcl_GetWideIntFromObj(NULL, srcB, &probeB) == TCL_OK) {
+	    int okA = Tcl_GetWideIntFromObj(NULL, srcA, &probeA) == TCL_OK, okB = Tcl_GetWideIntFromObj(NULL, srcB, &probeB) == TCL_OK;
+
+	    if (okA && okB) {
 		return OpError(interp, Tcl_NewStringObj("bitarray op: at least one operand must be a bitarray", -1));
 	    }
+	    return OpError(interp, Tcl_ObjPrintf("bitarray op: expected a bitarray or an integer of at most 64 bits but got \"%.40s\"",
+		    Tcl_GetString(okA ? srcB : srcA)));   // two words, at least one not a number: "a and b" without the $
 	}
     }
     if (sameName && scalar) {   // "varName = varName and 5": the variable is updated in place, copied first if something else holds it
@@ -2037,7 +2100,7 @@ OpCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	return stored ? TCL_OK : TCL_ERROR;
     }
 
-    subObj = Tcl_NewStringObj(opNames[op], -1);   // the rewritten command: and|or|xor|andnot|not ?-length m? var <- a ?b?
+    subObj = Tcl_NewStringObj(opMsgNames[op], -1);   // the rewritten command: and|or|xor|andnot|not ?-length m? var <- a ?b?; its name is only used in error messages ("bitarray op and: ...")
     arrowObj = Tcl_NewStringObj("<-", 2);
     Tcl_IncrRefCount(subObj);
     Tcl_IncrRefCount(arrowObj);
@@ -2064,20 +2127,8 @@ OpCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     Tcl_DecrRefCount(arrowObj);
     return result;
 
-  badOperator:
-    {
-	Tcl_Obj *bad = objv[(rest == 2 || rest == 4) ? first : first + 1];
-
-	if (ISBA(bad)) {   // an array where the operator belongs: the words are in the wrong places, say how they go
-	    goto usage;
-	}
-	return OpError(interp, Tcl_ObjPrintf("bad operator \"%.40s\": must be and, &, or, |, xor, ^, "
-		"andnot, &~, &!, not, ~, land, &&, lor, ||, lnot, !, eq, ==, ne, !=, lt, <, le, <=, gt, >, ge, or >=", Tcl_GetString(bad)));
-    }
-
   usage:
-    Tcl_WrongNumArgs(interp, 2, objv, "?-length strict|zero? ?varName =? array1 operator array2 | ?varName =? not array");
-    return TCL_ERROR;
+    return OpUsage(interp);
 }
 
 static int

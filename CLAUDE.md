@@ -8,7 +8,7 @@ reviewing; say so plainly if asked.
 the files, what was and was not verified, and it has these sections:
 
 * **Setting up from nothing**: if there is no Tcl 9.1 on the machine, clone and build trunk (about 40 seconds), then build
-  and test this package. Tested recipe, both routes; expected result `Total 407 Passed 401 Skipped 6 Failed 0` (the 6 skipped are the core `lappend` bug tests, `--testbug`).
+  and test this package. Tested recipe, both routes; expected result `Total 413 Passed 407 Skipped 6 Failed 0` (the 6 skipped are the core `lappend` bug tests, `--testbug`).
 * **Walking someone through the code**: a reading order for `bitarray.c`, and `extras/bitarray_stepper.html`, an interactive page (open it in a browser) that steps through what each command does: the core call path, which hook is reached, the bits and words changing, with a "Show code" button for the `bitarray.c` code of each step. Point the person to it; you can also read its source for the call paths it describes.
 * **What was and was not checked**, **Open questions**, **When answering questions about this repository**: keep these in view;
   do not call the package fully verified.

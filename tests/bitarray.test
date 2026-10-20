@@ -1394,28 +1394,28 @@ test op-4.1 {op: -length zero, a shorter second array counts as 0} -body {
 test op-4.2 {op: -length strict is the default, and can be given} -body {
     set a [bitarray newfrom $opA]; set s [bitarray newfrom {1 1 1}]
     list [catch {bitarray op c = $a and $s} m1] $m1 [catch {bitarray op -length strict c = $a and $s} m2] $m2
-} -result {1 {bitarray and: arrays differ in length (8 vs 3); use -length zero to allow it} 1 {bitarray and: arrays differ in length (8 vs 3); use -length zero to allow it}}
+} -result {1 {bitarray op and: arrays differ in length (8 vs 3); use -length zero to allow it} 1 {bitarray op and: arrays differ in length (8 vs 3); use -length zero to allow it}}
 test op-4.3 {op: arrays of different width} -returnCodes error -body {
     set a [bitarray newfrom $opA]; set w [bitarray newfrom {1 0 1 1 0 1 1 1} -width 8]
     bitarray op c = $a or $w
-} -result {bitarray or: arrays differ in width (1 vs 8)}
+} -result {bitarray op or: arrays differ in width (1 vs 8)}
 test op-4.4 {op: the error messages name the command the operator stands for (xor, andnot)} -body {
     set a [bitarray newfrom $opA]; set w [bitarray newfrom $opA -width 8]
     list [catch {bitarray op c = $a ^ $w} m1] $m1 [catch {bitarray op c = $a &~ $w} m2] $m2
-} -result {1 {bitarray xor: arrays differ in width (1 vs 8)} 1 {bitarray andnot: arrays differ in width (1 vs 8)}}
-test op-5.1 {op: no arguments} -returnCodes error -body {bitarray op} -result {wrong # args: should be "bitarray op ?-length strict|zero? ?varName =? array1 operator array2 | ?varName =? not array"}
+} -result {1 {bitarray op xor: arrays differ in width (1 vs 8)} 1 {bitarray op andnot: arrays differ in width (1 vs 8)}}
+test op-5.1 {op: no arguments} -returnCodes error -body {bitarray op} -result {wrong # args: should be "bitarray op ?-length strict|zero? ?varName =? array1 operator array2" or "bitarray op ?-length strict|zero? ?varName =? operator array" (a wrong operator lists the valid ones)}
 test op-5.2 {op: the word = is required} -returnCodes error -body {
     set a [bitarray newfrom $opA]; bitarray op r := $a and $a
-} -result {wrong # args: should be "bitarray op ?-length strict|zero? ?varName =? array1 operator array2 | ?varName =? not array"}
+} -result {wrong # args: should be "bitarray op ?-length strict|zero? ?varName =? array1 operator array2" or "bitarray op ?-length strict|zero? ?varName =? operator array" (a wrong operator lists the valid ones)}
 test op-5.3 {op: a missing second array} -returnCodes error -body {
     set a [bitarray newfrom $opA]; bitarray op r = $a and
-} -result {wrong # args: should be "bitarray op ?-length strict|zero? ?varName =? array1 operator array2 | ?varName =? not array"}
+} -result {bitarray op: "and" needs two arrays: varName = array1 and array2}
 test op-5.4 {op: too many words} -returnCodes error -body {
     set a [bitarray newfrom $opA]; bitarray op r = $a and $a $a
-} -result {wrong # args: should be "bitarray op ?-length strict|zero? ?varName =? array1 operator array2 | ?varName =? not array"}
+} -result {wrong # args: should be "bitarray op ?-length strict|zero? ?varName =? array1 operator array2" or "bitarray op ?-length strict|zero? ?varName =? operator array" (a wrong operator lists the valid ones)}
 test op-5.5 {op: unknown operator} -returnCodes error -body {
     set a [bitarray newfrom $opA]; bitarray op r = $a nand $a
-} -result {bad operator "nand": must be and, &, or, |, xor, ^, andnot, &~, &!, not, ~, land, &&, lor, ||, lnot, !, eq, ==, ne, !=, lt, <, le, <=, gt, >, ge, or >=}
+} -result {bad operator "nand": must be one of: and  &  or  |  xor  ^  andnot  &~  &!  not  ~  land  &&  lor  ||  lnot  !  eq  ==  ne  !=  lt  <  le  <=  gt  >  ge  >=}
 test op-5.6 {op: a binary operator with one array} -returnCodes error -body {
     set a [bitarray newfrom $opA]; bitarray op r = and $a
 } -result {bitarray op: "and" needs two arrays: varName = array1 and array2}
@@ -1428,10 +1428,10 @@ test op-5.8 {op: -length is for the two-array operators only} -returnCodes error
 test op-5.9 {op: a bad -length mode, and -length with nothing after it} -body {
     set a [bitarray newfrom $opA]
     list [catch {bitarray op -length bogus r = $a and $a} m1] $m1 [catch {bitarray op -length} m2] $m2
-} -result {1 {bad length mode "bogus": must be strict or zero} 1 {wrong # args: should be "bitarray op ?-length strict|zero? ?varName =? array1 operator array2 | ?varName =? not array"}}
+} -result {1 {bad length mode "bogus": must be strict or zero} 1 {wrong # args: should be "bitarray op ?-length strict|zero? ?varName =? array1 operator array2" or "bitarray op ?-length strict|zero? ?varName =? operator array" (a wrong operator lists the valid ones)}}
 test op-5.10 {op: an array where the operator belongs is a wrong # args error} -returnCodes error -body {
     set a [bitarray newfrom $opA]; bitarray op r = $a $a
-} -result {wrong # args: should be "bitarray op ?-length strict|zero? ?varName =? array1 operator array2 | ?varName =? not array"}
+} -result {wrong # args: should be "bitarray op ?-length strict|zero? ?varName =? array1 operator array2" or "bitarray op ?-length strict|zero? ?varName =? operator array" (a wrong operator lists the valid ones)}
 test op-5.11 {op: an ordinary list is not a bitarray} -returnCodes error -body {
     set a [bitarray newfrom $opA]; bitarray op r = $a and {1 0 1}
 } -result {bitarray op: expected a bitarray or an integer of at most 64 bits but got "1 0 1"}
@@ -1470,7 +1470,7 @@ test op-7.4 {op value form: the inputs are not changed} -body {
 test op-7.5 {op value form: -length zero} -body {
     set a [bitarray newfrom {1 1 1 1}]; set b [bitarray newfrom {1 0}]
     list [bitarray op -length zero $a and $b] [catch {bitarray op $a and $b} m] $m
-} -result {{1 0 0 0} 1 {bitarray and: arrays differ in length (4 vs 2); use -length zero to allow it}}
+} -result {{1 0 0 0} 1 {bitarray op and: arrays differ in length (4 vs 2); use -length zero to allow it}}
 test op-7.6 {op value form: the same array on both sides, in either order, and as the result variable} -body {
     set a [bitarray newfrom {1 1 0 0 1 0 1 0}]; set b [bitarray newfrom {1 0 1 0 1 1 0 0}]
     set x [bitarray op $a and $b]; set y [bitarray op $b and $a]
@@ -1503,7 +1503,7 @@ test op-7.10 {op value form: errors} -body {
 	[catch {bitarray op $a and {1 0 1}} m6] $m6 \
 	[catch {bitarray op $a} m7] [string range $m7 0 19] \
 	[catch {bitarray op = $a} m8] [string range $m8 0 15]
-} -match glob -result {1 {bad operator "nand": *} 1 {bitarray op: "and" needs two arrays: array1 and array2} 1 {bitarray op: "not" takes one array: not array} 1 {bitarray op: -length cannot be used with not} 1 {bitarray and: arrays differ in width (1 vs 8)} 1 {bitarray op: expected a bitarray or an integer of at most 64 bits but got "1 0 1"} 1 {wrong # args: should} 1 {bad operator "="}}
+} -match glob -result {1 {bad operator "nand": *} 1 {bitarray op: "and" needs two arrays: array1 and array2} 1 {bitarray op: "not" takes one array: not array} 1 {bitarray op: -length cannot be used with not} 1 {bitarray op and: arrays differ in width (1 vs 8)} 1 {bitarray op: expected a bitarray or an integer of at most 64 bits but got "1 0 1"} 1 {wrong # args: should} 1 {bad operator "="}}
 test op-7.11 {op value form: a plain list is not a bitarray (not form)} -returnCodes error -body {
     bitarray op not {1 0 1}
 } -match glob -result {*}
@@ -1542,7 +1542,7 @@ test op-8.5 {op logical: the lengths must match unless -length zero} -body {
     set a [bitarray newfrom {1 1 1 1} -width 8]; set b [bitarray newfrom {1 0}]
     list [catch {bitarray op $a land $b} m] $m [bitarray op -length zero $a land $b] [bitarray op -length zero $a lor $b] \
 	[bitarray op -length zero $b lor $a]
-} -result {1 {bitarray land: arrays differ in length (4 vs 2); use -length zero to allow it} {1 0 0 0} {1 1 1 1} {1 1}}
+} -result {1 {bitarray op land: arrays differ in length (4 vs 2); use -length zero to allow it} {1 0 0 0} {1 1 1 1} {1 1}}
 test op-8.6 {op logical: into a variable, also one of the inputs; the inputs of the other form are unchanged} -body {
     set a [bitarray newfrom {0 5 255 0} -width 8]; set b [bitarray newfrom {1 1 1 0} -width 8]
     bitarray op r = $a && $b
@@ -1615,7 +1615,7 @@ test op-9.8 {op relational: the lengths of two arrays, -length zero (missing ele
     set a [bitarray newfrom {0 5 1} -width -16]; set b [bitarray newfrom {0 6} -width 8]
     list [catch {bitarray op $a == $b} m] $m [catch {bitarray op $a lt $b} m2] $m2 \
 	[bitarray op -length zero $a == $b] [bitarray op -length zero $a > $b] [bitarray op -length zero $b == $a] [bitarray op -length strict $a == $a]
-} -result {1 {bitarray eq: arrays differ in length (3 vs 2); use -length zero to allow it} 1 {bitarray lt: arrays differ in length (3 vs 2); use -length zero to allow it} {1 0 0} {0 0 1} {1 0} {1 1 1}}
+} -result {1 {bitarray op eq: arrays differ in length (3 vs 2); use -length zero to allow it} 1 {bitarray op lt: arrays differ in length (3 vs 2); use -length zero to allow it} {1 0 0} {0 0 1} {1 0} {1 1 1}}
 test op-9.9 {op relational: empty arrays} -body {
     set e [bitarray newfrom {} -width 8]
     list [bitarray op $e == $e] [bitarray op $e < 5] [bitarray op 5 < $e] [bitarray width [bitarray op $e < 5]]
@@ -1692,7 +1692,7 @@ test op-10.4 {op in place: -length zero and strict} -body {
     set a [bitarray newfrom {1 1 1 1}]
     set e [catch {bitarray op a = a and [bitarray newfrom {1 0}]} m]
     list $r $e $m
-} -result {{1 0 0 0} 1 {bitarray and: arrays differ in length (4 vs 2); use -length zero to allow it}}
+} -result {{1 0 0 0} 1 {bitarray op and: arrays differ in length (4 vs 2); use -length zero to allow it}}
 test op-10.5 {op in place: the variable must exist, and be a bitarray} -returnCodes error -body {
     bitarray op nosuchvar = nosuchvar and [bitarray newfrom {1}]
 } -match glob -result {*nosuchvar*}
@@ -1837,4 +1837,36 @@ test op-11.10 {op: the in-place form with an integer, errors: no variable, not a
     set a [bitarray newfrom {1 2} -width 8]; set t 5
     list [catch {bitarray op nosuchvar = nosuchvar and 1} m1] $m1 [catch {bitarray op t = t and 1} m2] $m2 [catch {bitarray op a = a and 300} m3] $m3 $a
 } -result {1 {can't read "nosuchvar": no such variable} 1 {not a bitarray: "5"} 1 {expected integer in range 0..255 but got "300"} {1 2}}
+# Friendlier errors from the position of the words: the operator list only for a bad operator
+test op-12.1 {op: words that are not enough} -body {
+    list [catch {bitarray op} m1] [string range $m1 0 24] [catch {bitarray op foo} m2] [string range $m2 0 24] \
+	[catch {bitarray op foo =} m3] $m3 [catch {bitarray op foo = bar} m4] $m4
+} -result {1 {wrong # args: should be "} 1 {wrong # args: should be "} 1 {bitarray op: after "foo =" expected "array1 operator array2" or "operator array"} 1 {bitarray op: after "foo =" expected "array1 operator array2" or "operator array"}}
+test op-12.2 {op: an operator with a missing operand, or in the wrong place, is described and the operators are not listed} -body {
+    set a [bitarray newfrom {1 0}]
+    list [catch {bitarray op foo = bar and} m1] $m1 [catch {bitarray op foo = and bar} m2] $m2 [catch {bitarray op bar and} m3] $m3 \
+	[catch {bitarray op foo = bar not} m4] $m4 [catch {bitarray op bar lnot} m5] $m5 [catch {bitarray op and $a $a} m6] $m6 \
+	[catch {bitarray op foo = and $a $a} m7] $m7 [catch {bitarray op $a < } m8] $m8 [catch {bitarray op foo = bar ==} m9] $m9
+} -result {1 {bitarray op: "and" needs two arrays: varName = array1 and array2} 1 {bitarray op: "and" needs two arrays: varName = array1 and array2} 1 {bitarray op: "and" needs two arrays: array1 and array2} 1 {bitarray op: "not" goes in front of its array: varName = not array} 1 {bitarray op: "lnot" goes in front of its array: lnot array} 1 {bitarray op: "and" goes between the arrays: array1 and array2} 1 {bitarray op: "and" goes between the arrays: varName = array1 and array2} 1 {bitarray op: "<" needs two operands: operand1 < operand2} 1 {bitarray op: "==" needs two operands: varName = operand1 == operand2}}
+test op-12.3 {op: a bad operator lists the operators, and blames the word that is most likely the operator} -body {
+    set a [bitarray newfrom {1 0}]
+    set r {}
+    foreach cmd {{bitarray op foo = bar xxx} {bitarray op foo = nott $a} {bitarray op nott $a} {bitarray op $a xxx $a} {bitarray op r = $a xxx $a} {bitarray op xxx yyy}} {
+	catch $cmd m
+	lappend r [lindex [split $m \"] 1] [string match {*must be one of: and  &  or*} $m]
+    }
+    set r
+} -result {xxx 1 nott 1 nott 1 xxx 1 xxx 1 yyy 1}
+test op-12.4 {op: computation errors say bitarray op NAME} -body {
+    set a [bitarray newfrom {1 0}]; set b [bitarray newfrom {1 0 1}]
+    list [catch {bitarray op $a & $b} m1] $m1 [catch {bitarray op $a < $b} m2] $m2 [catch {bitarray op r = $a lor $b} m3] $m3
+} -result {1 {bitarray op and: arrays differ in length (2 vs 3); use -length zero to allow it} 1 {bitarray op lt: arrays differ in length (2 vs 3); use -length zero to allow it} 1 {bitarray op lor: arrays differ in length (2 vs 3); use -length zero to allow it}}
+test op-12.5 {op: an array where the middle operator belongs is the wrong # args message} -body {
+    set a [bitarray newfrom {1 0}]
+    list [catch {bitarray op $a $a $a} m1] [string range $m1 0 24] [catch {bitarray op r = $a $a $a} m2] [string range $m2 0 24]
+} -result {1 {wrong # args: should be "} 1 {wrong # args: should be "}}
+test op-12.6 {op: operands written without $ are not arrays or integers} -body {
+    set a [bitarray newfrom {1 1 0 0}]; set b [bitarray newfrom {1 0 1 0}]
+    list [catch {bitarray op a and b} m1] $m1 [catch {bitarray op a and $b} m2] $m2 [catch {bitarray op $a and b} m3] $m3 [catch {bitarray op 7 and b} m4] $m4 [catch {bitarray op a and 7} m5] $m5
+} -result {1 {bitarray op: expected a bitarray or an integer of at most 64 bits but got "a"} 1 {bitarray op: expected a bitarray or an integer of at most 64 bits but got "a"} 1 {bitarray op: expected a bitarray or an integer of at most 64 bits but got "b"} 1 {bitarray op: expected a bitarray or an integer of at most 64 bits but got "b"} 1 {bitarray op: expected a bitarray or an integer of at most 64 bits but got "a"}}
 cleanupTests

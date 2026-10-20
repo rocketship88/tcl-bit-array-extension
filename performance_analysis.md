@@ -1,6 +1,6 @@
 # bitarray: why it exists, what it costs, when to use it
 
-Version 0.9.3, Tcl 9.1. The figures were measured with 0.5; the only ones measured again since are the `in` rows in section 4 (0.7.0), the two 1-bit edit rows in section 3 (after the 0.5.1 change) and the bitwise rows in section 4 (0.6.0), the `lreverse` row in section 3 and the table in section 6 (0.6.0 after the word-at-a-time copies). Written by Eric Taylor together with Claude (Anthropic's AI model), which ran the measurements and
+Version 0.9.4, Tcl 9.1. The figures were measured with 0.5; the only ones measured again since are the `in` rows in section 4 (0.7.0), the two 1-bit edit rows in section 3 (after the 0.5.1 change) and the bitwise rows in section 4 (0.6.0), the `lreverse` row in section 3 and the table in section 6 (0.6.0 after the word-at-a-time copies). Written by Eric Taylor together with Claude (Anthropic's AI model), which ran the measurements and
 drafted the text. Every figure below was measured on the machines named in each section; nothing is estimated unless it says so.
 
 ## 1. Why bitarray
