@@ -219,6 +219,13 @@ def splice(src, old, new):
         nl = nl[:p] + mn + nl[len(nl) - s_:] if s_ else nl[:p] + mn
     return ls, le, old_block, '\n'.join(nl)
 
+for r in RECS:                      # line numbers recorded in an older run may be stale (bitarray.c has changed since): find them again
+    if r['result'] not in ('BADPATTERN',) and r.get('line1'):
+        try:
+            ls_, le_, ob_, nb_ = splice(SRC, r['old'], r['new'])
+        except ValueError:
+            continue
+        r['line1'] = SRC.count('\n', 0, ls_) + 1; r['line2'] = r['line1'] + ob_.count('\n')
 good = sorted([r for r in RECS if r['result'] not in ('BADPATTERN',) and r.get('line1')], key=lambda r: (r['line1'], r['id']))
 taken = []     # accepted mutants (non-overlapping line ranges); the rest become "also" notes
 also = {}

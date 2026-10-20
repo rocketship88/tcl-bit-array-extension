@@ -71,6 +71,12 @@ foreach {n script} {
     2.4 {bitarray fromchars abc}
     2.5 {bitarray and x <- $p $q}
     2.6 {lrange $p 1 2}
+    2.8 {bitarray op $p and $q}
+    2.9 {bitarray op $p land $q}
+    2.10 {bitarray op $p == $q}
+    2.11 {bitarray op $p < 1}
+    2.12 {bitarray op $p and 1}
+    2.13 {bitarray op 1 or $p}
 } {
     test fi-$n "out of memory: $script" -constraints faultbuild -cleanup {bitarray_test failalloc -1} -body "
         set p \[bitarray newfrom {1 0 1 1}\]

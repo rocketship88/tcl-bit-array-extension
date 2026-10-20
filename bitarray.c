@@ -25,6 +25,8 @@
  *	fill VAR FIRST ?to? LAST ?with? VALUE ?by? ?STEP?   (in place, like lset)
  *	and|or|xor|andnot ?-length strict|zero? VAR ?<-? BA ?BA?   (bitwise, 64 bits at a time)
  *	not VAR ?<- BA?                  (flip every bit)
+ *	op ?-length strict|zero? VAR = BA operator BA     op VAR = not BA     (the same, written as an expression;
+ *	    operator: and or xor andnot, or && & || | ^ &~ &! and for not ! ~)
  *	VAR is a variable name (that array is changed in place, or, after "<-" with two
  *	arrays, created); BA, DATA and STRING are values.  The other operations are
  *	the ordinary list commands, which the abstract-list hooks below implement.
@@ -32,7 +34,7 @@
  */
 
 #include <tcl.h>
-#define BA_VERSION "0.8.5"	/* the one place the version is set (also in pkgIndex.tcl) */
+#define BA_VERSION "0.9.3"	/* the one place the version is set (also in pkgIndex.tcl) */
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -1331,7 +1333,9 @@ ParseCreateArgs(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[],
 
 /* ------------------- bitwise operations (0.6.0) -------------------- */
 
-enum { BO_AND, BO_OR, BO_XOR, BO_ANDNOT, BO_NOT };
+enum { BO_AND, BO_OR, BO_XOR, BO_ANDNOT, BO_NOT,   // the bitwise operations (BitOpWords)
+       BO_LAND, BO_LOR, BO_LNOT,                 // the logical ones, only for "bitarray op" (OpValue)
+       BO_EQ, BO_NE, BO_LT, BO_LE, BO_GT, BO_GE };   // the relational ones, only for "bitarray op" (RelValue)
 
 /*
  * BitOpWords --
@@ -1419,6 +1423,21 @@ IsArrow(Tcl_Obj *obj)
 }
 
 static int
+BitLenCompat(Tcl_Interp *interp, const char *name, const BitArr *x,
+	const BitArr *y, int zero)
+{
+    if (!zero && x->len != y->len) {   // lengths must match unless -length zero
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"bitarray %s: arrays differ in length (%" TCL_SIZE_MODIFIER
+		"d vs %" TCL_SIZE_MODIFIER "d); use -length zero to allow it",
+		name, x->len, y->len));
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
+	return TCL_ERROR;
+    }
+    return TCL_OK;
+}
+
+static int
 BitOpCompat(Tcl_Interp *interp, const char *name, const BitArr *x,
 	const BitArr *y, int zero)
 {
@@ -1429,15 +1448,7 @@ BitOpCompat(Tcl_Interp *interp, const char *name, const BitArr *x,
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
 	return TCL_ERROR;
     }
-    if (!zero && x->len != y->len) {   // lengths must match unless -length zero
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"bitarray %s: arrays differ in length (%" TCL_SIZE_MODIFIER
-		"d vs %" TCL_SIZE_MODIFIER "d); use -length zero to allow it",
-		name, x->len, y->len));
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
-	return TCL_ERROR;
-    }
-    return TCL_OK;
+    return BitLenCompat(interp, name, x, y, zero);
 }
 
 /*
@@ -1557,17 +1568,529 @@ BitOpCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[], int op)
     return TCL_ERROR;
 }
 
+/*
+ * The words "bitarray op" accepts for an operation.  Each spelling maps to one of the BO_ codes (BitOpCmd's).
+ */
+static const struct {
+    const char *word;
+    int op;
+} opWords[] = {
+    {"and", BO_AND},       {"&", BO_AND},
+    {"or", BO_OR},         {"|", BO_OR},
+    {"xor", BO_XOR},       {"^", BO_XOR},
+    {"andnot", BO_ANDNOT}, {"&~", BO_ANDNOT}, {"&!", BO_ANDNOT},
+    {"not", BO_NOT},       {"~", BO_NOT},
+    {"land", BO_LAND},     {"&&", BO_LAND},
+    {"lor", BO_LOR},       {"||", BO_LOR},
+    {"lnot", BO_LNOT},     {"!", BO_LNOT},
+    {"eq", BO_EQ},         {"==", BO_EQ},
+    {"ne", BO_NE},         {"!=", BO_NE},
+    {"lt", BO_LT},         {"<", BO_LT},
+    {"le", BO_LE},         {"<=", BO_LE},
+    {"gt", BO_GT},         {">", BO_GT},
+    {"ge", BO_GE},         {">=", BO_GE},
+    {NULL, 0}
+};
+static const char *const opNames[] = { "and", "or", "xor", "andnot", "not", "land", "lor", "lnot",
+    "eq", "ne", "lt", "le", "gt", "ge" };   // the name of each BO_ code (the first five are subcommands)
+
+#define IS_UNARY(op)	((op) == BO_NOT || (op) == BO_LNOT)   // the operators with one array
+
+/*
+ * ElemNonzero --
+ *	True if element I of B is not 0.
+ */
+static int
+ElemNonzero(const BitArr *b, Tcl_Size i)
+{
+    if (b->width == 1) {
+	return (int)GETBIT(b, i);
+    }
+    return GetElem(b, i) != 0;
+}
+
+/*
+ * OpValue --
+ *	The new array X OP Y (Y is NULL for the one-array operators), or NULL with an error in the interp.  The bitwise
+ *	operators give an array of X's width, the logical ones (land, lor, lnot) test each element for "not 0" and give
+ *	a 1-bit array: the widths of the two arrays may differ for those, the lengths must match unless ZERO (the
+ *	missing elements of Y count as 0 and the extra ones are ignored).  The result has the length of X.
+ */
+static Tcl_Obj *
+OpValue(Tcl_Interp *interp, int op, const BitArr *x, const BitArr *y, int zero)
+{
+    BitArr *d;
+    Tcl_Size i;
+
+    if (y != NULL && (op >= BO_LAND ? BitLenCompat(interp, opNames[op], x, y, zero)
+	    : BitOpCompat(interp, opNames[op], x, y, zero)) != TCL_OK) {
+	return NULL;
+    }
+    if (op < BO_LAND) {
+	if ((d = NewRep(interp, x->len, x->width, x->isSigned)) == NULL) {
+	    return NULL;
+	}
+	BitOpWords(d, x, y, op);
+	MaskTail(d);
+	return WrapRep(d);
+    }
+    if ((d = NewRep(interp, x->len, 1, 0)) == NULL) {
+	return NULL;
+    }
+    if (x->width == 1 && (y == NULL || y->width == 1)) {   // 1-bit arrays: nonzero is the bit itself, so land, lor and lnot are the bitwise ones, a word at a time
+	BitOpWords(d, x, y, op == BO_LAND ? BO_AND : op == BO_LOR ? BO_OR : BO_NOT);
+	MaskTail(d);
+	return WrapRep(d);
+    }
+    for (i = 0; i < x->len; i++) {
+	int r = ElemNonzero(x, i);
+
+	if (op != BO_LNOT) {
+	    int other = (i < y->len) ? ElemNonzero(y, i) : 0;   // past the end of Y: 0
+
+	    r = (op == BO_LAND) ? (r && other) : (r || other);
+	} else {
+	    r = !r;
+	}
+	if (r) {
+	    SETBIT(d, i);
+	}
+    }
+    return WrapRep(d);
+}
+
+/*
+ * FindOperator --
+ *	The index in opWords of the word OBJ, or -1.  A bitarray value is never an operator word, and asking for
+ *	its string form would build a long string, so it is skipped.
+ */
+static int
+FindOperator(Tcl_Obj *obj)
+{
+    int i;
+
+    if (ISBA(obj)) {
+	return -1;
+    }
+    for (i = 0; opWords[i].word != NULL; i++) {
+	if (IsWord(obj, opWords[i].word)) {
+	    return i;
+	}
+    }
+    return -1;
+}
+
+/*
+ * ElemAt --
+ *	The number element I of B stands for (unsigned widths as they are, signed ones sign-extended; width 64 is
+ *	signed).  Every element fits in a Tcl_WideInt.
+ */
+static Tcl_WideInt
+ElemAt(const BitArr *b, Tcl_Size i)
+{
+    if (b->width == 1) {
+	return (Tcl_WideInt)GETBIT(b, i);
+    }
+    return ElemWide(b, GetElem(b, i));
+}
+
+static int
+OpError(Tcl_Interp *interp, Tcl_Obj *msg)
+{
+    Tcl_SetObjResult(interp, msg);
+    Tcl_SetErrorCode(interp, "TCL", "VALUE", "BITARRAY", NULL);
+    return TCL_ERROR;
+}
+
+/*
+ * GetOperand --
+ *	An operand of a relational operator: a bitarray (*BPTR set) or an integer (*BPTR NULL, *WPTR set).  Only the
+ *	type decides: a value that is not a bitarray must be an integer of at most 64 bits.
+ */
+static int
+GetOperand(Tcl_Interp *interp, Tcl_Obj *obj, const BitArr **bPtr, Tcl_WideInt *wPtr)
+{
+    if (ISBA(obj)) {
+	*bPtr = GETREP(obj);
+	return TCL_OK;
+    }
+    *bPtr = NULL;
+    if (Tcl_GetWideIntFromObj(NULL, obj, wPtr) == TCL_OK) {   // NULL: our own message below
+	return TCL_OK;
+    }
+    return OpError(interp, Tcl_ObjPrintf("bitarray op: expected a bitarray or an integer of at most 64 bits but got \"%.40s\"",
+	    Tcl_GetString(obj)));
+}
+
+/*
+ * RelTest --
+ *	The truth of "A op B" for the relational codes BO_EQ .. BO_GE.
+ */
+static int
+RelTest(int op, Tcl_WideInt a, Tcl_WideInt b)
+{
+    switch (op) {
+    case BO_EQ: return a == b;
+    case BO_NE: return a != b;
+    case BO_LT: return a < b;
+    case BO_LE: return a <= b;
+    case BO_GT: return a > b;
+    default:    return a >= b;   // BO_GE
+    }
+}
+
+/*
+ * RelBits --
+ *	RelValue for 1-bit arrays, a word at a time.  Two 1-bit arrays (the words of Y past its end count as 0), or one
+ *	1-bit array and an integer: then the answer for each element is one of four things that depend only on the
+ *	bit (and the integer), so the result is all 0s, all 1s, the array or its complement (X set: the array is the first
+ *	operand, Y set: the second).  The caller calls MaskTail.
+ */
+static void
+RelBits(BitArr *d, int op, const BitArr *x, const BitArr *y, Tcl_WideInt w)
+{
+    Tcl_Size k, n = d->nwords;
+
+    if (x != NULL && y != NULL) {
+	for (k = 0; k < n; k++) {
+	    uint64_t xv = x->words[k], yv = (k < y->nwords) ? y->words[k] : 0, r;
+
+	    switch (op) {
+	    case BO_EQ: r = ~(xv ^ yv); break;
+	    case BO_NE: r = xv ^ yv; break;
+	    case BO_LT: r = ~xv & yv; break;
+	    case BO_LE: r = ~xv | yv; break;
+	    case BO_GT: r = xv & ~yv; break;
+	    default:    r = xv | ~yv; break;   // BO_GE
+	    }
+	    d->words[k] = r;
+	}
+    } else {
+	const BitArr *a = (x != NULL) ? x : y;
+	int r0 = (x != NULL) ? RelTest(op, 0, w) : RelTest(op, w, 0);   // the answer for an element 0
+	int r1 = (x != NULL) ? RelTest(op, 1, w) : RelTest(op, w, 1);   // and for an element 1
+
+	for (k = 0; k < n; k++) {
+	    uint64_t av = a->words[k];
+
+	    d->words[k] = (r1 ? av : 0) | (r0 ? ~av : 0);
+	}
+    }
+}
+
+/*
+ * RelValue --
+ *	The 1-bit array with a 1 where "A op B" is true, op being eq, ne, lt, le, gt or ge.  Each operand is a bitarray or an
+ *	integer (not both integers); the numbers are compared as numbers, whatever the widths and signs of the arrays.
+ *	The result has the length of the array operand (of A if both are arrays).  Two arrays must have the same
+ *	length unless ZERO (HASLENGTH says -length was given): the missing elements of B count as 0, the extra ones are
+ *	ignored.  -length is an error when one operand is an integer.
+ */
+static Tcl_Obj *
+RelValue(Tcl_Interp *interp, int op, Tcl_Obj *objA, Tcl_Obj *objB, int hasLength, int zero)
+{
+    const BitArr *x, *y;
+    Tcl_WideInt wx = 0, wy = 0;
+    BitArr *d;
+    Tcl_Size i, len;
+
+    if (GetOperand(interp, objA, &x, &wx) != TCL_OK || GetOperand(interp, objB, &y, &wy) != TCL_OK) {
+	return NULL;
+    }
+    if (x == NULL && y == NULL) {
+	OpError(interp, Tcl_NewStringObj("bitarray op: at least one operand must be a bitarray", -1));
+	return NULL;
+    }
+    if (x != NULL && y != NULL) {
+	if (BitLenCompat(interp, opNames[op], x, y, zero) != TCL_OK) {
+	    return NULL;
+	}
+    } else if (hasLength) {
+	OpError(interp, Tcl_NewStringObj("bitarray op: -length cannot be used with an integer operand", -1));
+	return NULL;
+    }
+    len = (x != NULL) ? x->len : y->len;
+    if ((d = NewRep(interp, len, 1, 0)) == NULL) {
+	return NULL;
+    }
+    if ((x != NULL && x->width == 1 && (y == NULL || y->width == 1)) || (x == NULL && y->width == 1)) {   // 1-bit arrays: a word at a time
+	RelBits(d, op, x, y, x == NULL ? wx : wy);
+	MaskTail(d);
+	return WrapRep(d);
+    }
+    for (i = 0; i < len; i++) {
+	Tcl_WideInt a = (x != NULL) ? ElemAt(x, i) : wx;
+	Tcl_WideInt b = (y == NULL) ? wy : (i < y->len) ? ElemAt(y, i) : 0;   // past the end of B: 0
+
+	if (RelTest(op, a, b)) {
+	    SETBIT(d, i);
+	}
+    }
+    return WrapRep(d);
+}
+
+/*
+ * ScalarWord --
+ *	The integer K as a 64-bit word holding it in every element position of an array like A (same width and
+ *	signedness), so that a bitwise operation between an array and the integer is the same word loop as between two
+ *	arrays.  The integer must be a value the array's elements can hold (the same check and messages as lset).
+ */
+static int
+ScalarWord(Tcl_Interp *interp, Tcl_Obj *kObj, const BitArr *a, uint64_t *wordPtr)
+{
+    BitArr tmp;
+    uint64_t v;
+    Tcl_Size j;
+    Tcl_WideInt probe;
+
+    if (Tcl_GetWideIntFromObj(NULL, kObj, &probe) != TCL_OK) {   // not a number at all: the same message as for the relational operators
+	return OpError(interp, Tcl_ObjPrintf("bitarray op: expected a bitarray or an integer of at most 64 bits but got \"%.40s\"",
+		Tcl_GetString(kObj)));
+    }
+    if (ParseValue(interp, kObj, a->width, a->isSigned, &v) != TCL_OK) {   // a number that does not fit the elements
+	return TCL_ERROR;
+    }
+    memset(&tmp, 0, sizeof(tmp));
+    tmp.width = a->width;
+    for (j = 0; j < 64 / a->width; j++) {
+	PutElem(&tmp, j, v);
+    }
+    *wordPtr = tmp.words[0];
+    return TCL_OK;
+}
+
+/*
+ * ScalarApply --
+ *	dst = x OP k (SCALARFIRST: k OP x, which only matters for andnot), a word at a time, where PAT is the integer as
+ *	a word (ScalarWord).  DST may be X.  The caller calls MaskTail.
+ */
+static void
+ScalarApply(BitArr *dst, const BitArr *x, uint64_t pat, int op, int scalarFirst)
+{
+    Tcl_Size k;
+
+    for (k = 0; k < dst->nwords; k++) {
+	uint64_t xv = x->words[k];
+
+	switch (op) {
+	case BO_AND: dst->words[k] = xv & pat; break;
+	case BO_OR:  dst->words[k] = xv | pat; break;
+	case BO_XOR: dst->words[k] = xv ^ pat; break;
+	default:     dst->words[k] = scalarFirst ? (pat & ~xv) : (xv & ~pat); break;   // BO_ANDNOT
+	}
+    }
+}
+
+/*
+ * OpCmd --
+ *	bitarray op ?-length strict|zero? varName = array1 operator array2
+ *	bitarray op varName = not array
+ *	bitarray op ?-length strict|zero? array1 operator array2      (without "varName =": the result is the new array)
+ *	bitarray op not array
+ *
+ *	The operations as an expression.  With "varName =" the result goes into the variable (created if it does not
+ *	exist; the inputs are never changed); without it the result is the new array, so the command can be used as a value.
+ *	The number of words tells which form it is.  The relational operators (eq == ne != lt < le <= gt > ge >=) compare
+ *	numbers and give a 1-bit array; either operand may be an integer instead of an array (RelValue).  The bitwise operators (and, or, xor, andnot, not, or & | ^ &~ &! ~) in
+ *	the variable form only rewrite the arguments and call BitOpCmd, so the results, the checks and the error messages
+ *	are those of "bitarray and varName <- array1 array2" and "bitarray not varName <- array"; the value form and the
+ *	logical operators (land lor lnot, or && || !: each element is tested for "not 0", the result is a 1-bit array) are
+ *	computed by OpValue.  One array and the operator in front of it (not, lnot), or two arrays and the operator
+ *	between them: the number of words tells which, and an operator that does not fit is an error.
+ */
+static int
+OpCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+{
+    static const char *const modes[] = { "strict", "zero", NULL };
+    Tcl_Obj *argv[8], *subObj, *arrowObj, *srcA, *srcB = NULL;
+    Tcl_Size idx = 2, rest, first, n = 0;
+    int k, op, mode, hasLength = 0, result, sameName = 0, scalar = 0;   // scalar: 1 = array OP integer, 2 = integer OP array
+    Tcl_WideInt probe;
+
+    if (idx < objc && !ISBA(objv[idx]) && IsWord(objv[idx], "-length")) {   // optional -length strict|zero
+	if (idx + 1 >= objc) {
+	    goto usage;
+	}
+	if (Tcl_GetIndexFromObj(interp, objv[idx + 1], modes, "length mode", TCL_EXACT, &mode) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	hasLength = 1;
+	idx += 2;
+    }
+    rest = objc - idx;   // the words left: [varName =] array1 operator array2   or   [varName =] not array
+    if (rest < 2 || rest > 5) {
+	goto usage;
+    }
+    if (rest >= 4) {   // the variable form: varName = ...
+	if (ISBA(objv[idx + 1]) || !IsWord(objv[idx + 1], "=")) {
+	    goto usage;
+	}
+	if (Tcl_GetWideIntFromObj(NULL, objv[idx], &probe) == TCL_OK || (Tcl_GetString(objv[idx])[0] >= '0' && Tcl_GetString(objv[idx])[0] <= '9')) {   // a name that is, or starts like, an integer would be ambiguous with an operand
+	    return OpError(interp, Tcl_ObjPrintf("bitarray op: variable name \"%.40s\" looks like an integer or begins with a digit", Tcl_GetString(objv[idx])));
+	}
+	first = idx + 2;   // the index of the words after "="
+    } else {           // the value form: the words are the expression and the result is the new array
+	first = idx;
+    }
+    if (rest == 2 || rest == 4) {   // one array: the operator comes before it and must be a one-array operator
+	if ((k = FindOperator(objv[first])) < 0) {
+	    goto badOperator;
+	}
+	op = opWords[k].op;
+	if (!IS_UNARY(op)) {
+	    return OpError(interp, Tcl_ObjPrintf("bitarray op: \"%s\" needs two %s: %s%s %s %s",
+		    opWords[k].word, op >= BO_EQ ? "operands" : "arrays", rest == 4 ? "varName = " : "",
+		    op >= BO_EQ ? "operand1" : "array1", opWords[k].word, op >= BO_EQ ? "operand2" : "array2"));
+	}
+	srcA = objv[first + 1];
+    } else {   // two arrays: the operator is between them
+	if ((k = FindOperator(objv[first + 1])) < 0) {
+	    goto badOperator;
+	}
+	op = opWords[k].op;
+	if (IS_UNARY(op)) {
+	    return OpError(interp, Tcl_ObjPrintf("bitarray op: \"%s\" takes one array: %s%s array",
+		    opWords[k].word, rest == 5 ? "varName = " : "", opWords[k].word));
+	}
+	srcA = objv[first];
+	srcB = objv[first + 2];
+    }
+    if (hasLength && IS_UNARY(op)) {
+	return OpError(interp, Tcl_ObjPrintf("bitarray op: -length cannot be used with %s", opNames[op]));
+    }
+    if (rest >= 4 && op < BO_LAND && !ISBA(srcA) && IsWord(srcA, Tcl_GetString(objv[idx]))) {
+	sameName = 1;   // "varName = varName and $b": the bare name of the destination as the first operand means update the variable in place
+    }
+    if (op < BO_LAND && srcB != NULL) {   // a bitwise operator with two operands: one of them may be an integer
+	int aArr = ISBA(srcA), bArr = ISBA(srcB);
+
+	if (sameName ? !bArr : aArr != bArr) {
+	    scalar = aArr ? 1 : 2;
+	    if (hasLength) {
+		return OpError(interp, Tcl_NewStringObj("bitarray op: -length cannot be used with an integer operand", -1));
+	    }
+	} else if (!aArr && !bArr && !sameName) {   // neither is an array: two integers, or something that is neither
+	    Tcl_WideInt probeA, probeB;
+
+	    if (Tcl_GetWideIntFromObj(NULL, srcA, &probeA) == TCL_OK && Tcl_GetWideIntFromObj(NULL, srcB, &probeB) == TCL_OK) {
+		return OpError(interp, Tcl_NewStringObj("bitarray op: at least one operand must be a bitarray", -1));
+	    }
+	}
+    }
+    if (sameName && scalar) {   // "varName = varName and 5": the variable is updated in place, copied first if something else holds it
+	Tcl_Obj *obj = Tcl_ObjGetVar2(interp, objv[idx], NULL, TCL_LEAVE_ERR_MSG), *work, *stored;
+	BitArr *x = NULL, *d;
+	uint64_t pat;
+
+	if (obj == NULL || NeedBA(interp, obj, &x) != TCL_OK || ScalarWord(interp, srcB, x, &pat) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	work = Tcl_IsShared(obj) ? Tcl_DuplicateObj(obj) : obj;   // a shared value is copied first, never changed in place
+	d = GETREP(work);
+	ScalarApply(d, d, pat, op, 0);
+	MaskTail(d);
+	Touch(work);
+	Tcl_IncrRefCount(work);
+	stored = Tcl_ObjSetVar2(interp, objv[idx], NULL, work, TCL_LEAVE_ERR_MSG);
+	Tcl_DecrRefCount(work);
+	return stored ? TCL_OK : TCL_ERROR;
+    }
+    if (rest < 4 || op >= BO_LAND || scalar) {   // the value form, the logical operators and an integer operand: compute the new array here
+	BitArr *x = NULL, *y = NULL;
+	Tcl_Obj *res, *stored;
+
+	if (op >= BO_EQ) {   // the relational operators: the operands may be integers
+	    if ((res = RelValue(interp, op, srcA, srcB, hasLength, hasLength && mode)) == NULL) {
+		return TCL_ERROR;
+	    }
+	} else if (scalar) {   // an array and an integer
+	    uint64_t pat;
+	    BitArr *d;
+
+	    if (NeedBA(interp, scalar == 1 ? srcA : srcB, &x) != TCL_OK || ScalarWord(interp, scalar == 1 ? srcB : srcA, x, &pat) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if ((d = NewRep(interp, x->len, x->width, x->isSigned)) == NULL) {
+		return TCL_ERROR;
+	    }
+	    ScalarApply(d, x, pat, op, scalar == 2);
+	    MaskTail(d);
+	    res = WrapRep(d);
+	} else {
+	    if (NeedBA(interp, srcA, &x) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (srcB != NULL && NeedBA(interp, srcB, &y) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if ((res = OpValue(interp, op, x, y, hasLength && mode)) == NULL) {
+		return TCL_ERROR;
+	    }
+	}
+	if (rest < 4) {
+	    Tcl_SetObjResult(interp, res);
+	    return TCL_OK;
+	}
+	Tcl_IncrRefCount(res);                                                  // keep the result alive until the variable has it
+	stored = Tcl_ObjSetVar2(interp, objv[idx], NULL, res, TCL_LEAVE_ERR_MSG);
+	Tcl_DecrRefCount(res);
+	return stored ? TCL_OK : TCL_ERROR;
+    }
+
+    subObj = Tcl_NewStringObj(opNames[op], -1);   // the rewritten command: and|or|xor|andnot|not ?-length m? var <- a ?b?
+    arrowObj = Tcl_NewStringObj("<-", 2);
+    Tcl_IncrRefCount(subObj);
+    Tcl_IncrRefCount(arrowObj);
+    argv[n++] = objv[0];
+    argv[n++] = subObj;
+    if (hasLength) {
+	argv[n++] = objv[2];
+	argv[n++] = objv[3];
+    }
+    argv[n++] = objv[idx];
+    if (sameName) {   // the one-array form: bitarray and ?-length m? var array2  /  bitarray not var
+	if (srcB != NULL) {
+	    argv[n++] = srcB;
+	}
+    } else {
+	argv[n++] = arrowObj;
+	argv[n++] = srcA;
+	if (srcB != NULL) {
+	    argv[n++] = srcB;
+	}
+    }
+    result = BitOpCmd(interp, n, argv, op);
+    Tcl_DecrRefCount(subObj);
+    Tcl_DecrRefCount(arrowObj);
+    return result;
+
+  badOperator:
+    {
+	Tcl_Obj *bad = objv[(rest == 2 || rest == 4) ? first : first + 1];
+
+	if (ISBA(bad)) {   // an array where the operator belongs: the words are in the wrong places, say how they go
+	    goto usage;
+	}
+	return OpError(interp, Tcl_ObjPrintf("bad operator \"%.40s\": must be and, &, or, |, xor, ^, "
+		"andnot, &~, &!, not, ~, land, &&, lor, ||, lnot, !, eq, ==, ne, !=, lt, <, le, <=, gt, >, ge, or >=", Tcl_GetString(bad)));
+    }
+
+  usage:
+    Tcl_WrongNumArgs(interp, 2, objv, "?-length strict|zero? ?varName =? array1 operator array2 | ?varName =? not array");
+    return TCL_ERROR;
+}
+
 static int
 BitarrayCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 {
     static const char *const subs[] = {
 	"new", "newfrom", "width", "is", "count", "next", "fill",
 	"frombytes", "tobytes", "fromchars", "tochars",
-	"and", "or", "xor", "andnot", "not", "version", NULL
+	"and", "or", "xor", "andnot", "not", "op", "version", NULL
     };
     enum { S_NEW, S_NEWFROM, S_WIDTH, S_IS, S_COUNT, S_NEXT, S_FILL,
 	   S_FROMBYTES, S_TOBYTES, S_FROMCHARS, S_TOCHARS,
-	   S_AND, S_OR, S_XOR, S_ANDNOT, S_NOT, S_VERSION };
+	   S_AND, S_OR, S_XOR, S_ANDNOT, S_NOT, S_OP, S_VERSION };
     int sub, bit, width, isSigned = 0;
     BitArr *b = NULL, *n;
     Tcl_Size i, first, last;
@@ -1590,6 +2113,7 @@ BitarrayCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     case S_XOR:    return BitOpCmd(interp, objc, objv, BO_XOR);
     case S_ANDNOT: return BitOpCmd(interp, objc, objv, BO_ANDNOT);
     case S_NOT:    return BitOpCmd(interp, objc, objv, BO_NOT);
+    case S_OP:     return OpCmd(interp, objc, objv);   // the same operations written as: op var = a and b
     case S_VERSION:
 	if (objc != 2) {
 	    Tcl_WrongNumArgs(interp, 2, objv, NULL);

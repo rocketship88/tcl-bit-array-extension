@@ -78,13 +78,13 @@ sh ./run_tests.sh --tclsh /path/to/tcl9.1/bin/tclsh9.1
 sh ./run_sieves.sh --tclsh /path/to/tcl9.1/bin/tclsh9.1   # optional: the prime-sieve benchmark, see below
 ```
 
-Expected last line of the tests: `bitarray.test:	Total	315	Passed	309	Skipped	6	Failed	0`. The 6 skipped tests show the Tcl core's `lappend` type-loss problem (see the notes on `lappend` below) and are run only on request: `./run_tests.sh --testbug`. They fail on Tcl 9.1.1 and pass on a core with the fix in `extras/core_lappend_typeloss.patch`.
+Expected last line of the tests: `bitarray.test:	Total	407	Passed	401	Skipped	6	Failed	0`. The 6 skipped tests show the Tcl core's `lappend` type-loss problem (see the notes on `lappend` below) and are run only on request: `./run_tests.sh --testbug`. They fail on Tcl 9.1.1 and pass on a core with the fix in `extras/core_lappend_typeloss.patch`.
 
 (`sh ./script` works even if unpacking lost the executable bit, which happens when a ZIP is made or unpacked on Windows.)
 
 ### On Windows (Visual Studio 2022)
 
-`build.bat`, `run_tests.bat` and `run_sieves.bat` do the same three jobs with Microsoft Visual C. Version 0.7.0 has been built and run on Windows by the repository owner (a 64-bit machine, Visual Studio 2022, Tcl 9.1.1 built from trunk): no build warnings, `Total 282  Passed 281  Skipped 1  Failed 0`, the sieve passed, and `listbench.tcl` ran; the output is saved in `extras/windows_0.7.0_run.txt`. Version 0.8.0 was also built and run on Windows by the repository owner (same machine and Tcl 9.1.1 as for 0.7.0): no build warnings, `Total 315  Passed 308  Skipped 7  Failed 0` (the last Windows run was 0.8.0, with 288 tests) (6 are the `--testbug` tests, 1 is the procfs test), the sieve passed, and `listbench.tcl` ran with the same answers in every column (`extras/windows_0.8.0_run.txt`). Earlier versions were also run on Windows (see `RESULTS.txt`). A 32-bit build and other Visual Studio versions are untried.
+`build.bat`, `run_tests.bat` and `run_sieves.bat` do the same three jobs with Microsoft Visual C. Version 0.7.0 has been built and run on Windows by the repository owner (a 64-bit machine, Visual Studio 2022, Tcl 9.1.1 built from trunk): no build warnings, `Total 282  Passed 281  Skipped 1  Failed 0`, the sieve passed, and `listbench.tcl` ran; the output is saved in `extras/windows_0.7.0_run.txt`. Version 0.8.0 was also built and run on Windows by the repository owner (same machine and Tcl 9.1.1 as for 0.7.0): no build warnings, `Total 407  Passed 400  Skipped 7  Failed 0` (the last Windows run was 0.8.5, with 315 tests) (6 are the `--testbug` tests, 1 is the procfs test), the sieve passed, and `listbench.tcl` ran with the same answers in every column (`extras/windows_0.8.0_run.txt`). Earlier versions were also run on Windows (see `RESULTS.txt`). A 32-bit build and other Visual Studio versions are untried.
 
 Unpack the ZIP anywhere and, from a Command Prompt, go into the unpacked folder and run the three scripts:
 
@@ -97,7 +97,7 @@ run_sieves.bat --tclsh C:\path\to\tcl9.1\bin\tclsh91.exe     rem optional: the p
 
 `build.bat` finds the headers and the stubs library (`include\tcl.h`, `lib\tclstub.lib`) from the shell you name, or from
 `--tcl-prefix DIR`, finds Visual Studio itself with `vswhere` if `cl` is not already on your `PATH` (so a plain `cmd` window works; it was run that way on 2026-10-13 and set up `vcvars64.bat` itself), and builds the 64-bit or
-32-bit DLL to match the shell. `run_tests.bat` should end with `Total 315  Passed 308  Skipped 7  Failed 0` (the last Windows run was 0.8.0, with 288 tests): one test, which
+32-bit DLL to match the shell. `run_tests.bat` should end with `Total 407  Passed 400  Skipped 7  Failed 0` (the last Windows run was 0.8.5, with 315 tests): one test, which
 reads `/proc`, is skipped on Windows, and so are the 6 `--testbug` tests (to run those: `tclsh91 tests\bitarray.test -constraints coreTypeLoss`). `--help` on each prints the options.
 
 ### Telling `build.sh` where Tcl is
@@ -161,7 +161,7 @@ In the synopses and examples below:
 * `array` is a bitarray **value**, for example `$a` or the result of `bitarray new 8`, in the way that `list` is a list value in
   `lindex list index`. It is not a variable name.
 * `varName` is the **name** of a variable that holds a bitarray, written without a `$`, as in the Tcl manual pages for `lset`. Only `fill` and the bitwise commands
-  (`and`, `or`, `xor`, `andnot`, `not`) take one, because they change an array in place; `fill $a ...` is an error
+  (`and`, `or`, `xor`, `andnot`, `not`, and `op` which is written differently) take one, because they change an array in place; `fill $a ...` is an error
   (`can't read "1 0 1 ...": no such variable`).
 * `?...?` marks an optional part. `size`, `first`, `last`, `start` and `step` are integers; the index arguments `first`, `last` and
   `start` also accept `end` and `end-N`.
@@ -181,13 +181,13 @@ that do not mention `$a` or `$w` create their own arrays. With no `value` given,
 | `bitarray new size ?value? ?-width w?` | **Returns** a new bitarray of `size` elements, all `value` (default 0). `-width` may come before or after `value`.<br>`bitarray new 4` => `0 0 0 0`<br>`bitarray new 4 7 -width 8` => `7 7 7 7`<br>`bitarray new 3 -width 16 500` => `500 500 500` |
 | `bitarray newfrom list ?-width w?` | **Returns** a new bitarray packed from a list of integers.<br>`bitarray newfrom {200 5 255} -width 8` => `200 5 255` |
 | `bitarray width array` | **Returns** the element width in bits, as it was given when the array was created: `1`, `8`, `16`, `32`, `64`, or `-8`, `-16`, `-32`, `-64` for the signed ones.<br>`bitarray width [bitarray new 3]` => `1`<br>`bitarray width [bitarray new 3 -width -16]` => `-16` |
-| `bitarray version` | **Returns** the version of the extension, for example `0.8.5` (the same string `package require bitarray` returns). Takes no arguments.<br>`bitarray version` => `0.7.0` |
+| `bitarray version` | **Returns** the version of the extension, for example `0.9.3` (the same string `package require bitarray` returns). Takes no arguments.<br>`bitarray version` => `0.7.0` |
 | `bitarray is value` | **Returns** `1` if `value` currently has the bitarray representation, `0` if not (any value is accepted).<br>`a` -> `{1 0 1 1 0 1 1 1}`<br>`bitarray is $a` => `1`<br>`bitarray is {1 0 1}` => `0` |
 | `bitarray count array ?first ?to? last ?with? ?value??` | **Returns** the number of elements equal to `value`, or the number of non-zero elements if no `value`; whole array or an index range (`end-N` allowed). `value` needs a range. For 1-bit arrays without `value` this is a popcount.<br>`a` -> `{1 0 1 1 0 1 1 1}`<br>`bitarray count $a` => `6`<br>`bitarray count $a 0 3 1` => `3`<br>`bitarray count $a 4 end 0` => `1`<br>`bitarray count $a 2 end-1 1` => `4`<br>`bitarray count $a 0 to 3 with 1` => `3`<br>`bitarray count $a 4 .. end with 0` => `1`<br>`w` -> `{0 7 0 9}`<br>`bitarray count $w` => `2` (value omitted means != 0) |
 | `bitarray next array start ?with? ?value?` | **Returns** the index of the first element **at or after** `start` equal to `value` (non-zero if omitted), or `-1` if there is none.<br>`a` -> `{1 0 1 1 0 1 1 1}`<br>`bitarray next $a 0 0` => `1`<br>`bitarray next $a 2 0` => `4`<br>`bitarray next $a 5 0` => `-1`<br>`bitarray next $a 2 with 0` => `4`<br>`w` -> `{0 7 0 9}`<br>`bitarray next $w 0` => `1` (value omitted means != 0)<br>`bitarray next $w 0 0` => `0` (element 0 is itself 0) |
 | `bitarray fill varName first ?to? last ?with? value ?by? ?step?` | Sets every element from `first` to `last` to `value`, or only every `step`-th one if `step` is given, in the array stored in variable `varName`. **Returns** the empty string; the result is the changed array in `varName`.<br>`set b [bitarray new 10 1]` => `1 1 1 1 1 1 1 1 1 1`<br>`bitarray fill b 0 end 0 2` -> `0 1 0 1 0 1 0 1 0 1`<br>`set b [bitarray new 10 1]` => `1 1 1 1 1 1 1 1 1 1`<br>`bitarray fill b 0 to end with 0 by 2` -> `0 1 0 1 0 1 0 1 0 1`<br>`set c [bitarray new 10 5 -width 8]` => `5 5 5 5 5 5 5 5 5 5`<br>`bitarray fill c 2 5 0` -> `5 5 0 0 0 0 5 5 5 5`<br>`bitarray fill c 2 .. 5 with 0` -> same result |
-| `bitarray and`<br>`bitarray or`<br>`bitarray xor`<br>`bitarray andnot`<br>`  ?-length strict\|zero? varName ?<-? array ?array?` | Bitwise operation between two arrays of the same width (and the same sign), 64 bits at a time (any width: the bits of the packed data are combined, so for 8-bit arrays each byte is combined with the matching byte). `andnot` is "first AND NOT second": it removes the second array's 1 bits from the first. The arrays are values; only `varName` is a name. **Returns** the empty string.<br>`bitarray and varName array` and `bitarray and varName <- array`: `varName` becomes `varName AND array` (changed in place).<br>`bitarray and varName <- array1 array2`: `varName` becomes `array1 AND array2` and neither input changes (`varName` is created if it does not exist).<br>The result has the length of the first array. The widths must be equal. The lengths must be equal too unless `-length zero` is given: then missing elements of the second array count as 0 and extra ones are ignored. `-length strict` (the default) makes a different length an error.<br>The word `<-` cannot be used as the variable name (`bitarray and <- $x` is an error), and `bitarray and a <-` with nothing after the arrow is a wrong # args error.<br>`a` -> `{1 0 1 1 0 1 1 1}`, `m` -> `{1 1 0 0 1 1 0 0}`<br>`set c $a; bitarray and c $m` -> `1 0 0 0 0 1 0 0`<br>`set c $a; bitarray or c <- $m` -> `1 1 1 1 1 1 1 1`<br>`bitarray xor d <- $a $m` -> `d` is `0 1 1 1 1 0 1 1`, `a` unchanged<br>`set c $a; bitarray andnot c $m` -> `0 0 1 1 0 0 1 1`<br>`set c $a; bitarray and c {1 1 1}` => error: `not a bitarray: "1 1 1"`<br>`set s [bitarray newfrom {1 1 1}]; set c $a; bitarray and c $s` => error: `bitarray and: arrays differ in length (8 vs 3); use -length zero to allow it`<br>`set c $a; bitarray and -length zero c $s` -> `1 0 1 0 0 0 0 0`<br>`set c $a; bitarray or -length zero c $s` -> `1 1 1 1 0 1 1 1` |
-| `bitarray not varName ?<- array?` | Flips every bit. `bitarray not varName` changes the array in `varName` in place; `bitarray not varName <- array` stores the flipped copy of `array` in `varName` and leaves `array` alone. **Returns** the empty string. For arrays wider than 1 bit it flips all the bits of every element, so an 8-bit element 0 becomes 255.<br>`set c $a; bitarray not c` -> `0 1 0 0 1 0 0 0`<br>`bitarray not n <- $a` -> `n` is `0 1 0 0 1 0 0 0`<br>`set x $w; bitarray not x` -> `255 248 255 246` (`w` is `{0 7 0 9}` 8-bit) |
+| `bitarray and`, `or`, `xor`, `andnot`, `not` | The older bitwise commands. `bitarray op` does everything they do (see the table above and the Appendix at the end, which lists them with the `op` spelling of each), so new code should use `op`. They are still here, and still the fastest way to update an array in place, but they are not guaranteed to be in future versions. |
+| `bitarray op ?-length strict\|zero? varName = array1 operator array2`<br>`bitarray op ?-length strict\|zero? varName = operator array`<br>`bitarray op ?-length strict\|zero? array1 operator array2`<br>`bitarray op operator array` | The operations written as an expression: bitwise, logical and relational. **With `varName =`** the result is stored in the variable (created if it does not exist; the arrays are never changed, but `varName` may be the name of one of them) and the command **returns** the empty string. **Without it** the command **returns** the new array, so `set r [bitarray op $a and $b]` and `bitarray op not $a` work as values; the number of words tells which form it is. The arrays are values: a variable, `[lrange $c 0 7]` or the result of another `bitarray op` all do. The bitwise operators are a front end for the older commands `and`, `or`, `xor`, `andnot` and `not` (see the Appendix) (the arguments are rewritten and the same code runs, so the results, the checks and the error messages are those of `bitarray and varName <- array1 array2` and `bitarray not varName <- array`); `-length strict\|zero` works as for `and`, and is an error with the one-array operators.<br>**Bitwise** (combine the bits of the elements; both arrays need the same width): `and` or `&`, `or` or `\|`, `xor` or `^`, `andnot` or `&~` or `&!` (first AND NOT second), and `not` or `~` in front of its array.<br>**In place** (bitwise operators only): when the first operand is the bare name of the destination variable, with no `$`, as in `bitarray op a = a and $b` or `bitarray op a = not a`, the variable is updated where it is, with no new array, exactly like `bitarray and a $b` (the fastest form, for loops that update the same array again and again). `bitarray op a = $a and $b` gives the same result but builds a new array and stores it in `a`, because `$a` is a value that something else may also hold. A destination variable name that is an integer or begins with a digit (`5`, `-3`, `5x`) is an error in every `op varName = ...` form: it could not be told from an operand.<br>**An integer as one operand of a bitwise operator** (`and`, `or`, `xor`, `andnot`, on either side): the integer is combined with every element, and the result has the array's width and sign. The integer must be a value the elements can hold (`0..255` for an 8-bit array, `-128..127` for `-8`, `0` or `1` for a 1-bit array; the same rule and messages as `lset`). `-length` is an error with an integer, and two integers are an error. It works in all three forms, and in place with the bare name: `bitarray op a = a and 6`. A set of flag bits in every element: `bitarray op flags = $flags or 128`; clear a bit: `bitarray op flags = flags andnot 128`.<br>**Logical** (test each element for "not 0", the result is a 1-bit array of the same length; the two arrays may differ in width): `land` or `&&`, `lor` or `\|\|`, and `lnot` or `!` in front of its array. On 1-bit arrays they give the same as the bitwise ones, and are computed the same way, a word (64 elements) at a time.<br>**Relational** (compare the numbers the elements stand for, whatever the widths and signs of the arrays; the result is a 1-bit array of the same length): `eq` or `==`, `ne` or `!=`, `lt` or `<`, `le` or `<=`, `gt` or `>`, `ge` or `>=`. Either operand may be an integer (64 bits at most, a literal, a variable or `[expr ...]`) instead of an array, on either side, but not both: `bitarray op m = $a > 100`, `bitarray op 0 <= $a`. Two arrays need the same length unless `-length zero` (the missing elements of the second count as 0); `-length` is an error with an integer. `eq` and `ne` compare numbers here, not strings as they do in `expr`. With `in` and `ni` the result answers "all, none or some": `0 ni $m` all true, `1 ni $m` none true.<br>`a` -> `{1 0 1 1 0 1 1 1}`, `m` -> `{1 1 0 0 1 1 0 0}`<br>`bitarray op r = $a and $m` -> `r` is `1 0 0 0 0 1 0 0`<br>`bitarray op $a \| $m` -> `1 1 1 1 1 1 1 1`<br>`bitarray op $a ^ $m` -> `0 1 1 1 1 0 1 1`<br>`bitarray op $a &~ $m` -> `0 0 1 1 0 0 1 1`<br>`bitarray op ~ $a` -> `0 1 0 0 1 0 0 0`<br>`bitarray op a = $a and $m` -> `a` becomes `1 0 0 0 0 1 0 0` (a new array)<br>`bitarray op a = a and $m` -> the same result, `a` updated in place<br>`b` -> `{1 2 3 4}` (8-bit): `bitarray op $b or 8` -> `9 10 11 12`; `bitarray op 255 xor $b` -> `254 253 252 251`<br>`w` -> `{0 5 255 0}` (8-bit), `bitarray op ! $w` -> `1 0 0 1`; `bitarray op $w && $w` -> `0 1 1 0`; `bitarray op ~ $w` -> `255 250 0 255` (bitwise)<br>`w` -> `{0 5 255 0}` (8-bit), `bitarray op $w > 4` -> `0 1 1 0`; `bitarray op $w == $w` -> `1 1 1 1`; `bitarray op 5 <= $w` -> `0 1 1 0`<br>`bitarray op r = $a nand $m` => error: `bad operator "nand": must be and, &, or, \|, xor, ^, andnot, &~, &!, not, ~, land, &&, lor, \|\|, lnot, !, eq, ==, ne, !=, lt, <, le, <=, gt, >, ge, or >=`<br>`bitarray op and $a` => error: `bitarray op: "and" needs two arrays: array1 and array2`<br>Because `op` is now a subcommand, the abbreviation `o` (which used to mean `or`) is ambiguous; `or` itself is unchanged. |
 | `bitarray frombytes data` | **Returns** a new 8-bit array with one element per byte of `data`, without making a temporary list. Characters 0 to 255 are taken as bytes (read a file with `open ... rb`); a character above 255 is an error.<br>`bitarray frombytes "Hi!"` => `72 105 33` |
 | `bitarray tobytes array` | **Returns** the elements of an 8-bit `array` as binary data (a byte array), the reverse of `frombytes`. Any other width, and a signed one (`-8`), is an error.<br>`bitarray tobytes [bitarray frombytes "Hi!"]` => `Hi!` |
 | `bitarray fromchars string ?-width w?` | **Returns** a new array with one element per character of `string`, holding its code point. `w` is 8 (the default), 16 or 32; a character that does not fit is an error that names it (`character U+20AC at index 1 does not fit in width 8`).<br>`bitarray fromchars "Hi"` => `72 105`<br>`bitarray fromchars "A\u20ac" -width 16` => `65 8364` |
@@ -204,6 +204,136 @@ set fh [open out.bin wb]; puts -nonewline $fh [bitarray tobytes $a]; close $fh
 
 Load it with `load /full/path/libbitarray.so Bitarray` (on Windows `bitarray.dll`), or use the package index below.
 
+### Examples with `bitarray op`
+
+Five small uses of `bitarray op` (comparisons and logical operators). Each one is complete: paste it into a `tclsh` or `wish` console after
+`package require bitarray` (the same code, with the outputs, is in `extras/op_examples.tcl`; `extras/listbench.tcl -only scenario` times the same five on arrays of up to a million elements, 30 to 70 times faster than plain-list loops on Linux). The idea is the same each time: compare or combine
+whole arrays in one call, then ask "all, none, how many, or where?" with `in`, `ni`, `count` and `next`. A call handles many elements, so the gain
+grows with the array size; for a single element `lindex` and an `if` are just as good.
+
+**1. Which readings are too hot (a threshold mask).** An integer may stand in for an array on either side of a comparison. **Used for:** threshold monitoring. Readings such as temperatures, response times or scores against a limit: which are over it, how many, and where the first one is.
+
+```tcl
+set temps [bitarray newfrom {72 75 81 90 78 85 70 82} -width 8]
+bitarray op hot = $temps > 80
+puts "temperatures : $temps"
+puts "hot (> 80)   : $hot"
+puts "how many hot : [bitarray count $hot]"
+puts "first hot at index [bitarray next $hot 0 1]"
+set i [bitarray next $hot 0 1]
+while {$i >= 0} {
+    puts "  index $i has [lindex $temps $i]"
+    set i [bitarray next $hot [expr {$i + 1}] 1]
+}
+```
+```
+temperatures : 72 75 81 90 78 85 70 82
+hot (> 80)   : 0 0 1 1 0 1 0 1
+how many hot : 4
+first hot at index 2
+  index 2 has 81
+  index 3 has 90
+  index 5 has 85
+  index 7 has 82
+```
+
+**2. Are all values within limits, and where is the first bad one.** The two comparisons give 1-bit masks; `and` combines them; `0 ni $ok` is true when
+no element is 0, that is when everything is in range. The result of one `bitarray op` can be an argument of another. **Used for:** validating a batch of values before using it. Is everything inside the limits, where is the first bad value, and how many are bad.
+
+```tcl
+set v [bitarray newfrom {12 18 25 10 20 7 15 20} -width 8]
+bitarray op ok = [bitarray op $v >= 10] and [bitarray op $v <= 20]
+puts "values       : $v"
+puts "in 10..20    : $ok"
+puts [expr {0 ni $ok ? "all values are in range" : "some values are out of range"}]
+puts "first bad index : [bitarray next $ok 0 0]   (-1 would mean none)"
+puts "bad values      : [expr {[llength $ok] - [bitarray count $ok]}]"
+set v2 [bitarray newfrom {12 18 20 10 11} -width 8]
+bitarray op ok2 = [bitarray op $v2 >= 10] and [bitarray op $v2 <= 20]
+puts [expr {0 ni $ok2 ? "second list: all in range" : "second list: some out of range"}]
+```
+```
+values       : 12 18 25 10 20 7 15 20
+in 10..20    : 1 1 0 1 1 0 1 1
+some values are out of range
+first bad index : 2   (-1 would mean none)
+bad values      : 2
+second list: all in range
+```
+
+**3. What changed between two snapshots.** `!=` marks the positions that differ; `count` says how many and `next` visits them. The same works for byte buffers
+(8-bit arrays) of any size. **Used for:** change detection. Compare a buffer, a set of flags or a state vector with an earlier copy: did anything change, how many elements, and where first.
+
+```tcl
+set before [bitarray newfrom {1 0 0 1 1 0 1 0}]
+set after  [bitarray newfrom {1 0 1 1 0 0 1 1}]
+bitarray op changed = $before != $after
+puts "before  : $before"
+puts "after   : $after"
+puts "changed : $changed"
+puts "[bitarray count $changed] elements differ"
+puts [expr {1 in $changed ? "something changed" : "nothing changed"}]
+set i [bitarray next $changed 0 1]
+while {$i >= 0} {
+    puts "  index $i: [lindex $before $i] -> [lindex $after $i]"
+    set i [bitarray next $changed [expr {$i + 1}] 1]
+}
+```
+```
+before  : 1 0 0 1 1 0 1 0
+after   : 1 0 1 1 0 0 1 1
+changed : 0 0 1 0 1 0 0 1
+3 elements differ
+something changed
+  index 2: 0 -> 1
+  index 4: 1 -> 0
+  index 7: 0 -> 1
+```
+
+**4. A 1-bit validity array combined with wide data.** The logical operators (`&&`, `||`, `!`, or `land`, `lor`, `lnot`) treat each element as true if it is not 0,
+and the two arrays may have different widths (the bitwise `&`, `|`, `^` need the same width and work on the bits). **Used for:** selecting usable data when each value has a present/missing flag: the valid values over a limit, and the non-zero values that are also valid.
+
+```tcl
+set values [bitarray newfrom {0 250 0 7 1000 0} -width 16]
+set valid  [bitarray newfrom {1 1 0 1 0 1}]
+bitarray op big = $values > 100
+bitarray op use = $valid && $big
+puts "values : $values   (16-bit)"
+puts "valid  : $valid   (1-bit)"
+puts "big    : $big   (values > 100)"
+puts "use    : $use   (valid and big)"
+puts "nonzero and valid : [bitarray op $values && $valid]"
+```
+```
+values : 0 250 0 7 1000 0   (16-bit)
+valid  : 1 1 0 1 0 1   (1-bit)
+big    : 0 1 0 0 1 0   (values > 100)
+use    : 0 1 0 0 0 0   (valid and big)
+nonzero and valid : 0 1 0 1 0 0
+```
+
+**5. One step of a cellular automaton (game of life rules).** Each rule is a comparison or a combination of whole arrays; a new generation is three lines. **Used for:** applying a rule to a whole grid or flag array at once. Any "new state from the old state and a count" update has this shape; here one generation of the game of life.
+
+```tcl
+set alive  [bitarray newfrom {1 0 1 1 0 1 0 1}]
+set counts [bitarray newfrom {2 3 3 1 3 4 0 3} -width 8]
+bitarray op born = [bitarray op $alive == 0] and [bitarray op $counts == 3]
+bitarray op stay = $alive and [bitarray op [bitarray op $counts == 2] or [bitarray op $counts == 3]]
+bitarray op next = $born or $stay
+puts "alive now   : $alive"
+puts "neighbours  : $counts"
+puts "born        : $born"
+puts "survive     : $stay"
+puts "next gen    : $next"
+```
+```
+alive now   : 1 0 1 1 0 1 0 1
+neighbours  : 2 3 3 1 3 4 0 3
+born        : 0 1 0 0 1 0 0 0
+survive     : 1 0 1 0 0 0 0 1
+next gen    : 1 1 1 0 1 0 0 1
+```
+
 ### Using `package require`
 
 `pkgIndex.tcl` (in the top-level folder, next to `build.sh`) registers the package. Put the folder that holds `pkgIndex.tcl` and the
@@ -211,7 +341,7 @@ built library on `auto_path`, and then `package require bitarray` finds and load
 
 ```tcl
 lappend auto_path /full/path/to/bitarray     ;# the folder with pkgIndex.tcl and libbitarray.so (bitarray.dll on Windows)
-package require bitarray                     ;# returns 0.8.5
+package require bitarray                     ;# returns 0.9.3
 ```
 
 You can also set the environment variable `TCLLIBPATH` to that folder before starting `tclsh`. The two files do not have to stay where
@@ -255,7 +385,7 @@ All deliberate, and covered by the tests.
   * Cause and a reproduction with stock Tcl only: `extras/typeloss_*` (start with `typeloss_ticket.md`), `RESULTS.txt` section 13a, and Tcl ticket
   https://core.tcl-lang.org/tcl/tktview/0c82728f85760f36361fe42a15f55453c94d285d . Whether the core team considers it a bug is not known.
   * `concat`, `lmap` and similar also give ordinary lists; `bitarray newfrom` packs one again.
-* `lset` with a nested index (`lset a 0 0 1`) is an error: elements are not lists.
+* `lset` with a nested index (`lset a 0 0 1`) is an error: elements are not lists.  So is `lset a value` with no index at all, which for an ordinary list is the same as `set a value`.
 * `7 in $a` compares string forms, as for a list: `"007" in $a` and `"0x7" in $a` are false.
 * The string form is built only if something asks for it (a million 1-bit elements: 2 MB of text).
 * Size limit: 2^40 bits (128 GiB) in total on a 64-bit build, 2^30−1 bits on a 32-bit one. A 64-bit-wide array can hold up to
@@ -302,19 +432,19 @@ Whether an extension like this counts as a "faithful" entry in Dave's Garage rul
 
 ## Quality checks
 
-* **315 tests** (`tests/bitarray.test`; plus 6 more for the core's `lappend` problem, run with `--testbug`): option parsing, ranges and error messages at every width, every list command on
+* **407 tests** (`tests/bitarray.test`; plus 6 more for the core's `lappend` problem, run with `--testbug`): option parsing, ranges and error messages at every width, every list command on
   every width, copy-on-write, `fill`/`count`/`next`, the bitwise commands, word-boundary cases, memory growth.
 * **Random comparison against plain Tcl lists** (`tests/diff_*.tcl`): thousands of random operations per run, values and error
   messages compared. Last big run: 5 widths × 10 seeds × 100 iterations × 40 steps, 0 differences (the signed widths `-8`, `-16`, `-32` and `-64` were added afterwards: 3 seeds × 150 iterations each, 0 differences). The bitwise commands have their own (`tests/diff_bitops.tcl`: 15,000 random cases over all widths, lengths, forms and both `-length` modes, 0 differences).
 * **valgrind** on the whole suite: 0 invalid accesses, 0 definite leaks.
 * **Memory:** `unset` returns the memory (a 953 MiB array: 960 MB → 6.6 MB resident); building and dropping wide arrays in a
   loop leaves memory flat.
-* **Mutation testing** (`extras/mutate5.py`): 217 deliberate bugs inserted into the C code, 196 caught by the tests (one full run of all 217, on 0.8.3, with the test build and both test files; not repeated for 0.8.4 and 0.8.5, whose code differs only in comments, the name of the test command, the lpop panic and an abort() in the BA_IMPOSSIBLE macro); the 21
+* **Mutation testing** (`extras/mutate5.py`): 286 deliberate bugs inserted into the C code, 262 caught by the tests (the first 217 from one full run on 0.8.3, with the test build and both test files, not repeated since, whose old code differs only in comments, the name of the test command, the lpop panic and an abort() in the BA_IMPOSSIBLE macro; the 69 for `op` run on 0.9.0, 0.9.1 and 0.9.2, the first 40 not repeated after the relational operators were added); the 24 The code added in 0.9.3 (integer operands for the bitwise operators, the 1-bit word paths) has not been mutation tested yet.
   missed are explained in `RESULTS.txt` (mostly unreachable code, stray bits nobody can read, or checks that are repeated
-  elsewhere on a 64-bit build). `extras/bitarray.mutants` is `bitarray.c` with every one of the 217 bugs applied (from the full run on 0.8.3) and, beside
+  elsewhere on a 64-bit build). `extras/bitarray.mutants` is `bitarray.c` with every one of the 282 bugs applied and, beside
   each, the tests that caught it, for reading in a side-by-side compare tool (see `extras/README.md`).
-* **Line coverage** (gcov, `extras/coverage_0.8.5.txt`, repeat it with `extras/coverage.sh`): 98.5% of the 1008 lines of `bitarray.c` outside the test support code; the 15 lines that never run (3 of them `BA_IMPOSSIBLE` panics, which are meant never to run) are listed there, each with the reason. `tests/faultinject.test` (29 tests, test build only: a small size limit, allocations that fail on request, a process that panics) runs the error paths for that.
-* The same 315 tests also pass with `-DBA_NO_BUILTINS` (portable popcount code) and `-DBA_FORCE_32BIT_LIMITS`.
+* **Line coverage** (gcov, `extras/coverage_0.9.3.txt`, repeat it with `extras/coverage.sh`): 98.8% of the 1260 lines of `bitarray.c` outside the test support code; the 15 lines that never run (3 of them `BA_IMPOSSIBLE` panics, which are meant never to run) are listed there, each with the reason. `tests/faultinject.test` (29 tests, test build only: a small size limit, allocations that fail on request, a process that panics) runs the error paths for that.
+* The same 407 tests also pass with `-DBA_NO_BUILTINS` (portable popcount code) and `-DBA_FORCE_32BIT_LIMITS`.
 
 Details and numbers: `RESULTS.txt`.
 
@@ -365,6 +495,27 @@ I would like people who are interested in this to read it critically, and to use
 | `undefined symbol: Tcl_…` when loading | the library was built against a different Tcl than the one running it; rebuild with the same one |
 | `bad interpreter: …^M` or `\r: command not found` | the scripts got Windows line endings; run `sed -i 's/\r$//' *.sh` (the repository's `.gitattributes` keeps them as LF) |
 | `Permission denied` running `./build.sh` | run it as `sh ./build.sh` |
+
+## Appendix: the older bitwise commands (not guaranteed in future versions)
+
+`bitarray and`, `or`, `xor`, `andnot` and `not` came first. `bitarray op` now covers all of them: for the bitwise operators it rewrites its arguments and runs the same code, so the results, the checks and the error messages are identical. They are kept because the tests, the sieve and the benchmarks use them, and because they are marginally faster (about 0.2 microseconds less per call, the time `op` spends reading its words). New code should use `op`. These commands may be changed or removed in a later version.
+
+Two small differences remain: the older commands accept a variable whose name begins with a digit (`bitarray and 5 <- $a $b`), which `op` rejects on purpose, and their subcommand names can be abbreviated as far as Tcl allows (`bitarray an` is ambiguous, `bitarray xo` works), while `op`'s operator words cannot.
+
+| Older command | The same with `op` |
+|---|---|
+| `bitarray and c $m` (changes `c`) | `bitarray op c = c and $m` |
+| `bitarray and c <- $m` | `bitarray op c = c and $m` |
+| `bitarray and d <- $a $m` | `bitarray op d = $a and $m` |
+| `bitarray or`, `xor`, `andnot` | the same with `or`, `xor`, `andnot` (or `\|`, `^`, `&~`) |
+| `bitarray not c` | `bitarray op c = not c` |
+| `bitarray not n <- $a` | `bitarray op n = not $a` |
+| `bitarray and -length zero c $s` | `bitarray op -length zero c = c and $s` |
+
+| Command | What it does |
+|---|---|
+| `bitarray and`<br>`bitarray or`<br>`bitarray xor`<br>`bitarray andnot`<br>`  ?-length strict\|zero? varName ?<-? array ?array?` | Bitwise operation between two arrays of the same width (and the same sign), 64 bits at a time (any width: the bits of the packed data are combined, so for 8-bit arrays each byte is combined with the matching byte). `andnot` is "first AND NOT second": it removes the second array's 1 bits from the first. The arrays are values; only `varName` is a name. **Returns** the empty string.<br>`bitarray and varName array` and `bitarray and varName <- array`: `varName` becomes `varName AND array` (changed in place).<br>`bitarray and varName <- array1 array2`: `varName` becomes `array1 AND array2` and neither input changes (`varName` is created if it does not exist).<br>The result has the length of the first array. The widths must be equal. The lengths must be equal too unless `-length zero` is given: then missing elements of the second array count as 0 and extra ones are ignored. `-length strict` (the default) makes a different length an error.<br>The word `<-` cannot be used as the variable name (`bitarray and <- $x` is an error), and `bitarray and a <-` with nothing after the arrow is a wrong # args error.<br>`a` -> `{1 0 1 1 0 1 1 1}`, `m` -> `{1 1 0 0 1 1 0 0}`<br>`set c $a; bitarray and c $m` -> `1 0 0 0 0 1 0 0`<br>`set c $a; bitarray or c <- $m` -> `1 1 1 1 1 1 1 1`<br>`bitarray xor d <- $a $m` -> `d` is `0 1 1 1 1 0 1 1`, `a` unchanged<br>`set c $a; bitarray andnot c $m` -> `0 0 1 1 0 0 1 1`<br>`set c $a; bitarray and c {1 1 1}` => error: `not a bitarray: "1 1 1"`<br>`set s [bitarray newfrom {1 1 1}]; set c $a; bitarray and c $s` => error: `bitarray and: arrays differ in length (8 vs 3); use -length zero to allow it`<br>`set c $a; bitarray and -length zero c $s` -> `1 0 1 0 0 0 0 0`<br>`set c $a; bitarray or -length zero c $s` -> `1 1 1 1 0 1 1 1` |
+| `bitarray not varName ?<- array?` | Flips every bit. `bitarray not varName` changes the array in `varName` in place; `bitarray not varName <- array` stores the flipped copy of `array` in `varName` and leaves `array` alone. **Returns** the empty string. For arrays wider than 1 bit it flips all the bits of every element, so an 8-bit element 0 becomes 255.<br>`set c $a; bitarray not c` -> `0 1 0 0 1 0 0 0`<br>`bitarray not n <- $a` -> `n` is `0 1 0 0 1 0 0 0`<br>`set x $w; bitarray not x` -> `255 248 255 246` (`w` is `{0 7 0 9}` 8-bit) |
 
 ## Repository layout
 

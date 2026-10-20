@@ -33,6 +33,8 @@
 # In mode both the last two columns are plain-list time divided by bitarray time: above 1 the bitarray is faster, below 1 it
 # is slower.  Notes printed at the end say what to keep in mind when reading the numbers.
 
+catch {console show}   ;# under wish: open the console, so that commands can be tried by hand after the run (tclsh has no such command; the error is caught)
+
 set usageText {usage: tclsh9.1 listbench.tcl ?mode? ?options?
 
  mode   both   plain list and bitarray side by side (the default)
@@ -60,7 +62,7 @@ set usageText {usage: tclsh9.1 listbench.tcl ?mode? ?options?
   tclsh9.1 listbench.tcl l                             plain lists only
   tclsh9.1 listbench.tcl both -ratios -sort best1      ratios only, biggest bitarray win first
   tclsh9.1 listbench.tcl both -only "linsert*" -quick  just the linsert rows, two sizes
-  tclsh9.1 listbench.tcl both -only bitop -quick       just the and / or / xor / andnot / not rows ("-only 'bitop xor'" for one)}
+  tclsh9.1 listbench.tcl both -only bitop -quick       just the and / or / xor / andnot / not rows (also "-only scenario") ("-only 'bitop xor'" for one)}
 
 proc die {msg} { puts stderr "listbench: $msg\n"; puts stderr $::usageText; exit 2 }
 
@@ -233,11 +235,71 @@ proc xorList    {var other} { upvar 1 $var l; set l [lmap x $l y $other {expr {$
 proc andnotList {var other} { upvar 1 $var l; set l [lmap x $l y $other {expr {$x & ~$y}}] }
 proc notList    {var}       { upvar 1 $var l; set l [lmap x $l {expr {$x ^ 1}}] }
 proc notList8   {var}       { upvar 1 $var l; set l [lmap x $l {expr {$x ^ 255}}] }
-op "bitop and (a AND b)"        {} s_plain {andList X $Z}    s_w1 {bitarray and X $Z}    s_w8 {bitarray and X $Z}    prep own after {set X} z 1
-op "bitop or (a OR b)"          {} s_plain {orList X $Z}     s_w1 {bitarray or X $Z}     s_w8 {bitarray or X $Z}     prep own after {set X} z 1
-op "bitop xor (a XOR b)"        {} s_plain {xorList X $Z}    s_w1 {bitarray xor X $Z}    s_w8 {bitarray xor X $Z}    prep own after {set X} z 1
-op "bitop andnot (a AND NOT b)" {} s_plain {andnotList X $Z} s_w1 {bitarray andnot X $Z} s_w8 {bitarray andnot X $Z} prep own after {set X} z 1
-op "bitop not (flip every bit)" {} s_plain {notList X}       s_w1 {bitarray not X}       s_w8 {bitarray not X}       prep own after {set X} s_plain8 {notList8 X}
+op "bitop and (a AND b)"        {} s_plain {andList X $Z}    s_w1 {bitarray op X = X and $Z}    s_w8 {bitarray op X = X and $Z}    prep own after {set X} z 1
+op "bitop or (a OR b)"          {} s_plain {orList X $Z}     s_w1 {bitarray op X = X or $Z}     s_w8 {bitarray op X = X or $Z}     prep own after {set X} z 1
+op "bitop xor (a XOR b)"        {} s_plain {xorList X $Z}    s_w1 {bitarray op X = X xor $Z}    s_w8 {bitarray op X = X xor $Z}    prep own after {set X} z 1
+op "bitop andnot (a AND NOT b)" {} s_plain {andnotList X $Z} s_w1 {bitarray op X = X andnot $Z} s_w8 {bitarray op X = X andnot $Z} prep own after {set X} z 1
+op "bitop not (flip every bit)" {} s_plain {notList X}       s_w1 {bitarray op X = not X} s_w8 {bitarray op X = not X}       prep own after {set X} s_plain8 {notList8 X}
+
+# ---- bitarray op (0.9.0 / 0.9.1): the front end, logical operators, relational operators ----
+# All rows begin with "bitop" too ("-only 'bitop op:*'" picks the front-end rows, "-only 'bitop l*'" the logical ones, "-only 'bitop rel*'" the relational ones).
+# (1) Front end: the five bitwise rows above are written `bitarray op X = X and $Z` (the bare name X: updated in place). The rows here show the
+#     forms that build a NEW array: "bitarray op X = $X and $Z" and "bitarray op R = $X and $Z" store a new array each call (the source $X is a
+#     shared value, so it cannot be changed), and "bitarray op $X and $Z" returns one, which is the price of leaving the operands alone.
+# (2) Logical operators: each element counts as true if it is not 0; the result is a new 1-bit array.  The plain list does it with an lmap loop.
+# (3) Relational operators: the result is a new 1-bit array of 0/1; "> 0" is the integer operand form (a threshold mask).  The last rows ask
+#     "is any element different / is any element over the threshold", as `1 in` on the result.
+proc andVal  {l other} { lmap x $l y $other {expr {$x & $y}} }
+proc landList {l other} { lmap x $l y $other {expr {($x != 0) && ($y != 0) ? 1 : 0}} }
+proc lorList  {l other} { lmap x $l y $other {expr {($x != 0) || ($y != 0) ? 1 : 0}} }
+proc lnotList {l}       { lmap x $l {expr {$x == 0}} }
+proc eqList   {l other} { lmap x $l y $other {expr {$x == $y}} }
+proc neList   {l other} { lmap x $l y $other {expr {$x != $y}} }
+proc ltList   {l other} { lmap x $l y $other {expr {$x < $y}} }
+proc gtList0  {l}       { lmap x $l {expr {$x > 0}} }
+op "bitop op: X = \$X and Z (new array)" {} s_plain {andList X $Z} s_w1 {bitarray op X = $X and $Z} s_w8 {bitarray op X = $X and $Z} prep own after {set X} z 1
+op "bitop op: R = \$X and Z (new array)" {} s_plain {set R [andVal $X $Z]} s_w1 {bitarray op R = $X and $Z} s_w8 {bitarray op R = $X and $Z} after {set R} z 1
+op "bitop op: value form (new array)" {} s_plain {andVal $X $Z} s_w1 {bitarray op $X and $Z} s_w8 {bitarray op $X and $Z} z 1
+op "bitop xor integer (X xor 1)" {} s_plain {lmap x $X {expr {$x ^ 1}}} s_w1 {bitarray op $X xor 1} s_w8 {bitarray op $X xor 1}
+op "bitop land (both nonzero)" {} s_plain {landList $X $Z} s_w1 {bitarray op $X land $Z} s_w8 {bitarray op $X land $Z} z 1
+op "bitop lor (either nonzero)" {} s_plain {lorList $X $Z} s_w1 {bitarray op $X lor $Z} s_w8 {bitarray op $X lor $Z} z 1
+op "bitop lnot (is zero)"      {} s_plain {lnotList $X} s_w1 {bitarray op lnot $X} s_w8 {bitarray op lnot $X}
+op "bitop rel == (array, array)"       {} s_plain {eqList $X $Z} s_w1 {bitarray op $X == $Z} s_w8 {bitarray op $X == $Z} z 1
+op "bitop rel != (array, array)"       {} s_plain {neList $X $Z} s_w1 {bitarray op $X != $Z} s_w8 {bitarray op $X != $Z} z 1
+op "bitop rel < (array, array)"        {} s_plain {ltList $X $Z} s_w1 {bitarray op $X < $Z} s_w8 {bitarray op $X < $Z} z 1
+op "bitop rel > 0 (integer operand)" {} s_plain {gtList0 $X} s_w1 {bitarray op $X > 0} s_w8 {bitarray op $X > 0}
+op "bitop rel: any different? (1 in)" {} s_plain {expr {1 in [neList $X $Z]}} s_w1 {expr {1 in [bitarray op $X != $Z]}} s_w8 {expr {1 in [bitarray op $X != $Z]}} z 1
+op "bitop rel: all over 0? (0 ni)" {} s_plain {expr {0 ni [gtList0 $X]}} s_w1 {expr {0 ni [bitarray op $X > 0]}} s_w8 {expr {0 ni [bitarray op $X > 0]}}
+
+# ---- scenarios: the five examples of the README ("Examples with bitarray op") on arrays of the sizes being tested ----
+# Same statements as the examples, without the puts, on data made here (data scen): X values 0..99, Z a copy of X in which every 7th value is
+# one higher, B a 1-bit flag array (2 of every 3 are 1), C counts 0..8.  The bitarray columns use an 8-bit X, Z and C and a 1-bit B (the
+# 1-bit column does not apply: the values do not fit in a bit).  Each script returns the answers the example prints, so the same-answer check
+# compares them with the plain-list version.  The plain list does each example in the fewest passes: one lmap per mask, comparisons fused
+# What each scenario stands for:
+#  1  Threshold monitoring: readings (temperatures, response times, scores) against a limit: which are over it, how many, where is the first.
+#  2  Range validation of a batch of values: is everything inside the limits, where is the first bad value, how many are bad.
+#  3  Change detection between two snapshots (a buffer, a set of flags, a state vector): did anything change, how many, where first.
+#  4  Selection with a validity mask: values plus a presence flag per value (missing data): the usable values over a limit, and the
+#     non-zero values that are also valid.
+#  5  A rule over whole arrays, here one generation of the game of life from alive flags and neighbour counts; any "new state from old state
+#     and counts" grid or flag update has this shape.
+# (v >= 10 && v <= 20 in one expression), which is the faster way to write it for a list and so the fair one.  Names begin with "scenario".
+op "scenario 1: hot mask, count, first" {} data scen \
+    s_plain {set m [lmap v $X {expr {$v > 80}}]; list [countList $m] [nextList $m 0]} s_w1 {} \
+    s_w8 {bitarray op m = $X > 80; list [bitarray count $m] [bitarray next $m 0 1]}
+op "scenario 2: all values in 10..20?" {} data scen \
+    s_plain {set ok [lmap v $X {expr {$v >= 10 && $v <= 20}}]; list [expr {0 ni $ok}] [lsearch -exact $ok 0] [llength [lsearch -all -exact $ok 0]]} s_w1 {} \
+    s_w8 {bitarray op ok = [bitarray op $X >= 10] and [bitarray op $X <= 20]; list [expr {0 ni $ok}] [bitarray next $ok 0 0] [expr {[llength $ok] - [bitarray count $ok]}]}
+op "scenario 3: what changed (X vs Z)" {} data scen \
+    s_plain {set ch [lmap a $X b $Z {expr {$a != $b}}]; list [countList $ch] [expr {1 in $ch}] [nextList $ch 0]} s_w1 {} \
+    s_w8 {bitarray op ch = $X != $Z; list [bitarray count $ch] [expr {1 in $ch}] [bitarray next $ch 0 1]}
+op "scenario 4: valid flags and big values" {} data scen \
+    s_plain {set use [lmap v $X f $B {expr {$f && $v > 50}}]; set nz [lmap v $X f $B {expr {$v != 0 && $f}}]; list [countList $use] [countList $nz]} s_w1 {} \
+    s_w8 {bitarray op big = $X > 50; bitarray op use = $B && $big; list [bitarray count $use] [bitarray count [bitarray op $X && $B]]}
+op "scenario 5: one life generation" {} data scen \
+    s_plain {set nx [lmap a $B c $C {expr {($a == 0 && $c == 3) || ($a && ($c == 2 || $c == 3))}}]; countList $nx} s_w1 {} \
+    s_w8 {bitarray op born = [bitarray op $B == 0] and [bitarray op $C == 3]; bitarray op stay = $B and [bitarray op [bitarray op $C == 2] or [bitarray op $C == 3]]; bitarray op nx = $born or $stay; bitarray count $nx}
 
 proc scriptFor {opd type n} {
     set key s_$type
@@ -297,7 +359,28 @@ proc mklist2 {n} {
     for {set i 2} {$i < $n} {incr i 5} { lset l $i 1 }
     return $l
 }
+proc scenData {n} {
+    if {[info exists ::LV] && [llength $::LV] == $n} return
+    set ::LV {}; set ::LV2 {}; set ::LB {}; set ::LC {}
+    for {set i 0} {$i < $n} {incr i} {
+	set v [expr {($i * 37 + ($i / 7) * 11) % 100}]
+	lappend ::LV $v
+	lappend ::LV2 [expr {$i % 7 == 3 ? ($v + 1) % 100 : $v}]
+	lappend ::LB [expr {$i % 3 != 0}]
+	lappend ::LC [expr {($i * 5 + $i / 3) % 9}]
+    }
+}
 proc setBase {type {mode normal} {needZ 0}} {
+    if {$mode eq "scen"} {
+	scenData [llength $::L]
+	switch $type {
+	    plain - plain8 { set ::BASE $::LV; set ::Z $::LV2; set ::B $::LB; set ::C $::LC }
+	    w8 { set ::BASE [bitarray newfrom $::LV -width 8]; set ::Z [bitarray newfrom $::LV2 -width 8]
+		 set ::B [bitarray newfrom $::LB]; set ::C [bitarray newfrom $::LC -width 8] }
+	    default { error "scenario data is for the plain and 8-bit columns" }
+	}
+	return
+    }
     switch $mode { sparse { set src $::LS } ones { set src $::LO } default { set src $::L } }
     switch $type {
 	plain - plain8 { set ::BASE $src }
@@ -424,13 +507,14 @@ foreach n $sizes {
     append title [expr {$ratiosOnly ? "time list/bitarray (>1x: bitarray faster)" : "us per call, best of $runs"}]
     if {$sortKey ne ""} { append title ", sorted by [expr {$sortKey eq {best1} ? {bit1} : {bit8}}]" }
     if {$mode eq "both"} { append title "; memory [memorySaving $n] less" }
+    set nameW 36; foreach opd $OPS { set w [expr {[string length [dict get $opd name]] + 1}]; if {$w > $nameW} { set nameW $w } }   ;# a longer name widens the column
     if {$md} {
 	puts "### $title\n"
 	puts "| operation | [join $heads { | }] |"
 	puts "|---|[string repeat ---| [llength $heads]]"
     } else {
 	puts $title
-	puts [format "%-36s%s" operation [join [lmap h $heads {format " %10s" $h}] ""]]
+	puts [format "%-*s%s" $nameW operation [join [lmap h $heads {format " %10s" $h}] ""]]
     }
     set rows {}
     foreach opd $OPS {
@@ -469,7 +553,7 @@ foreach n $sizes {
 	if {$md} {
 	    puts "| $name | [join $cells { | }] |"
 	} else {
-	    puts [format "%-36s%s" $name [join [lmap c $cells {format " %10s" $c}] ""]]
+	    puts [format "%-*s%s" $nameW $name [join [lmap c $cells {format " %10s" $c}] ""]]
 	}
     }
     unset ::L ::LS ::LO ::STR ::BASE ::X
@@ -477,6 +561,7 @@ foreach n $sizes {
     catch {unset ::Y}
     catch {unset ::L2}
     catch {unset ::Z}
+    catch {unset ::B ::C ::LV ::LV2 ::LB ::LC}
 }
 puts ""
 if {$verbose} {

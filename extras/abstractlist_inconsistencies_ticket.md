@@ -96,9 +96,23 @@ save implementers from discovering it.
 `lpop b end` returns `f` and leaves the list unchanged.  Probably just a test-type slip, but it is the reference implementation, and
 an extension that copies it would inherit it.
 
+## 5. Smaller: `lset listVar value` (no index) reaches the SetElement hook with an index count of 0
+
+**Observed.**  For an ordinary list, `lset l value` is documented in the source as a synonym for `set l value`
+(`TclLsetFlat`: "If there are no indices, simply return the new value").  `Tcl_LsetObjCmd` and `INST_LSET_FLAT` hand a type that has a
+SetElement hook the call `hook(interp, list, 0, objv+2, value)` without that shortcut, so the hook decides what zero indices mean.
+The core's own `lstring` hook (`LStringSetElem`) reads `indices[0]` without checking the count; with a count of 0 that is the value argument, so
+
+    % set s [lstring abcdef]
+    % lset s X
+    bad index "X": must be integer?[+-]integer? or end?[+-]integer?
+
+(for an ordinary list `lset l X` just gives `X`).  The hook documentation does not say whether a count of 0 can occur or what it should mean.
+Our extension answers it with an error ("elements are not lists").
+
 ## What I am not claiming
 
-* Not a security or correctness problem for scripts: items 1 and 4 need a C caller or a test type; item 3 never gives wrong values.
+* Not a security or correctness problem for scripts: items 1 and 4 need a C caller or a test type; item 3 never gives wrong values; item 5 is an error message where an ordinary list would take the value.
 * I have not looked at trunk, or at other abstract list types (`lseq`/arithseries, `lrange`).
 * Items 1 and 2 are the ones I would most like to hear are intended or not, because a hook implementer cannot tell.
 

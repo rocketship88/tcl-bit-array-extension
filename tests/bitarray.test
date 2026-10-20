@@ -48,6 +48,10 @@ test set-1.5 {out of range} -returnCodes error -body {set a [bitarray new 3]; ls
 test set-1.6 {negative} -returnCodes error -body {set a [bitarray new 3]; lset a -1 1} -result {index "-1" out of range}
 test set-1.7 {bad value} -returnCodes error -body {set a [bitarray new 3]; lset a 1 7} -result {expected 0 or 1 but got "7"}
 test set-1.8 {nested index rejected} -returnCodes error -body {set a [bitarray new 3]; lset a 0 0 1} -result {bitarray elements are not lists}
+test set-1.8a {lset without an index is an error here (for an ordinary list it is "set"): the array is unchanged} -body {
+    set a [bitarray new 3 1]; set b $a
+    list [catch {lset a 5} m] $m $a [bitarray is $a]
+} -result {1 {bitarray elements are not lists} {1 1 1} 1}
 test set-1.9 {empty array append} -body {set a [bitarray new 0]; lset a 0 1; set a} -result 1
 test set-1.10 {lset keeps last-word tail clean: count after growth} -body {
     set a [bitarray new 63 1]; lset a 63 1; lset a end+1 1; list [llength $a] [bitarray count $a]
@@ -1319,4 +1323,518 @@ test cov-2.4 {lset: bad index, index past the end, index == length appends} -bod
     list [catch {lset b foo 1} m1] $m1 [catch {lset b 99 1} m2] $m2 [lset b 3 1]
 } -result {1 {bad index "foo": must be integer?[+-]integer? or end?[+-]integer?} 1 {index "99" out of range} {1 0 1 1}}
 
+# ---- bitarray op: the bitwise commands written as  op var = a operator b  (a front end for and / or / xor / andnot / not) ----
+set opA {1 0 1 1 0 1 1 1}
+set opM {1 1 0 0 1 1 0 0}
+foreach {n sub words} {
+    1.1 and    {and && &}
+    1.2 or     {or || |}
+    1.3 xor    {xor ^}
+    1.4 andnot {andnot &~ &!}
+} {
+    foreach w $words {
+        test op-$n.$w "op: $w gives the same as bitarray $sub, the inputs are not changed" -body "
+            set a \[bitarray newfrom {$opA}\]; set m \[bitarray newfrom {$opM}\]
+            bitarray $sub want <- \$a \$m
+            set r {}
+            bitarray op r = \$a [list $w] \$m
+            list \[expr {\$r eq \$want}\] \[bitarray is \$r\] \$a \$m
+        " -result [list 1 1 $opA $opM]
+    }
+}
+foreach w {not ! ~} {
+    test op-2.1.$w "op: $w flips every bit, like bitarray not" -body "
+        set a \[bitarray newfrom {$opA}\]
+        bitarray not want <- \$a
+        bitarray op r = [list $w] \$a
+        list \[expr {\$r eq \$want}\] \$r \$a
+    " -result [list 1 {0 1 0 0 1 0 0 0} $opA]
+}
+test op-3.1 {op: result values, 1 bit} -body {
+    set a [bitarray newfrom $opA]; set m [bitarray newfrom $opM]
+    bitarray op r1 = $a and $m; bitarray op r2 = $a or $m; bitarray op r3 = $a xor $m; bitarray op r4 = $a andnot $m
+    list $r1 $r2 $r3 $r4
+} -result {{1 0 0 0 0 1 0 0} {1 1 1 1 1 1 1 1} {0 1 1 1 1 0 1 1} {0 0 1 1 0 0 1 1}}
+test op-3.2 {op: 8-bit elements} -body {
+    set a [bitarray newfrom {255 15 240 3} -width 8]; set m [bitarray newfrom {15 15 15 15} -width 8]
+    bitarray op r1 = $a & $m; bitarray op r2 = $a | $m; bitarray op r3 = $a ^ $m; bitarray op r4 = ~ $a
+    list $r1 $r2 $r3 $r4
+} -result {{15 15 0 3} {255 15 255 15} {240 0 255 12} {0 240 15 252}}
+test op-3.3 {op: signed 16-bit elements} -body {
+    set a [bitarray newfrom {-1 5 -32768} -width -16]; set m [bitarray newfrom {255 255 255} -width -16]
+    bitarray op r = $a & $m
+    list $r [bitarray width $r]
+} -result {{255 5 0} -16}
+test op-3.4 {op: the variable may be one of the inputs (the result replaces it)} -body {
+    set a [bitarray newfrom $opA]; set m [bitarray newfrom $opM]; set copy $a
+    bitarray op a = $a and $m
+    list $a $copy
+} -result [list {1 0 0 0 0 1 0 0} $opA]
+test op-3.5 {op: the variable is created, and an old value of any kind is replaced} -body {
+    set a [bitarray newfrom $opA]; set m [bitarray newfrom $opM]
+    unset -nocomplain fresh
+    set old 12
+    bitarray op fresh = $a xor $m; bitarray op old = ! $a
+    list $fresh $old [info exists fresh]
+} -result {{0 1 1 1 1 0 1 1} {0 1 0 0 1 0 0 0} 1}
+test op-3.6 {op: returns the empty string} -body {
+    set a [bitarray newfrom $opA]
+    list [bitarray op r = $a and $a] [bitarray op r = not $a]
+} -result {{} {}}
+test op-3.7 {op: an array of 70 bits (more than one word), the unused bits stay clear} -body {
+    set a [bitarray new 70 1]; set m [bitarray new 70]
+    bitarray op r = not $m
+    list [bitarray count $r] [llength $r] [bitarray count [bitarray new 70]]
+} -result {70 70 0}
+test op-4.1 {op: -length zero, a shorter second array counts as 0} -body {
+    set a [bitarray newfrom $opA]; set s [bitarray newfrom {1 1 1}]
+    bitarray op -length zero c = $a and $s; bitarray op -length zero d = $a or $s
+    list $c $d
+} -result {{1 0 1 0 0 0 0 0} {1 1 1 1 0 1 1 1}}
+test op-4.2 {op: -length strict is the default, and can be given} -body {
+    set a [bitarray newfrom $opA]; set s [bitarray newfrom {1 1 1}]
+    list [catch {bitarray op c = $a and $s} m1] $m1 [catch {bitarray op -length strict c = $a and $s} m2] $m2
+} -result {1 {bitarray and: arrays differ in length (8 vs 3); use -length zero to allow it} 1 {bitarray and: arrays differ in length (8 vs 3); use -length zero to allow it}}
+test op-4.3 {op: arrays of different width} -returnCodes error -body {
+    set a [bitarray newfrom $opA]; set w [bitarray newfrom {1 0 1 1 0 1 1 1} -width 8]
+    bitarray op c = $a or $w
+} -result {bitarray or: arrays differ in width (1 vs 8)}
+test op-4.4 {op: the error messages name the command the operator stands for (xor, andnot)} -body {
+    set a [bitarray newfrom $opA]; set w [bitarray newfrom $opA -width 8]
+    list [catch {bitarray op c = $a ^ $w} m1] $m1 [catch {bitarray op c = $a &~ $w} m2] $m2
+} -result {1 {bitarray xor: arrays differ in width (1 vs 8)} 1 {bitarray andnot: arrays differ in width (1 vs 8)}}
+test op-5.1 {op: no arguments} -returnCodes error -body {bitarray op} -result {wrong # args: should be "bitarray op ?-length strict|zero? ?varName =? array1 operator array2 | ?varName =? not array"}
+test op-5.2 {op: the word = is required} -returnCodes error -body {
+    set a [bitarray newfrom $opA]; bitarray op r := $a and $a
+} -result {wrong # args: should be "bitarray op ?-length strict|zero? ?varName =? array1 operator array2 | ?varName =? not array"}
+test op-5.3 {op: a missing second array} -returnCodes error -body {
+    set a [bitarray newfrom $opA]; bitarray op r = $a and
+} -result {wrong # args: should be "bitarray op ?-length strict|zero? ?varName =? array1 operator array2 | ?varName =? not array"}
+test op-5.4 {op: too many words} -returnCodes error -body {
+    set a [bitarray newfrom $opA]; bitarray op r = $a and $a $a
+} -result {wrong # args: should be "bitarray op ?-length strict|zero? ?varName =? array1 operator array2 | ?varName =? not array"}
+test op-5.5 {op: unknown operator} -returnCodes error -body {
+    set a [bitarray newfrom $opA]; bitarray op r = $a nand $a
+} -result {bad operator "nand": must be and, &, or, |, xor, ^, andnot, &~, &!, not, ~, land, &&, lor, ||, lnot, !, eq, ==, ne, !=, lt, <, le, <=, gt, >, ge, or >=}
+test op-5.6 {op: a binary operator with one array} -returnCodes error -body {
+    set a [bitarray newfrom $opA]; bitarray op r = and $a
+} -result {bitarray op: "and" needs two arrays: varName = array1 and array2}
+test op-5.7 {op: not with two arrays} -returnCodes error -body {
+    set a [bitarray newfrom $opA]; bitarray op r = $a not $a
+} -result {bitarray op: "not" takes one array: varName = not array}
+test op-5.8 {op: -length is for the two-array operators only} -returnCodes error -body {
+    set a [bitarray newfrom $opA]; bitarray op -length zero r = not $a
+} -result {bitarray op: -length cannot be used with not}
+test op-5.9 {op: a bad -length mode, and -length with nothing after it} -body {
+    set a [bitarray newfrom $opA]
+    list [catch {bitarray op -length bogus r = $a and $a} m1] $m1 [catch {bitarray op -length} m2] $m2
+} -result {1 {bad length mode "bogus": must be strict or zero} 1 {wrong # args: should be "bitarray op ?-length strict|zero? ?varName =? array1 operator array2 | ?varName =? not array"}}
+test op-5.10 {op: an array where the operator belongs is a wrong # args error} -returnCodes error -body {
+    set a [bitarray newfrom $opA]; bitarray op r = $a $a
+} -result {wrong # args: should be "bitarray op ?-length strict|zero? ?varName =? array1 operator array2 | ?varName =? not array"}
+test op-5.11 {op: an ordinary list is not a bitarray} -returnCodes error -body {
+    set a [bitarray newfrom $opA]; bitarray op r = $a and {1 0 1}
+} -result {bitarray op: expected a bitarray or an integer of at most 64 bits but got "1 0 1"}
+test op-5.12 {op: a variable that does not exist is created; one with a bad name part is an error from Tcl} -body {
+    set a [bitarray newfrom $opA]
+    list [catch {bitarray op arr(x) = $a and $a} m] [info exists arr(x)] [catch {bitarray op ::nsq::v = $a and $a} m2]
+} -result {0 1 1}
+test op-6.1 {op: the abbreviation o used to mean or and is now ambiguous (op and or)} -returnCodes error -body {
+    bitarray o x
+} -match glob -result {ambiguous subcommand "o": must be *}
+
+# The value form: without "varName =" the result is the new array.
+test op-7.1 {op value form: every operator, the result is a bitarray of the same width} -body {
+    set a [bitarray newfrom $opA]; set b [bitarray newfrom {1 1 0 0 1 0 1 0}]
+    set res {}
+    foreach o {and && & or || | xor ^ andnot &~ &!} {
+	set r [bitarray op $a $o $b]
+	bitarray op x = $a $o $b
+	lappend res [expr {$r eq $x && [bitarray is $r]}]
+    }
+    set res
+} -result {1 1 1 1 1 1 1 1 1 1 1}
+test op-7.2 {op value form: the values} -body {
+    set a [bitarray newfrom {1 1 0 0 1 0 1 0}]; set b [bitarray newfrom {1 0 1 0 1 1 0 0}]
+    list [bitarray op $a and $b] [bitarray op $a or $b] [bitarray op $a xor $b] [bitarray op $a andnot $b]
+} -result {{1 0 0 0 1 0 0 0} {1 1 1 0 1 1 1 0} {0 1 1 0 0 1 1 0} {0 1 0 0 0 0 1 0}}
+test op-7.3 {op value form: not, ! and ~} -body {
+    set a [bitarray newfrom {1 1 0 0 1 0 1 0}]
+    list [bitarray op not $a] [bitarray op ! $a] [bitarray op ~ $a]
+} -result {{0 0 1 1 0 1 0 1} {0 0 1 1 0 1 0 1} {0 0 1 1 0 1 0 1}}
+test op-7.4 {op value form: the inputs are not changed} -body {
+    set a [bitarray newfrom {1 1 0 0 1 0 1 0}]; set b [bitarray newfrom {1 0 1 0 1 1 0 0}]
+    bitarray op $a xor $b; bitarray op not $a
+    list $a $b
+} -result {{1 1 0 0 1 0 1 0} {1 0 1 0 1 1 0 0}}
+test op-7.5 {op value form: -length zero} -body {
+    set a [bitarray newfrom {1 1 1 1}]; set b [bitarray newfrom {1 0}]
+    list [bitarray op -length zero $a and $b] [catch {bitarray op $a and $b} m] $m
+} -result {{1 0 0 0} 1 {bitarray and: arrays differ in length (4 vs 2); use -length zero to allow it}}
+test op-7.6 {op value form: the same array on both sides, in either order, and as the result variable} -body {
+    set a [bitarray newfrom {1 1 0 0 1 0 1 0}]; set b [bitarray newfrom {1 0 1 0 1 1 0 0}]
+    set x [bitarray op $a and $b]; set y [bitarray op $b and $a]
+    bitarray op a = $a or $b
+    set a [bitarray op $a xor $b]
+    list $x $y $a
+} -result {{1 0 0 0 1 0 0 0} {1 0 0 0 1 0 0 0} {0 1 0 0 0 0 1 0}}
+test op-7.7 {op value form: operands may be commands returning bitarrays (slices) and may be nested} -body {
+    set c [bitarray newfrom {1 1 1 1 0 0 0 0 1 1 1 1 0 0 0 0}]; set b [bitarray newfrom {1 0 1 0 1 1 0 0}]
+    list [bitarray op [lrange $c 0 7] xor $b] \
+	[bitarray op [lrange $c 8 15] xor [lrange $b 0 7]] \
+	[bitarray op [bitarray op $b and [lrange $c 0 7]] or [bitarray op not $b]]
+} -result {{0 1 0 1 1 1 0 0} {0 1 0 1 1 1 0 0} {1 1 1 1 0 0 1 1}}
+test op-7.8 {op value form: widths 8 and -16, and the list of the result} -body {
+    set a [bitarray newfrom {-1 5 -32768} -width -16]; set m [bitarray newfrom {255 255 255} -width -16]
+    set r [bitarray op $a and $m]
+    list $r [bitarray width $r] [llength $r]
+} -result {{255 5 0} -16 3}
+test op-7.9 {op value form: it can be used in an expression and as a list} -body {
+    set a [bitarray newfrom {1 1 0 0 1 0 1 0}]; set b [bitarray newfrom {1 0 1 0 1 1 0 0}]
+    list [bitarray count [bitarray op $a and $b]] [lindex [bitarray op $a or $b] 2] [expr {1 in [bitarray op $a andnot $a]}]
+} -result {2 1 0}
+test op-7.10 {op value form: errors} -body {
+    set a [bitarray newfrom $opA]; set w [bitarray newfrom {1 2} -width 8]
+    list [catch {bitarray op $a nand $a} m1] $m1 \
+	[catch {bitarray op and $a} m2] $m2 \
+	[catch {bitarray op $a not $a} m3] $m3 \
+	[catch {bitarray op -length zero not $a} m4] $m4 \
+	[catch {bitarray op $a and $w} m5] $m5 \
+	[catch {bitarray op $a and {1 0 1}} m6] $m6 \
+	[catch {bitarray op $a} m7] [string range $m7 0 19] \
+	[catch {bitarray op = $a} m8] [string range $m8 0 15]
+} -match glob -result {1 {bad operator "nand": *} 1 {bitarray op: "and" needs two arrays: array1 and array2} 1 {bitarray op: "not" takes one array: not array} 1 {bitarray op: -length cannot be used with not} 1 {bitarray and: arrays differ in width (1 vs 8)} 1 {bitarray op: expected a bitarray or an integer of at most 64 bits but got "1 0 1"} 1 {wrong # args: should} 1 {bad operator "="}}
+test op-7.11 {op value form: a plain list is not a bitarray (not form)} -returnCodes error -body {
+    bitarray op not {1 0 1}
+} -match glob -result {*}
+test op-7.12 {op value form: the bits past the end of the result are 0 (a 0 appended later stays 0)} -body {
+    set a [bitarray newfrom {1 0 1 0 1}]
+    set r [bitarray op not $a]; lappend r 0
+    set q [bitarray op $a xor [bitarray newfrom {1 1 1 1 1}]]; lappend q 0 0 0
+    set n [bitarray op lnot $a]; lappend n 0
+    list $r [bitarray count $r] $q $n
+} -result {{0 1 0 1 0 0} 2 {0 1 0 1 0 0 0 0} {0 1 0 1 0 0}}
+test op-8.1 {op logical: on 1-bit arrays they are the same as the bitwise ones} -body {
+    set a [bitarray newfrom {1 1 0 0 1 0 1 0}]; set b [bitarray newfrom {1 0 1 0 1 1 0 0}]
+    list [expr {[bitarray op $a land $b] eq [bitarray op $a and $b]}] [expr {[bitarray op $a && $b] eq [bitarray op $a & $b]}] \
+	[expr {[bitarray op $a lor $b] eq [bitarray op $a or $b]}] [expr {[bitarray op $a || $b] eq [bitarray op $a | $b]}] \
+	[expr {[bitarray op lnot $a] eq [bitarray op not $a]}] [expr {[bitarray op ! $a] eq [bitarray op ~ $a]}]
+} -result {1 1 1 1 1 1}
+test op-8.2 {op logical: wider elements are tested for not 0, the result is 1-bit} -body {
+    set a [bitarray newfrom {0 5 255 0 1} -width 8]; set b [bitarray newfrom {0 0 7 9 128} -width 8]
+    set r [bitarray op $a && $b]
+    list $r [bitarray width $r] [bitarray op $a || $b] [bitarray op ! $a] [bitarray op $a & $b] [bitarray op ~ $a]
+} -result {{0 0 1 0 1} 1 {0 1 1 1 1} {1 0 0 1 0} {0 0 7 0 0} {255 250 0 255 254}}
+test op-8.3 {op logical: every width, signed ones too} -body {
+    set res {}
+    foreach w {8 16 32 64 -8 -16 -32 -64} {
+	set a [bitarray newfrom [expr {$w < 0 ? {0 -1 0 1} : {0 1 0 1}}] -width $w]
+	set b [bitarray newfrom {0 0 1 1} -width $w]
+	lappend res [list $w [bitarray op $a land $b] [bitarray op $a lor $b] [bitarray op lnot $a]]
+    }
+    set res
+} -result {{8 {0 0 0 1} {0 1 1 1} {1 0 1 0}} {16 {0 0 0 1} {0 1 1 1} {1 0 1 0}} {32 {0 0 0 1} {0 1 1 1} {1 0 1 0}} {64 {0 0 0 1} {0 1 1 1} {1 0 1 0}} {-8 {0 0 0 1} {0 1 1 1} {1 0 1 0}} {-16 {0 0 0 1} {0 1 1 1} {1 0 1 0}} {-32 {0 0 0 1} {0 1 1 1} {1 0 1 0}} {-64 {0 0 0 1} {0 1 1 1} {1 0 1 0}}}
+test op-8.4 {op logical: the widths of the two arrays may differ} -body {
+    set m [bitarray newfrom {1 0 5 0} -width 16]; set f [bitarray newfrom {1 1 0 0}]
+    list [bitarray op $m && $f] [bitarray op $f && $m] [bitarray op $m || $f]
+} -result {{1 0 0 0} {1 0 0 0} {1 1 1 0}}
+test op-8.5 {op logical: the lengths must match unless -length zero} -body {
+    set a [bitarray newfrom {1 1 1 1} -width 8]; set b [bitarray newfrom {1 0}]
+    list [catch {bitarray op $a land $b} m] $m [bitarray op -length zero $a land $b] [bitarray op -length zero $a lor $b] \
+	[bitarray op -length zero $b lor $a]
+} -result {1 {bitarray land: arrays differ in length (4 vs 2); use -length zero to allow it} {1 0 0 0} {1 1 1 1} {1 1}}
+test op-8.6 {op logical: into a variable, also one of the inputs; the inputs of the other form are unchanged} -body {
+    set a [bitarray newfrom {0 5 255 0} -width 8]; set b [bitarray newfrom {1 1 1 0} -width 8]
+    bitarray op r = $a && $b
+    bitarray op a = $a || $b
+    bitarray op b = ! $b
+    list $r $a [bitarray width $a] $b
+} -result {{0 1 1 0} {1 1 1 0} 1 {0 0 0 1}}
+test op-8.7 {op logical: the result is a normal 1-bit array (count, in, further operations)} -body {
+    set a [bitarray newfrom {0 5 255 0 3} -width 8]
+    set r [bitarray op ! $a]
+    list [bitarray count $r] [expr {1 in $r}] [expr {7 in $r}] [bitarray op $r lor [bitarray op lnot $r]]
+} -result {2 1 0 {1 1 1 1 1}}
+test op-8.8 {op logical: empty arrays, and a slice as an operand} -body {
+    set e [bitarray newfrom {} -width 8]; set a [bitarray newfrom {0 2 0 4} -width 8]
+    list [bitarray op $e land $e] [bitarray op lnot $e] [bitarray op [lrange $a 1 2] lor [lrange $a 2 3]] [bitarray width [bitarray op $e lor $e]]
+} -result {{} {} {1 1} 1}
+test op-8.9 {op logical: errors} -body {
+    set a [bitarray newfrom {0 2} -width 8]
+    list [catch {bitarray op -length zero lnot $a} m1] $m1 [catch {bitarray op $a lnot $a} m2] $m2 [catch {bitarray op land $a} m3] $m3 \
+	[catch {bitarray op r = $a && {1 0}} m4] $m4
+} -result {1 {bitarray op: -length cannot be used with lnot} 1 {bitarray op: "lnot" takes one array: lnot array} 1 {bitarray op: "land" needs two arrays: array1 land array2} 1 {not a bitarray: "1 0"}}
+
+# The relational operators: eq == ne != lt < le <= gt > ge >=; numbers are compared as numbers, the result is a 1-bit array.
+set relA {0 5 -3 100 7}; set relB {0 6 253 50 7}
+test op-9.1 {op relational: every spelling, a signed 16-bit array against an unsigned 8-bit one} -body {
+    set a [bitarray newfrom $relA -width -16]; set b [bitarray newfrom $relB -width 8]
+    set res {}
+    foreach {sym word} {== eq != ne < lt <= le > gt >= ge} {
+	set r1 [bitarray op $a $sym $b]; set r2 [bitarray op $a $word $b]
+	lappend res [list $sym $r1 [expr {$r1 eq $r2}] [bitarray width $r1]]
+    }
+    set res
+} -result {{== {1 0 0 0 1} 1 1} {!= {0 1 1 1 0} 1 1} {< {0 1 1 0 0} 1 1} {<= {1 1 1 0 1} 1 1} {> {0 0 0 1 0} 1 1} {>= {1 0 0 1 1} 1 1}}
+test op-9.2 {op relational: an integer on the right and on the left} -body {
+    set a [bitarray newfrom $relA -width -16]
+    set res {}
+    foreach sym {== != < <= > >=} {
+	lappend res [bitarray op $a $sym 5] [bitarray op 5 $sym $a]
+    }
+    set res
+} -result {{0 1 0 0 0} {0 1 0 0 0} {1 0 1 1 1} {1 0 1 1 1} {1 0 1 0 0} {0 0 0 1 1} {1 1 1 0 0} {0 1 0 1 1} {0 0 0 1 1} {1 0 1 0 0} {0 1 0 1 1} {1 1 1 0 0}}
+test op-9.3 {op relational: the integer can be a variable or an expression (and a hex or negative number)} -body {
+    set a [bitarray newfrom $relA -width -16]; set n 2; set t 0x5
+    list [bitarray op $a > [expr {$n * 2}]] [bitarray op $a == $t] [bitarray op $a < -2] [bitarray op $a >= -3]
+} -result {{0 1 0 1 1} {0 1 0 0 0} {0 0 1 0 0} {1 1 1 1 1}}
+test op-9.4 {op relational: numbers, not bits: signed against unsigned, wide values} -body {
+    set s [bitarray newfrom {-1 0 5} -width -8]; set u [bitarray newfrom {255 0 5} -width 8]
+    set w [bitarray newfrom {-9223372036854775808 9223372036854775807 0} -width 64]
+    set v [bitarray newfrom {4294967295 0 1} -width 32]
+    list [bitarray op $s == $u] [bitarray op $s < $u] [bitarray op $w < $s] [bitarray op $w > 9223372036854775806] [bitarray op $v > $w] [bitarray op $v == 4294967295]
+} -result {{0 1 1} {1 0 0} {1 0 1} {0 1 0} {1 0 1} {1 0 0}}
+test op-9.5 {op relational: 1-bit arrays, and a 1-bit result for any width} -body {
+    set a [bitarray newfrom {1 0 1 1 0}]; set b [bitarray newfrom {1 1 0 1 0}]
+    list [bitarray op $a == $b] [bitarray op $a != $b] [bitarray op $a > $b] [bitarray op $a >= $b] [bitarray op $a < 1] [bitarray width [bitarray op [bitarray newfrom {1 2} -width 32] > 1]]
+} -result {{1 0 0 1 1} {0 1 1 0 0} {0 0 1 0 0} {1 0 1 1 1} {0 1 0 0 1} 1}
+test op-9.6 {op relational: into a variable; the result chains with the other operators} -body {
+    set a [bitarray newfrom $relA -width -16]; set b [bitarray newfrom $relB -width 8]
+    bitarray op big = $a > 3
+    bitarray op ok = $b < 100
+    bitarray op both = $big and $ok
+    bitarray op m = [bitarray op $a >= 0] && [bitarray op $b != 0]
+    list $big $ok $both $m $a
+} -result {{0 1 0 1 1} {1 1 0 1 1} {0 1 0 1 1} {0 1 0 1 1} {0 5 -3 100 7}}
+test op-9.7 {op relational: all, none and some, with in and ni} -body {
+    set a [bitarray newfrom {3 4 5 6} -width 8]
+    set all [bitarray op $a > 2]; set none [bitarray op $a > 9]; set some [bitarray op $a > 4]
+    list [expr {0 ni $all}] [expr {1 ni $none}] [expr {0 ni $some}] [expr {1 ni $some}] [expr {1 in $some && 0 in $some}]
+} -result {1 1 0 0 1}
+test op-9.8 {op relational: the lengths of two arrays, -length zero (missing elements of the second count as 0)} -body {
+    set a [bitarray newfrom {0 5 1} -width -16]; set b [bitarray newfrom {0 6} -width 8]
+    list [catch {bitarray op $a == $b} m] $m [catch {bitarray op $a lt $b} m2] $m2 \
+	[bitarray op -length zero $a == $b] [bitarray op -length zero $a > $b] [bitarray op -length zero $b == $a] [bitarray op -length strict $a == $a]
+} -result {1 {bitarray eq: arrays differ in length (3 vs 2); use -length zero to allow it} 1 {bitarray lt: arrays differ in length (3 vs 2); use -length zero to allow it} {1 0 0} {0 0 1} {1 0} {1 1 1}}
+test op-9.9 {op relational: empty arrays} -body {
+    set e [bitarray newfrom {} -width 8]
+    list [bitarray op $e == $e] [bitarray op $e < 5] [bitarray op 5 < $e] [bitarray width [bitarray op $e < 5]]
+} -result {{} {} {} 1}
+test op-9.10 {op relational: errors} -body {
+    set a [bitarray newfrom {1 0 1}]
+    list [catch {bitarray op 3 < 4} m1] $m1 \
+	[catch {bitarray op $a < x} m2] $m2 \
+	[catch {bitarray op $a < 1.5} m3] $m3 \
+	[catch {bitarray op $a < 99999999999999999999} m4] $m4 \
+	[catch {bitarray op $a < {1 0 1}} m5] $m5 \
+	[catch {bitarray op -length zero $a < 4} m6] $m6 \
+	[catch {bitarray op -length zero 4 < $a} m7] $m7 \
+	[catch {bitarray op >= $a} m8] $m8 \
+	[catch {bitarray op r = lt $a} m9] $m9 \
+	[catch {bitarray op ! $a < $a} m10] [string range $m10 0 23]
+} -result {1 {bitarray op: at least one operand must be a bitarray} 1 {bitarray op: expected a bitarray or an integer of at most 64 bits but got "x"} 1 {bitarray op: expected a bitarray or an integer of at most 64 bits but got "1.5"} 1 {bitarray op: expected a bitarray or an integer of at most 64 bits but got "99999999999999999999"} 1 {bitarray op: expected a bitarray or an integer of at most 64 bits but got "1 0 1"} 1 {bitarray op: -length cannot be used with an integer operand} 1 {bitarray op: -length cannot be used with an integer operand} 1 {bitarray op: ">=" needs two operands: operand1 >= operand2} 1 {bitarray op: "lt" needs two operands: varName = operand1 lt operand2} 1 {wrong # args: should be }}
+test op-9.11 {op relational: random arrays against a plain Tcl computation} -body {
+    set bad 0
+    foreach w {8 -8 16 -16 32 -32 64} {
+	foreach w2 {1 8 -16 64} {
+	    set lo [expr {$w < 0 ? -(1 << (-$w - 1)) : 0}]; set hi [expr {$w < 0 ? (1 << (-$w - 1)) - 1 : (($w == 64) ? 0x7fffffffffffffff : (1 << $w) - 1)}]
+	    if {$w == 64} {set lo -0x8000000000000000}
+	    set lo2 [expr {$w2 < 0 ? -(1 << (-$w2 - 1)) : 0}]; set hi2 [expr {$w2 == 1 ? 1 : ($w2 < 0 ? (1 << (-$w2 - 1)) - 1 : (($w2 == 64) ? 0x7fffffffffffffff : (1 << $w2) - 1))}]
+	    if {$w2 == 64} {set lo2 -0x8000000000000000}
+	    set l1 {}; set l2 {}
+	    for {set i 0} {$i < 40} {incr i} {
+		lappend l1 [expr {int(rand() * 4) == 0 ? $lo + int(rand() * 2) : ($lo + int(rand() * 3) == 0 ? $hi : $lo + int(rand() * 1000) % ($hi - $lo > 0 ? min($hi - $lo, 1000000) : 1))}]
+		lappend l2 [expr {$lo2 + int(rand() * min($hi2 - $lo2 + 1, 1000)) }]
+	    }
+	    set a [bitarray newfrom $l1 -width $w]; set b [bitarray newfrom $l2 -width $w2]
+	    foreach {sym} {== != < <= > >=} {
+		set exp {}
+		foreach x $l1 y $l2 { lappend exp [expr "$x $sym $y"] }
+		if {[bitarray op $a $sym $b] ne $exp} {incr bad}
+		set exp {}
+		foreach x $l1 { lappend exp [expr "$x $sym 5"] }
+		if {[bitarray op $a $sym 5] ne $exp} {incr bad}
+	    }
+	}
+    }
+    set bad
+} -result 0
+
+
+# The bare name of the destination as the first operand: update the variable in place (same as "bitarray and a $b").
+test op-10.1 {op in place: a = a OP $b gives the same array as the old command, for every bitwise operator} -body {
+    set b [bitarray newfrom {1 1 0 0 1 0 1 0}]
+    set res {}
+    foreach o {and & or | xor ^ andnot &~ &!} {
+	set a [bitarray newfrom {1 0 1 0 1 1 0 0}]; set c [bitarray newfrom {1 0 1 0 1 1 0 0}]
+	bitarray op a = a $o $b
+	bitarray $::opNames($o) c $b
+	lappend res [expr {$a eq $c}]
+    }
+    set res
+} -setup {array set opNames {and and & and or or | or xor xor ^ xor andnot andnot &~ andnot &! andnot}} -cleanup {unset opNames} -result {1 1 1 1 1 1 1 1 1}
+test op-10.2 {op in place: not} -body {
+    set a [bitarray newfrom {1 0 1 1}]
+    bitarray op a = not a
+    set b [bitarray newfrom {1 0 1 1}]
+    bitarray op b = ~ b
+    list $a $b
+} -result {{0 1 0 0} {0 1 0 0}}
+test op-10.3 {op in place: the array object is changed, not replaced (a copy held elsewhere is not touched)} -body {
+    set a [bitarray newfrom {1 1 0 0}]; set keep $a
+    bitarray op a = a and [bitarray newfrom {1 0 1 0}]
+    list $a $keep
+} -result {{1 0 0 0} {1 1 0 0}}
+test op-10.4 {op in place: -length zero and strict} -body {
+    set a [bitarray newfrom {1 1 1 1}]
+    bitarray op -length zero a = a and [bitarray newfrom {1 0}]
+    set r $a
+    set a [bitarray newfrom {1 1 1 1}]
+    set e [catch {bitarray op a = a and [bitarray newfrom {1 0}]} m]
+    list $r $e $m
+} -result {{1 0 0 0} 1 {bitarray and: arrays differ in length (4 vs 2); use -length zero to allow it}}
+test op-10.5 {op in place: the variable must exist, and be a bitarray} -returnCodes error -body {
+    bitarray op nosuchvar = nosuchvar and [bitarray newfrom {1}]
+} -match glob -result {*nosuchvar*}
+test op-10.6 {op: a different name as the first operand is an error, not a variable read} -returnCodes error -body {
+    set a [bitarray newfrom {1 0}]
+    bitarray op a = zz and $a
+} -result {bitarray op: expected a bitarray or an integer of at most 64 bits but got "zz"}
+test op-10.7 {op: a destination name that looks like an integer or begins with a digit is an error} -body {
+    set one [bitarray newfrom {1}]
+    list [catch {bitarray op 5 = $one and $one} m1] $m1 [catch {bitarray op 5x = $one and $one} m2] $m2 [catch {bitarray op -3 = $one and $one} m3] $m3 \
+	[catch {bitarray op x5 = $one and $one} m4] $m4 [catch {bitarray op x = $one and $one} m5]
+} -result {1 {bitarray op: variable name "5" looks like an integer or begins with a digit} 1 {bitarray op: variable name "5x" looks like an integer or begins with a digit} 1 {bitarray op: variable name "-3" looks like an integer or begins with a digit} 0 {} 0}
+test op-10.8 {op in place: the bare name works only for the bitwise operators} -returnCodes error -body {
+    set a [bitarray newfrom {1 0}]
+    bitarray op a = a land $a
+} -result {not a bitarray: "a"}
+test op-10.9 {op in place: a = $a and $b still works and makes a new array} -body {
+    set a [bitarray newfrom {1 1 0 0}]; set keep $a
+    bitarray op a = $a and [bitarray newfrom {1 0 1 0}]
+    list $a $keep
+} -result {{1 0 0 0} {1 1 0 0}}
+
+test op-10.10 {op in place: a variable that shares its array with another (set a $b) is copied first, b is not changed} -body {
+    set b [bitarray newfrom {1 1 0 0}]; set a $b
+    bitarray op a = a and [bitarray newfrom {1 0 1 0}]
+    set c $b
+    bitarray op c = not c
+    list $a $b $c
+} -result {{1 0 0 0} {1 1 0 0} {0 0 1 1}}
+test op-10.11 {op in place: an array that is also a list element or a proc argument is not changed behind the holder's back} -body {
+    set c [bitarray newfrom {1 1 0 0}]; set l [list $c $c]
+    bitarray op c = not c
+    proc ::op1011 {x} {bitarray op x = not x; return $x}
+    set d [bitarray newfrom {1 0 1 0}]
+    set r [op1011 $d]
+    rename ::op1011 {}
+    list $c $l $r $d
+} -result {{0 0 1 1} {{1 1 0 0} {1 1 0 0}} {0 1 0 1} {1 0 1 0}}
+
+# 1-bit arrays take a word-at-a-time path in the logical and relational operators; the same data as 8-bit arrays takes the element-at-a-time
+# path, so the two must give the same answers (including the bits past the end of the last word and -length zero with different lengths).
+test op-11.1 {op: 1-bit fast paths give the same answers as the element-at-a-time code, lengths around a word} -body {
+    set bad 0
+    foreach n {1 2 63 64 65 70 127 128 130} {
+	foreach n2 [list $n [expr {$n > 3 ? $n - 3 : 1}] [expr {$n + 5}]] {
+	    set l1 {}; set l2 {}
+	    for {set i 0} {$i < $n} {incr i} { lappend l1 [expr {int(rand() * 2)}] }
+	    for {set i 0} {$i < $n2} {incr i} { lappend l2 [expr {int(rand() * 2)}] }
+	    set a1 [bitarray newfrom $l1]; set b1 [bitarray newfrom $l2]
+	    set a8 [bitarray newfrom $l1 -width 8]; set b8 [bitarray newfrom $l2 -width 8]
+	    set lopt [expr {$n == $n2 ? {} : {-length zero}}]
+	    foreach o {&& || == != < <= > >=} {
+		if {[bitarray op {*}$lopt $a1 $o $b1] ne [bitarray op {*}$lopt $a8 $o $b8]} {incr bad; puts "$n $n2 $o"}
+	    }
+	    if {[bitarray op ! $a1] ne [bitarray op ! $a8]} {incr bad}
+	    foreach k {-1 0 1 2} {
+		foreach o {== != < <= > >=} {
+		    if {[bitarray op $a1 $o $k] ne [bitarray op $a8 $o $k]} {incr bad; puts "$n $o $k"}
+		    if {[bitarray op $k $o $a1] ne [bitarray op $k $o $a8]} {incr bad; puts "$k $o $n"}
+		}
+	    }
+	}
+    }
+    set bad
+} -result 0
+test op-11.2 {op: 1-bit logical and relational results have no stray bits past the end (counts and appended zeros)} -body {
+    set a [bitarray new 70]
+    set n [bitarray op ! $a]
+    set e [bitarray op $a == $a]
+    set g [bitarray op $a >= 0]
+    set l [bitarray op 1 > $a]
+    set r [list [bitarray count $n] [bitarray count $e] [bitarray count $g] [bitarray count $l]]
+    lappend n 0
+    lappend e 0
+    lappend r [bitarray count $n] [bitarray count $e] [llength $n]
+} -result {70 70 70 70 70 70 71}
+# an integer as one operand of a bitwise operator
+test op-11.3 {op: an array and an integer, bitwise, every width, either side, against a computation in Tcl} -body {
+    set bad 0
+    foreach w {8 -8 16 -16 32 -32 64} {
+	set lo [expr {$w < 0 ? -(1 << (-$w - 1)) : 0}]
+	set hi [expr {$w < 0 ? (1 << (-$w - 1)) - 1 : $w == 64 ? 0x7fffffffffffffff : (1 << $w) - 1}]
+	if {$w == 64} {set lo -0x8000000000000000}
+	set l {}
+	for {set i 0} {$i < 70} {incr i} { lappend l [expr {$lo + int(rand() * min($hi - $lo + 1, 1000000))}] }
+	lappend l $lo $hi
+	set a [bitarray newfrom $l -width $w]
+	foreach k [list $lo $hi [expr {$lo + 1}] [expr {$hi - 1}] [expr {$lo ? 0 : 5}]] {
+	    foreach {sym tclop} {and &  & &  or |  | |  xor ^  ^ ^} {
+		set exp [lmap x $l {expr "$x $tclop $k"}]
+		if {[bitarray op $a $sym $k] ne $exp} {incr bad; puts "$w $sym $k"}
+		if {[bitarray op $k $sym $a] ne $exp} {incr bad; puts "$w $k $sym"}
+	    }
+	    set exp [lmap x $l {expr {$x & ~$k}}]
+	    if {[bitarray op $a andnot $k] ne $exp} {incr bad; puts "$w andnot $k"}
+	    if {[bitarray op $a &~ $k] ne $exp} {incr bad}
+	    set exp [lmap x $l {expr {$k & ~$x}}]
+	    if {[bitarray op $k andnot $a] ne $exp} {incr bad; puts "$w $k andnot"}
+	}
+    }
+    set bad
+} -result 0
+test op-11.4 {op: an integer and a 1-bit array} -body {
+    set a [bitarray newfrom {1 0 1 1 0}]
+    list [bitarray op $a and 1] [bitarray op $a and 0] [bitarray op $a or 1] [bitarray op $a or 0] [bitarray op $a xor 1] [bitarray op 1 andnot $a] [bitarray op $a andnot 1] [bitarray op 0 | $a]
+} -result {{1 0 1 1 0} {0 0 0 0 0} {1 1 1 1 1} {1 0 1 1 0} {0 1 0 0 1} {0 1 0 0 1} {0 0 0 0 0} {1 0 1 1 0}}
+test op-11.5 {op: a bitwise operation with an integer keeps the array's width and sign} -body {
+    set a [bitarray newfrom {-3 5 100} -width -8]
+    set r [bitarray op $a and 15]
+    lappend r 200
+} -returnCodes error -result {expected integer in range -128..127 but got "200"}
+test op-11.6 {op: a bitwise operation with an integer, errors} -body {
+    set a [bitarray newfrom {1 2 3} -width 8]; set b [bitarray newfrom {1 0 1}]; set s [bitarray newfrom {-1 2} -width -8]
+    list [catch {bitarray op $a and 256} m1] $m1 [catch {bitarray op $a and -1} m2] $m2 [catch {bitarray op $b or 2} m3] $m3 \
+	[catch {bitarray op $s xor 128} m4] $m4 [catch {bitarray op $a and x} m5] $m5 [catch {bitarray op 3 and 4} m6] $m6 \
+	[catch {bitarray op -length zero $a and 1} m7] $m7 [catch {bitarray op r = $a and 1.5} m8] $m8 [catch {bitarray op 1 not $a} m9]
+} -match glob -result {1 {expected integer in range 0..255 but got "256"} 1 {expected integer in range 0..255 but got "-1"} 1 {expected 0 or 1 but got "2"} 1 {expected integer in range -128..127 but got "128"} 1 {bitarray op: expected a bitarray or an integer of at most 64 bits but got "x"} 1 {bitarray op: at least one operand must be a bitarray} 1 {bitarray op: -length cannot be used with an integer operand} 1 {bitarray op: expected a bitarray or an integer of at most 64 bits but got "1.5"} 1}
+test op-11.7 {op: an integer operand in the variable form, and in place with the bare name} -body {
+    set a [bitarray newfrom {1 2 3 4} -width 8]; set b $a
+    bitarray op r = $a or 8
+    bitarray op a = a and 6
+    bitarray op c = 255 xor $b
+    list $r $a $b $c
+} -result {{9 10 11 12} {0 2 2 4} {1 2 3 4} {254 253 252 251}}
+test op-11.8 {op: an integer operand, the variable may be the array operand and the integer is a variable or an expr} -body {
+    set a [bitarray newfrom {1 2 3 4} -width 8]; set k 3
+    bitarray op a = $a xor $k
+    bitarray op a = $a and [expr {$k + 4}]
+    set a
+} -result {2 1 0 7}
+test op-11.9 {op: an integer operand, bits past the end of the last word stay 0} -body {
+    set a [bitarray newfrom {1 0 1 0 1} -width 8]
+    set b [bitarray op $a xor 255]
+    set c [bitarray newfrom {1 0 1 0 1}]
+    set d [bitarray op $c or 1]
+    lappend b 0
+    lappend d 0
+    list $b [bitarray count $d] $d
+} -result {{254 255 254 255 254 0} 5 {1 1 1 1 1 0}}
+
+test op-11.10 {op: the in-place form with an integer, errors: no variable, not a bitarray, integer that does not fit} -body {
+    set a [bitarray newfrom {1 2} -width 8]; set t 5
+    list [catch {bitarray op nosuchvar = nosuchvar and 1} m1] $m1 [catch {bitarray op t = t and 1} m2] $m2 [catch {bitarray op a = a and 300} m3] $m3 $a
+} -result {1 {can't read "nosuchvar": no such variable} 1 {not a bitarray: "5"} 1 {expected integer in range 0..255 but got "300"} {1 2}}
 cleanupTests
