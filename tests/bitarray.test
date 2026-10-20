@@ -1838,6 +1838,12 @@ test op-11.10 {op: the in-place form with an integer, errors: no variable, not a
     list [catch {bitarray op nosuchvar = nosuchvar and 1} m1] $m1 [catch {bitarray op t = t and 1} m2] $m2 [catch {bitarray op a = a and 300} m3] $m3 $a
 } -result {1 {can't read "nosuchvar": no such variable} 1 {not a bitarray: "5"} 1 {expected integer in range 0..255 but got "300"} {1 2}}
 # Friendlier errors from the position of the words: the operator list only for a bad operator
+test op-11.11 {op: in place with an integer: andnot keeps the array first, and a string form already built is replaced} -body {
+    set a [bitarray newfrom {255 3 12} -width 8]
+    set before [expr {$a eq "255 3 12"}]	;# builds the string form; the value stays an unshared bitarray
+    bitarray op a = a andnot 0x0F
+    list $before [expr {$a eq "240 0 0"}] [lindex $a 0] "$a"
+} -result {1 1 240 {240 0 0}}
 test op-12.1 {op: words that are not enough} -body {
     list [catch {bitarray op} m1] [string range $m1 0 24] [catch {bitarray op foo} m2] [string range $m2 0 24] \
 	[catch {bitarray op foo =} m3] $m3 [catch {bitarray op foo = bar} m4] $m4

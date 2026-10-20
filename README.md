@@ -78,13 +78,13 @@ sh ./run_tests.sh --tclsh /path/to/tcl9.1/bin/tclsh9.1
 sh ./run_sieves.sh --tclsh /path/to/tcl9.1/bin/tclsh9.1   # optional: the prime-sieve benchmark, see below
 ```
 
-Expected last line of the tests: `bitarray.test:	Total	413	Passed	407	Skipped	6	Failed	0`. The 6 skipped tests show the Tcl core's `lappend` type-loss problem (see the notes on `lappend` below) and are run only on request: `./run_tests.sh --testbug`. They fail on Tcl 9.1.1 and pass on a core with the fix in `extras/core_lappend_typeloss.patch`.
+Expected last line of the tests: `bitarray.test:	Total	414	Passed	408	Skipped	6	Failed	0`. The 6 skipped tests show the Tcl core's `lappend` type-loss problem (see the notes on `lappend` below) and are run only on request: `./run_tests.sh --testbug`. They fail on Tcl 9.1.1 and pass on a core with the fix in `extras/core_lappend_typeloss.patch`.
 
 (`sh ./script` works even if unpacking lost the executable bit, which happens when a ZIP is made or unpacked on Windows.)
 
 ### On Windows (Visual Studio 2022)
 
-`build.bat`, `run_tests.bat` and `run_sieves.bat` do the same three jobs with Microsoft Visual C. Version 0.7.0 has been built and run on Windows by the repository owner (a 64-bit machine, Visual Studio 2022, Tcl 9.1.1 built from trunk): no build warnings, `Total 282  Passed 281  Skipped 1  Failed 0`, the sieve passed, and `listbench.tcl` ran; the output is saved in `extras/windows_0.7.0_run.txt`. Version 0.8.0 was also built and run on Windows by the repository owner (same machine and Tcl 9.1.1 as for 0.7.0): no build warnings, `Total 413  Passed 406  Skipped 7  Failed 0` (the last Windows run was 0.8.5, with 315 tests) (6 are the `--testbug` tests, 1 is the procfs test), the sieve passed, and `listbench.tcl` ran with the same answers in every column (`extras/windows_0.8.0_run.txt`). Earlier versions were also run on Windows (see `RESULTS.txt`). A 32-bit build and other Visual Studio versions are untried.
+`build.bat`, `run_tests.bat` and `run_sieves.bat` do the same three jobs with Microsoft Visual C. Version 0.7.0 has been built and run on Windows by the repository owner (a 64-bit machine, Visual Studio 2022, Tcl 9.1.1 built from trunk): no build warnings, `Total 282  Passed 281  Skipped 1  Failed 0`, the sieve passed, and `listbench.tcl` ran; the output is saved in `extras/windows_0.7.0_run.txt`. Version 0.8.0 was run the same way (same machine and Tcl 9.1.1): `Total 288  Passed 281  Skipped 7  Failed 0` (`extras/windows_0.8.0_run.txt`). The latest Windows run is of version 0.9.3 (same machine and Tcl 9.1.1): no build warnings, `Total 407  Passed 400  Skipped 7  Failed 0` (6 are the `--testbug` tests, 1 is the procfs test), the sieve passed, and `listbench.tcl` ran with the same answers in every column (`extras/windows_0.9.3_run.txt`). Version 0.9.4 adds 7 tests, so its Windows run should end with `Total 414  Passed 407  Skipped 7  Failed 0`; it has not been run on Windows yet. Earlier versions were also run on Windows (see `RESULTS.txt`). A 32-bit build and other Visual Studio versions are untried.
 
 Unpack the ZIP anywhere and, from a Command Prompt, go into the unpacked folder and run the three scripts:
 
@@ -97,7 +97,7 @@ run_sieves.bat --tclsh C:\path\to\tcl9.1\bin\tclsh91.exe     rem optional: the p
 
 `build.bat` finds the headers and the stubs library (`include\tcl.h`, `lib\tclstub.lib`) from the shell you name, or from
 `--tcl-prefix DIR`, finds Visual Studio itself with `vswhere` if `cl` is not already on your `PATH` (so a plain `cmd` window works; it was run that way on 2026-10-13 and set up `vcvars64.bat` itself), and builds the 64-bit or
-32-bit DLL to match the shell. `run_tests.bat` should end with `Total 413  Passed 406  Skipped 7  Failed 0` (the last Windows run was 0.8.5, with 315 tests): one test, which
+32-bit DLL to match the shell. `run_tests.bat` should end with `Total 414  Passed 407  Skipped 7  Failed 0` (the last Windows run, of 0.9.3, had 407 tests and 400 passed): one test, which
 reads `/proc`, is skipped on Windows, and so are the 6 `--testbug` tests (to run those: `tclsh91 tests\bitarray.test -constraints coreTypeLoss`). `--help` on each prints the options.
 
 ### Telling `build.sh` where Tcl is
@@ -514,19 +514,16 @@ Whether an extension like this counts as a "faithful" entry in Dave's Garage rul
 
 ## Quality checks
 
-* **413 tests** (`tests/bitarray.test`; plus 6 more for the core's `lappend` problem, run with `--testbug`): option parsing, ranges and error messages at every width, every list command on
+* **414 tests** (`tests/bitarray.test`; plus 6 more for the core's `lappend` problem, run with `--testbug`): option parsing, ranges and error messages at every width, every list command on
   every width, copy-on-write, `fill`/`count`/`next`, the bitwise commands, word-boundary cases, memory growth.
 * **Random comparison against plain Tcl lists** (`tests/diff_*.tcl`): thousands of random operations per run, values and error
   messages compared. Last big run: 5 widths × 10 seeds × 100 iterations × 40 steps, 0 differences (the signed widths `-8`, `-16`, `-32` and `-64` were added afterwards: 3 seeds × 150 iterations each, 0 differences). The bitwise commands have their own (`tests/diff_bitops.tcl`: 15,000 random cases over all widths, lengths, forms and both `-length` modes, 0 differences).
 * **valgrind** on the whole suite: 0 invalid accesses, 0 definite leaks.
 * **Memory:** `unset` returns the memory (a 953 MiB array: 960 MB → 6.6 MB resident); building and dropping wide arrays in a
   loop leaves memory flat.
-* **Mutation testing** (`extras/mutate5.py`): 286 deliberate bugs inserted into the C code, 262 caught by the tests (the first 217 from one full run on 0.8.3, with the test build and both test files, not repeated since, whose old code differs only in comments, the name of the test command, the lpop panic and an abort() in the BA_IMPOSSIBLE macro; the 69 for `op` run on 0.9.0, 0.9.1 and 0.9.2, the first 40 not repeated after the relational operators were added); the 24 The code added in 0.9.3 (integer operands for the bitwise operators, the 1-bit word paths) has not been mutation tested yet.
-  missed are explained in `RESULTS.txt` (mostly unreachable code, stray bits nobody can read, or checks that are repeated
-  elsewhere on a 64-bit build). `extras/bitarray.mutants` is `bitarray.c` with every one of the 282 bugs applied and, beside
-  each, the tests that caught it, for reading in a side-by-side compare tool (see `extras/README.md`).
+* **Mutation testing** (`extras/mutate5.py`, run with `extras/mutate6.py`): 342 deliberate bugs inserted into the C code, 313 caught by the tests, all 342 from one full run on 0.9.4 (2026-10-20, with the test build and both test files; 12 older mutants of the relational code were re-aimed at the new text and run again separately). The 29 missed are explained in `RESULTS.txt` (mostly unreachable code, stray bits nobody can read, or checks that are repeated elsewhere on a 64-bit build). `extras/bitarray.mutants` is `bitarray.c` with every one of the bugs applied and, beside each, the tests that caught it, for reading in a side-by-side compare tool (see `extras/README.md`).
 * **Line coverage** (gcov, `extras/coverage_0.9.4.txt`, repeat it with `extras/coverage.sh`): 98.8% of the 1260 lines of `bitarray.c` outside the test support code; the 15 lines that never run (3 of them `BA_IMPOSSIBLE` panics, which are meant never to run) are listed there, each with the reason. `tests/faultinject.test` (29 tests, test build only: a small size limit, allocations that fail on request, a process that panics) runs the error paths for that.
-* The same 413 tests also pass with `-DBA_NO_BUILTINS` (portable popcount code) and `-DBA_FORCE_32BIT_LIMITS`.
+* The same 414 tests also pass with `-DBA_NO_BUILTINS` (portable popcount code) and `-DBA_FORCE_32BIT_LIMITS`.
 
 Details and numbers: `RESULTS.txt`.
 

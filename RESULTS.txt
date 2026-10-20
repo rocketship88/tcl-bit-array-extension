@@ -625,3 +625,15 @@ arrays only it is still true of the 1-bit code, which 0.3 keeps (the 66 old test
 
 31. Version 0.9.4: friendlier errors for bitarray op (2026-10-19, Linux container, gcc, Tcl 9.1.1)
    The operator list only for a bad operator; messages for a missing operand, an operator in the wrong place and "name =" with nothing after it; computation errors named `bitarray op and:`. Tests: 412 (406 passed, 6 skipped); op-12.1 to 12.5 new, ten op tests' expected texts changed. Coverage 98.83% of 1282 production lines (extras/coverage_0.9.4.txt); the same 15 lines never run. The new code is not mutation tested (asked to wait).
+
+32. Mutation run of 0.9.4 and the new test op-11.11 (2026-10-20, Linux container, gcc, Tcl 9.1.1)
+   Mutants O71-O126 (56) for the 0.9.3 and 0.9.4 code: OpValue 1-bit path, RelBits (all six comparisons, missing words, integer side), RelValue 1-bit path, ScalarWord, ScalarApply (every operator, andnot order),
+   the scalar branches of OpCmd (side of the integer, -length, two integers, shared value in place, string form, tail bits), the "name =" message, the digit-name check, OpPositionError and OpUsage.
+   First run of the 56: 50 caught, 6 missed.  O101 (in place with an integer, andnot order) and O109 (in place, string form not invalidated) were real gaps: test op-11.11 added (414 tests, 408 passed, 6 skipped;
+   Windows expected 414 / 407 / 7).  Both are now caught.  The other four misses are stray bits past the end that every reader masks, the same as O39, B11 and B13: O76 (OpValue 1-bit path), O90 (RelValue 1-bit path),
+   O108 (in place with an integer) and O110 (value form with an integer).  The check for them is cheap and stays in the code.
+   Then ONE full run of all 342 mutants (the 217 older ones included, not run since 0.8.3): 12 patterns no longer matched the code (O24, O28, O29, O36, O47-O52, O59, O70) and were re-aimed (the RelValue comparisons
+   are now in RelTest) and run again: all 12 caught.  Result: 342 mutants, 313 caught, 29 missed.  New missed since the last count: O10, O76, O90, O108, O110.
+   O10 (the names "xor" and "andnot" swapped in opNames) is equivalent now: opNames is used only to say which operator -length is refused for (not and lnot); the other entries are never printed.
+   The older 24 missed are unchanged (unreachable code, stray bits, repeated checks).  Tests that failed on no mutant are listed in extras/mutation_summary.txt.
+   Also with -DBA_NO_BUILTINS and -DBA_FORCE_32BIT_LIMITS: 414 / 408 / 6.  Not run: Windows (MSVC), a 32-bit build, valgrind on the 414 tests.

@@ -7,9 +7,9 @@
   "cls": "changed:constant",
   "line1": 203,
   "line2": 203,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "12 tests fail",
+  "how": "13 tests fail",
   "tests": [
    "shift-1.1",
    "bitop-1.2",
@@ -22,9 +22,10 @@
    "grow-1.3",
    "diff-3.1",
    "diff-2.1",
-   "diff-4.2"
+   "diff-4.2",
+   "op-9.11"
   ],
-  "secs": 15.9
+  "secs": 28.6
  },
  {
   "id": "M02",
@@ -34,7 +35,7 @@
   "cls": "changed:operator",
   "line1": 204,
   "line2": 204,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "7 tests fail",
   "tests": [
@@ -46,7 +47,7 @@
    "diff-4.2",
    "cov-2.3"
   ],
-  "secs": 16.7
+  "secs": 29.8
  },
  {
   "id": "M03",
@@ -56,9 +57,9 @@
   "cls": "deleted:clause",
   "line1": 205,
   "line2": 205,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "26 tests fail",
+  "how": "29 tests fail",
   "tests": [
    "set-1.4",
    "set-1.11",
@@ -85,9 +86,12 @@
    "diff-3.1",
    "diff-2.1",
    "diff-4.2",
-   "lpop-1.11"
+   "lpop-1.11",
+   "op-7.12",
+   "op-11.2",
+   "op-11.9"
   ],
-  "secs": 15.5
+  "secs": 26.7
  },
  {
   "id": "M04",
@@ -97,7 +101,7 @@
   "cls": "changed:constant",
   "line1": 57,
   "line2": 57,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "3 tests fail",
   "tests": [
@@ -105,7 +109,7 @@
    "range-x.2",
    "range-x.3"
   ],
-  "secs": 27.4
+  "secs": 28.4
  },
  {
   "id": "M33",
@@ -113,13 +117,13 @@
   "old": "if (w < 0 || w > BA_MAX_BITS / width) {",
   "new": "if (w < 0) {",
   "cls": "deleted:clause",
-  "line1": 1971,
-  "line2": 1971,
-  "total": 386,
+  "line1": 2191,
+  "line2": 2191,
+  "total": 35,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 17.0
+  "secs": 27.7
  },
  {
   "id": "M34",
@@ -129,14 +133,14 @@
   "cls": "changed:expression",
   "line1": 1120,
   "line2": 1120,
-  "total": 386,
+  "total": 35,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "fi-1.3",
    "fi-1.5"
   ],
-  "secs": 17.7
+  "secs": 26.9
  },
  {
   "id": "M35",
@@ -146,13 +150,13 @@
   "cls": "changed:expression",
   "line1": 1134,
   "line2": 1134,
-  "total": 386,
+  "total": 35,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "fi-4.2"
   ],
-  "secs": 16.3
+  "secs": 30.4
  },
  {
   "id": "M36",
@@ -162,11 +166,11 @@
   "cls": "deleted:clause",
   "line1": 1179,
   "line2": 1179,
-  "total": 386,
+  "total": 35,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 16.7
+  "secs": 29.7
  },
  {
   "id": "M37",
@@ -176,7 +180,7 @@
   "cls": "changed:operator",
   "line1": 1044,
   "line2": 1046,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "6 tests fail",
   "tests": [
@@ -187,7 +191,7 @@
    "diff-3.1",
    "diff-4.2"
   ],
-  "secs": 16.3
+  "secs": 27.9
  },
  {
   "id": "M38",
@@ -197,11 +201,11 @@
   "cls": "deleted:clause",
   "line1": 1161,
   "line2": 1163,
-  "total": 386,
+  "total": 35,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 18.3
+  "secs": 28.5
  },
  {
   "id": "M39",
@@ -211,12 +215,12 @@
   "cls": "deleted:clause",
   "line1": 1164,
   "line2": 1165,
-  "total": 386,
+  "total": null,
   "result": "CAUGHT",
   "how": "crash rc=132",
   "tests": [],
   "running": "shift-1.1",
-  "secs": 0.7
+  "secs": 1.3
  },
  {
   "id": "M40",
@@ -226,7 +230,7 @@
   "cls": "deleted:clause",
   "line1": 1186,
   "line2": 1187,
-  "total": 386,
+  "total": null,
   "result": "CAUGHT",
   "how": "crash rc=132",
   "tests": [
@@ -234,7 +238,7 @@
    "diff-3.1"
   ],
   "running": "diff-2.1",
-  "secs": 2.0
+  "secs": 3.1
  },
  {
   "id": "M41",
@@ -244,12 +248,12 @@
   "cls": "deleted:statement",
   "line1": 1167,
   "line2": 1168,
-  "total": 386,
+  "total": null,
   "result": "CAUGHT",
   "how": "crash rc=139",
   "tests": [],
   "running": "diff-1.1",
-  "secs": 0.8
+  "secs": 1.6
  },
  {
   "id": "M42",
@@ -259,11 +263,11 @@
   "cls": "deleted:clause",
   "line1": 1105,
   "line2": 1110,
-  "total": 386,
+  "total": 35,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 17.3
+  "secs": 29.5
  },
  {
   "id": "M05",
@@ -273,14 +277,14 @@
   "cls": "changed:operator",
   "line1": 739,
   "line2": 740,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "diff-1.1",
    "elem-1.1"
   ],
-  "secs": 17.9
+  "secs": 29.8
  },
  {
   "id": "M06",
@@ -290,11 +294,11 @@
   "cls": "changed:operator",
   "line1": 781,
   "line2": 783,
-  "total": 386,
+  "total": 35,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 17.2
+  "secs": 32.3
  },
  {
   "id": "M07",
@@ -304,11 +308,11 @@
   "cls": "deleted:clause",
   "line1": 799,
   "line2": 799,
-  "total": 386,
+  "total": 35,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 17.1
+  "secs": 30.6
  },
  {
   "id": "M08",
@@ -318,11 +322,11 @@
   "cls": "deleted:clause",
   "line1": 778,
   "line2": 783,
-  "total": 386,
+  "total": 35,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 17.1
+  "secs": 34.6
  },
  {
   "id": "M09",
@@ -332,7 +336,7 @@
   "cls": "changed:constant",
   "line1": 830,
   "line2": 830,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
@@ -342,7 +346,7 @@
    "diff-1.1",
    "diff-4.2"
   ],
-  "secs": 17.1
+  "secs": 34.7
  },
  {
   "id": "M10",
@@ -352,7 +356,7 @@
   "cls": "changed:operator",
   "line1": 938,
   "line2": 939,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "10 tests fail",
   "tests": [
@@ -367,7 +371,7 @@
    "diff-4.2",
    "cov-2.4"
   ],
-  "secs": 13.2
+  "secs": 26.7
  },
  {
   "id": "M11",
@@ -377,7 +381,7 @@
   "cls": "changed:expression",
   "line1": 956,
   "line2": 959,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "6 tests fail",
   "tests": [
@@ -388,7 +392,7 @@
    "elem-1.9",
    "signed-1.14"
   ],
-  "secs": 16.9
+  "secs": 33.5
  },
  {
   "id": "M12",
@@ -398,14 +402,15 @@
   "cls": "deleted:clause",
   "line1": 342,
   "line2": 343,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "2 tests fail",
+  "how": "3 tests fail",
   "tests": [
    "bitop-2.6",
-   "diff-1.1"
+   "diff-1.1",
+   "op-11.11"
   ],
-  "secs": 17.6
+  "secs": 32.6
  },
  {
   "id": "M13",
@@ -415,7 +420,7 @@
   "cls": "deleted:clause",
   "line1": 342,
   "line2": 343,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
@@ -425,7 +430,7 @@
    "diff-4.1",
    "diff-4.2"
   ],
-  "secs": 12.4
+  "secs": 25.2
  },
  {
   "id": "M14",
@@ -435,7 +440,7 @@
   "cls": "deleted:statement",
   "line1": 1111,
   "line2": 1113,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "3 tests fail",
   "tests": [
@@ -443,7 +448,7 @@
    "shift-2.1",
    "cov-2.3"
   ],
-  "secs": 17.4
+  "secs": 31.8
  },
  {
   "id": "M15",
@@ -453,7 +458,7 @@
   "cls": "changed:+tokens",
   "line1": 1172,
   "line2": 1172,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "21 tests fail",
   "tests": [
@@ -479,7 +484,7 @@
    "lpop-1.10",
    "cov-2.3"
   ],
-  "secs": 14.7
+  "secs": 26.2
  },
  {
   "id": "M17",
@@ -489,9 +494,9 @@
   "cls": "changed:+tokens",
   "line1": 437,
   "line2": 440,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "23 tests fail",
+  "how": "28 tests fail",
   "tests": [
    "new-1.7",
    "set-1.10",
@@ -515,9 +520,14 @@
    "diff-3.1",
    "diff-2.1",
    "bulk-1.9",
-   "diff-4.2"
+   "diff-4.2",
+   "op-3.7",
+   "op-7.9",
+   "op-8.7",
+   "op-11.2",
+   "op-11.9"
   ],
-  "secs": 17.2
+  "secs": 29.6
  },
  {
   "id": "M18",
@@ -527,7 +537,7 @@
   "cls": "changed:constant",
   "line1": 438,
   "line2": 440,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "16 tests fail",
   "tests": [
@@ -548,7 +558,7 @@
    "bulk-1.9",
    "diff-4.2"
   ],
-  "secs": 16.8
+  "secs": 29.5
  },
  {
   "id": "M19",
@@ -558,7 +568,7 @@
   "cls": "deleted:clause",
   "line1": 462,
   "line2": 462,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "8 tests fail",
   "tests": [
@@ -571,7 +581,7 @@
    "diff-2.1",
    "diff-4.2"
   ],
-  "secs": 17.4
+  "secs": 32.0
  },
  {
   "id": "M20",
@@ -581,7 +591,7 @@
   "cls": "deleted:clause",
   "line1": 466,
   "line2": 466,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "7 tests fail",
   "tests": [
@@ -593,7 +603,7 @@
    "diff-2.1",
    "diff-4.2"
   ],
-  "secs": 16.7
+  "secs": 31.1
  },
  {
   "id": "M21",
@@ -603,7 +613,7 @@
   "cls": "deleted:clause",
   "line1": 404,
   "line2": 408,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "9 tests fail",
   "tests": [
@@ -617,7 +627,7 @@
    "diff-2.1",
    "diff-4.2"
   ],
-  "secs": 17.9
+  "secs": 30.3
  },
  {
   "id": "M22",
@@ -627,7 +637,7 @@
   "cls": "changed:operator",
   "line1": 416,
   "line2": 417,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "3 tests fail",
   "tests": [
@@ -635,7 +645,7 @@
    "diff-2.1",
    "diff-4.2"
   ],
-  "secs": 16.9
+  "secs": 30.0
  },
  {
   "id": "M23",
@@ -643,9 +653,9 @@
   "old": "\t\t    if (bit) {\n\t\t        SETBIT(b, i);\n\t\t    } else {\n\t\t        CLRBIT(b, i);\n\t\t    }\n\t\t    if (last - i < step) {     // i + step could pass the end, and overflow, so test last - i\n\t\t        break;\n\t\t    }",
   "new": "\t\t    if (bit) {\n\t\t        SETBIT(b, i);\n\t\t    } else {\n\t\t        CLRBIT(b, i);\n\t\t    }\n\t\t    if (last - i <= step) {     // i + step could pass the end, and overflow, so test last - i\n\t\t        break;\n\t\t    }",
   "cls": "changed:operator",
-  "line1": 2360,
-  "line2": 2367,
-  "total": 386,
+  "line1": 2580,
+  "line2": 2587,
+  "total": 414,
   "result": "CAUGHT",
   "how": "4 tests fail",
   "tests": [
@@ -654,7 +664,7 @@
    "diff-2.1",
    "diff-4.2"
   ],
-  "secs": 17.3
+  "secs": 31.5
  },
  {
   "id": "M24",
@@ -662,9 +672,9 @@
   "old": "\tif (first > last) {             // an empty range: nothing to do, not an error\n\t    return TCL_OK;\n\t}\n\tif (first < 0 || last >= b->len) {   // out of range is an error",
   "new": "\tif (first < 0 || last >= b->len) {   // out of range is an error",
   "cls": "deleted:clause",
-  "line1": 2342,
-  "line2": 2345,
-  "total": 386,
+  "line1": 2562,
+  "line2": 2565,
+  "total": null,
   "result": "CAUGHT",
   "how": "crash rc=139",
   "tests": [
@@ -672,7 +682,7 @@
    "fill-w.25"
   ],
   "running": "diff-2.1",
-  "secs": 2.5
+  "secs": 4.8
  },
  {
   "id": "M25",
@@ -682,13 +692,13 @@
   "cls": "changed:operator",
   "line1": 570,
   "line2": 571,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "set-1.11"
   ],
-  "secs": 17.2
+  "secs": 31.7
  },
  {
   "id": "M26",
@@ -698,9 +708,9 @@
   "cls": "changed:token",
   "line1": 702,
   "line2": 704,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "70 tests fail",
+  "how": "119 tests fail",
   "tests": [
    "new-1.1",
    "new-1.2",
@@ -709,6 +719,7 @@
    "set-1.2",
    "set-1.3",
    "set-1.4",
+   "set-1.8a",
    "range-1.2",
    "range-1.3",
    "set-1.11",
@@ -771,9 +782,57 @@
    "lpop-1.11",
    "cov-2.2",
    "cov-2.3",
-   "cov-2.4"
+   "cov-2.4",
+   "op-1.1.and",
+   "op-1.1.&&",
+   "op-1.1.&",
+   "op-1.2.or",
+   "op-1.2.||",
+   "op-1.2.|",
+   "op-1.3.xor",
+   "op-1.3.^",
+   "op-1.4.andnot",
+   "op-1.4.&~",
+   "op-1.4.&!",
+   "op-2.1.not",
+   "op-2.1.!",
+   "op-2.1.~",
+   "op-3.1",
+   "op-3.4",
+   "op-3.5",
+   "op-4.1",
+   "op-7.2",
+   "op-7.3",
+   "op-7.4",
+   "op-7.5",
+   "op-7.6",
+   "op-7.7",
+   "op-7.12",
+   "op-8.2",
+   "op-8.3",
+   "op-8.4",
+   "op-8.5",
+   "op-8.6",
+   "op-8.7",
+   "op-8.8",
+   "op-9.1",
+   "op-9.2",
+   "op-9.3",
+   "op-9.4",
+   "op-9.5",
+   "op-9.6",
+   "op-9.8",
+   "op-9.11",
+   "op-10.2",
+   "op-10.3",
+   "op-10.4",
+   "op-10.9",
+   "op-10.10",
+   "op-10.11",
+   "op-11.4",
+   "op-11.9"
   ],
-  "secs": 17.4
+  "secs": 34.4
  },
  {
   "id": "M27",
@@ -783,7 +842,7 @@
   "cls": "changed:+tokens",
   "line1": 678,
   "line2": 678,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "14 tests fail",
   "tests": [
@@ -802,7 +861,7 @@
    "signed-1.14",
    "lpop-1.10"
   ],
-  "secs": 14.3
+  "secs": 29.4
  },
  {
   "id": "M28",
@@ -812,14 +871,14 @@
   "cls": "deleted:clause",
   "line1": 284,
   "line2": 285,
-  "total": 386,
+  "total": null,
   "result": "CAUGHT",
   "how": "crash rc=132",
   "tests": [
    "new-1.1"
   ],
   "running": "new-1.2",
-  "secs": 0.6
+  "secs": 1.4
  },
  {
   "id": "M29",
@@ -827,15 +886,15 @@
   "old": "\t    if (last >= b->len) {\n\t        last = b->len - 1;\n\t    }\n\t}\n\tval = 1;                        // no value given: count the 1s (or the non-zero elements)",
   "new": "\t    if (last > b->len) {\n\t        last = b->len - 1;\n\t    }\n\t}\n\tval = 1;                        // no value given: count the 1s (or the non-zero elements)",
   "cls": "changed:operator",
-  "line1": 2086,
-  "line2": 2090,
-  "total": 386,
+  "line1": 2306,
+  "line2": 2310,
+  "total": 414,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "diff-2.1"
   ],
-  "secs": 16.5
+  "secs": 34.5
  },
  {
   "id": "M30",
@@ -845,7 +904,7 @@
   "cls": "changed:2 tokens",
   "line1": 889,
   "line2": 889,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
@@ -855,7 +914,7 @@
    "diff-2.1",
    "diff-4.2"
   ],
-  "secs": 15.7
+  "secs": 30.5
  },
  {
   "id": "M31",
@@ -863,13 +922,13 @@
   "old": "SetRangeOnes(n, 0, n->len - 1, 1);",
   "new": "memset(n->words, 0xff, (size_t)n->nwords * 8);",
   "cls": "changed:expression",
-  "line1": 1982,
-  "line2": 1982,
-  "total": 386,
+  "line1": 2202,
+  "line2": 2202,
+  "total": 35,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 18.0
+  "secs": 33.4
  },
  {
   "id": "M32",
@@ -879,13 +938,13 @@
   "cls": "deleted:clause",
   "line1": 1186,
   "line2": 1187,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "diff-1.1"
   ],
-  "secs": 17.5
+  "secs": 32.9
  },
  {
   "id": "W01",
@@ -895,9 +954,9 @@
   "cls": "changed:constant",
   "line1": 229,
   "line2": 229,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "22 tests fail",
+  "how": "33 tests fail",
   "tests": [
    "bitop-1.3",
    "bitop-1.4",
@@ -920,9 +979,20 @@
    "signed-1.6",
    "signed-1.14",
    "lpop-1.10",
-   "cov-2.1"
+   "cov-2.1",
+   "op-3.3",
+   "op-7.8",
+   "op-8.3",
+   "op-8.4",
+   "op-9.1",
+   "op-9.2",
+   "op-9.3",
+   "op-9.6",
+   "op-9.8",
+   "op-9.11",
+   "op-11.3"
   ],
-  "secs": 17.4
+  "secs": 30.4
  },
  {
   "id": "W02",
@@ -932,9 +1002,9 @@
   "cls": "changed:constant",
   "line1": 230,
   "line2": 230,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "15 tests fail",
+  "how": "19 tests fail",
   "tests": [
    "bitop-1.3",
    "range-2.1",
@@ -950,9 +1020,13 @@
    "signed-1.10",
    "signed-1.16",
    "lpop-1.10",
-   "cov-2.1"
+   "cov-2.1",
+   "op-8.3",
+   "op-9.4",
+   "op-9.11",
+   "op-11.3"
   ],
-  "secs": 17.2
+  "secs": 30.4
  },
  {
   "id": "W03",
@@ -962,9 +1036,9 @@
   "cls": "changed:constant",
   "line1": 231,
   "line2": 231,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "16 tests fail",
+  "how": "20 tests fail",
   "tests": [
    "bitop-1.3",
    "bitop-1.4",
@@ -981,9 +1055,13 @@
    "signed-1.2",
    "signed-1.13",
    "lpop-1.10",
-   "cov-2.1"
+   "cov-2.1",
+   "op-8.3",
+   "op-9.4",
+   "op-9.11",
+   "op-11.3"
   ],
-  "secs": 17.7
+  "secs": 31.9
  },
  {
   "id": "W04",
@@ -993,7 +1071,7 @@
   "cls": "changed:+tokens",
   "line1": 250,
   "line2": 250,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
@@ -1003,7 +1081,7 @@
    "elem-1.12",
    "diff-4.1"
   ],
-  "secs": 17.6
+  "secs": 31.6
  },
  {
   "id": "W05",
@@ -1013,14 +1091,14 @@
   "cls": "changed:constant",
   "line1": 251,
   "line2": 251,
-  "total": 386,
+  "total": null,
   "result": "CAUGHT",
-  "how": "crash rc=139",
+  "how": "crash rc=-9",
   "tests": [
    "bitop-1.3"
   ],
   "running": "bitop-1.4",
-  "secs": 0.6
+  "secs": 114.9
  },
  {
   "id": "W06",
@@ -1030,9 +1108,9 @@
   "cls": "changed:constant",
   "line1": 252,
   "line2": 252,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "15 tests fail",
+  "how": "19 tests fail",
   "tests": [
    "bitop-1.3",
    "range-2.1",
@@ -1048,9 +1126,13 @@
    "signed-1.10",
    "signed-1.16",
    "lpop-1.10",
-   "cov-2.1"
+   "cov-2.1",
+   "op-8.3",
+   "op-9.4",
+   "op-9.11",
+   "op-11.3"
   ],
-  "secs": 17.3
+  "secs": 27.1
  },
  {
   "id": "W07",
@@ -1060,9 +1142,9 @@
   "cls": "changed:constant",
   "line1": 253,
   "line2": 253,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "18 tests fail",
+  "how": "22 tests fail",
   "tests": [
    "bitop-1.3",
    "bitop-1.4",
@@ -1081,9 +1163,13 @@
    "signed-1.2",
    "signed-1.13",
    "lpop-1.10",
-   "cov-2.1"
+   "cov-2.1",
+   "op-8.3",
+   "op-9.4",
+   "op-9.11",
+   "op-11.3"
   ],
-  "secs": 16.5
+  "secs": 26.9
  },
  {
   "id": "W08",
@@ -1093,15 +1179,17 @@
   "cls": "changed:constant",
   "line1": 354,
   "line2": 356,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "3 tests fail",
+  "how": "5 tests fail",
   "tests": [
    "signed-1.2",
    "signed-1.10",
-   "signed-1.16"
+   "signed-1.16",
+   "op-9.11",
+   "op-11.3"
   ],
-  "secs": 17.4
+  "secs": 29.2
  },
  {
   "id": "W09",
@@ -1111,7 +1199,7 @@
   "cls": "changed:name/variable",
   "line1": 376,
   "line2": 378,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "3 tests fail",
   "tests": [
@@ -1119,7 +1207,7 @@
    "diff-4.1",
    "signed-1.9"
   ],
-  "secs": 16.2
+  "secs": 27.5
  },
  {
   "id": "W10",
@@ -1129,18 +1217,19 @@
   "cls": "deleted:clause",
   "line1": 624,
   "line2": 624,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "6 tests fail",
+  "how": "7 tests fail",
   "tests": [
    "range-8.2",
    "range-16.2",
    "range-32.2",
    "elem-1.5",
    "elem-1.13",
-   "bulk-8.3"
+   "bulk-8.3",
+   "op-11.6"
   ],
-  "secs": 17.8
+  "secs": 34.0
  },
  {
   "id": "W11",
@@ -1150,15 +1239,16 @@
   "cls": "changed:expression",
   "line1": 624,
   "line2": 624,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "3 tests fail",
+  "how": "4 tests fail",
   "tests": [
    "range-8.3",
    "elem-1.17",
-   "signed-1.4"
+   "signed-1.4",
+   "op-11.6"
   ],
-  "secs": 18.9
+  "secs": 33.0
  },
  {
   "id": "W12",
@@ -1168,9 +1258,9 @@
   "cls": "changed:constant",
   "line1": 613,
   "line2": 614,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "17 tests fail",
+  "how": "21 tests fail",
   "tests": [
    "bitop-1.3",
    "bitop-1.4",
@@ -1188,9 +1278,13 @@
    "diff-4.1",
    "mem-1.1",
    "signed-1.2",
-   "signed-1.13"
+   "signed-1.13",
+   "op-8.3",
+   "op-9.4",
+   "op-9.11",
+   "op-11.3"
   ],
-  "secs": 7.2
+  "secs": 11.9
  },
  {
   "id": "W13",
@@ -1200,13 +1294,13 @@
   "cls": "changed:token",
   "line1": 608,
   "line2": 608,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "range-8.4"
   ],
-  "secs": 30.9
+  "secs": 31.2
  },
  {
   "id": "W14",
@@ -1216,14 +1310,14 @@
   "cls": "deleted:clause",
   "line1": 266,
   "line2": 266,
-  "total": 386,
+  "total": 35,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "fi-1.1",
    "fi-1.2"
   ],
-  "secs": 30.7
+  "secs": 31.3
  },
  {
   "id": "W15",
@@ -1233,14 +1327,14 @@
   "cls": "changed:expression",
   "line1": 274,
   "line2": 274,
-  "total": 386,
+  "total": null,
   "result": "CAUGHT",
   "how": "crash rc=139",
   "tests": [
    "bitop-1.3"
   ],
   "running": "bitop-1.4",
-  "secs": 0.8
+  "secs": 1.4
  },
  {
   "id": "W16",
@@ -1250,9 +1344,9 @@
   "cls": "changed:constant",
   "line1": 211,
   "line2": 211,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "13 tests fail",
+  "how": "14 tests fail",
   "tests": [
    "shift-1.1",
    "bitop-1.2",
@@ -1266,9 +1360,10 @@
    "grow-1.5",
    "diff-3.1",
    "diff-2.1",
-   "diff-4.2"
+   "diff-4.2",
+   "op-11.1"
   ],
-  "secs": 25.2
+  "secs": 30.6
  },
  {
   "id": "W17",
@@ -1278,13 +1373,13 @@
   "cls": "changed:expression",
   "line1": 301,
   "line2": 302,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "mem-1.1"
   ],
-  "secs": 17.4
+  "secs": 18.9
  },
  {
   "id": "W18",
@@ -1294,12 +1389,12 @@
   "cls": "changed:expression",
   "line1": 306,
   "line2": 306,
-  "total": 386,
+  "total": null,
   "result": "CAUGHT",
   "how": "crash rc=139",
   "tests": [],
   "running": "elem-1.16",
-  "secs": 4.8
+  "secs": 6.1
  },
  {
   "id": "W19",
@@ -1309,14 +1404,14 @@
   "cls": "deleted:statement",
   "line1": 895,
   "line2": 897,
-  "total": 386,
+  "total": null,
   "result": "CAUGHT",
   "how": "crash rc=139",
   "tests": [
    "elem-1.16"
   ],
   "running": "elem-1.16",
-  "secs": 4.5
+  "secs": 5.3
  },
  {
   "id": "W20",
@@ -1326,13 +1421,13 @@
   "cls": "deleted:clause",
   "line1": 901,
   "line2": 902,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "mem-1.1"
   ],
-  "secs": 18.2
+  "secs": 20.9
  },
  {
   "id": "W21",
@@ -1342,7 +1437,7 @@
   "cls": "deleted:clause",
   "line1": 793,
   "line2": 793,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "4 tests fail",
   "tests": [
@@ -1351,7 +1446,7 @@
    "diff-4.1",
    "signed-1.14"
   ],
-  "secs": 27.6
+  "secs": 29.9
  },
  {
   "id": "W22",
@@ -1361,7 +1456,7 @@
   "cls": "deleted:clause",
   "line1": 794,
   "line2": 795,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "9 tests fail",
   "tests": [
@@ -1375,7 +1470,7 @@
    "signed-1.13",
    "signed-1.14"
   ],
-  "secs": 27.0
+  "secs": 27.6
  },
  {
   "id": "W23",
@@ -1385,14 +1480,14 @@
   "cls": "changed:+tokens",
   "line1": 858,
   "line2": 858,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "rev-2.1",
    "diff-4.1"
   ],
-  "secs": 27.6
+  "secs": 31.4
  },
  {
   "id": "W24",
@@ -1402,11 +1497,11 @@
   "cls": "changed:name/variable",
   "line1": 1040,
   "line2": 1040,
-  "total": 386,
+  "total": 35,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 27.0
+  "secs": 29.2
  },
  {
   "id": "W25",
@@ -1416,7 +1511,7 @@
   "cls": "deleted:clause",
   "line1": 1040,
   "line2": 1040,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "4 tests fail",
   "tests": [
@@ -1425,7 +1520,7 @@
    "signed-1.14",
    "lpop-1.10"
   ],
-  "secs": 26.6
+  "secs": 27.8
  },
  {
   "id": "W26",
@@ -1435,11 +1530,11 @@
   "cls": "deleted:clause",
   "line1": 1181,
   "line2": 1182,
-  "total": 386,
+  "total": 35,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 28.1
+  "secs": 29.9
  },
  {
   "id": "W27",
@@ -1449,9 +1544,9 @@
   "cls": "changed:expression",
   "line1": 718,
   "line2": 718,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "17 tests fail",
+  "how": "19 tests fail",
   "tests": [
    "bitop-1.3",
    "bitop-1.4",
@@ -1469,9 +1564,11 @@
    "signed-1.14",
    "signed-1.15",
    "signed-1.16",
-   "signed-1.21"
+   "signed-1.21",
+   "op-9.6",
+   "op-11.3"
   ],
-  "secs": 28.6
+  "secs": 29.7
  },
  {
   "id": "W28",
@@ -1481,9 +1578,9 @@
   "cls": "changed:token",
   "line1": 715,
   "line2": 717,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "54 tests fail",
+  "how": "65 tests fail",
   "tests": [
    "lcmd-w8",
    "bitop-1.3",
@@ -1538,9 +1635,20 @@
    "signed-1.16",
    "signed-1.19",
    "signed-1.21",
-   "lpop-1.10"
+   "lpop-1.10",
+   "op-3.2",
+   "op-3.3",
+   "op-7.8",
+   "op-8.2",
+   "op-9.6",
+   "op-11.3",
+   "op-11.7",
+   "op-11.8",
+   "op-11.9",
+   "op-11.10",
+   "op-11.11"
   ],
-  "secs": 27.1
+  "secs": 29.5
  },
  {
   "id": "W29",
@@ -1550,7 +1658,7 @@
   "cls": "changed:expression",
   "line1": 1242,
   "line2": 1242,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "3 tests fail",
   "tests": [
@@ -1558,7 +1666,7 @@
    "diff-4.1",
    "signed-1.8"
   ],
-  "secs": 27.2
+  "secs": 29.6
  },
  {
   "id": "W30",
@@ -1568,7 +1676,7 @@
   "cls": "changed:constant",
   "line1": 1243,
   "line2": 1243,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "4 tests fail",
   "tests": [
@@ -1577,7 +1685,7 @@
    "diff-4.1",
    "signed-1.8"
   ],
-  "secs": 26.0
+  "secs": 28.5
  },
  {
   "id": "W31",
@@ -1587,7 +1695,7 @@
   "cls": "changed:operator",
   "line1": 494,
   "line2": 494,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "6 tests fail",
   "tests": [
@@ -1598,7 +1706,7 @@
    "diff-4.1",
    "signed-1.7"
   ],
-  "secs": 26.7
+  "secs": 28.5
  },
  {
   "id": "W32",
@@ -1608,7 +1716,7 @@
   "cls": "changed:operator",
   "line1": 500,
   "line2": 500,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "3 tests fail",
   "tests": [
@@ -1616,7 +1724,7 @@
    "bulk-8.4",
    "diff-4.1"
   ],
-  "secs": 26.7
+  "secs": 28.2
  },
  {
   "id": "W33",
@@ -1626,7 +1734,7 @@
   "cls": "changed:operator",
   "line1": 508,
   "line2": 508,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "4 tests fail",
   "tests": [
@@ -1635,7 +1743,7 @@
    "bulk-16.2",
    "diff-4.1"
   ],
-  "secs": 28.5
+  "secs": 29.5
  },
  {
   "id": "W34",
@@ -1645,13 +1753,13 @@
   "cls": "changed:+tokens",
   "line1": 529,
   "line2": 529,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "diff-4.1"
   ],
-  "secs": 28.4
+  "secs": 28.1
  },
  {
   "id": "W35",
@@ -1661,7 +1769,7 @@
   "cls": "deleted:clause",
   "line1": 543,
   "line2": 546,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "3 tests fail",
   "tests": [
@@ -1669,7 +1777,7 @@
    "bulk-8.5",
    "diff-4.1"
   ],
-  "secs": 28.7
+  "secs": 29.7
  },
  {
   "id": "W36",
@@ -1679,7 +1787,7 @@
   "cls": "changed:operator",
   "line1": 557,
   "line2": 559,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
@@ -1689,7 +1797,7 @@
    "diff-4.1",
    "cov-2.1"
   ],
-  "secs": 28.8
+  "secs": 30.0
  },
  {
   "id": "W37",
@@ -1697,9 +1805,9 @@
   "old": "memset(p + first, c, (size_t)(last - first + 1));",
   "new": "memset(p + first, c, (size_t)(last - first));",
   "cls": "deleted:clause",
-  "line1": 2374,
-  "line2": 2374,
-  "total": 386,
+  "line1": 2594,
+  "line2": 2594,
+  "total": 414,
   "result": "CAUGHT",
   "how": "6 tests fail",
   "tests": [
@@ -1710,7 +1818,7 @@
    "diff-4.1",
    "signed-1.15"
   ],
-  "secs": 27.8
+  "secs": 28.7
  },
  {
   "id": "W38",
@@ -1718,9 +1826,9 @@
   "old": "memset(p + first, c,",
   "new": "memset(p, c,",
   "cls": "deleted:clause",
-  "line1": 2374,
-  "line2": 2374,
-  "total": 386,
+  "line1": 2594,
+  "line2": 2594,
+  "total": 414,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
@@ -1730,7 +1838,7 @@
    "diff-4.1",
    "signed-1.15"
   ],
-  "secs": 28.0
+  "secs": 27.8
  },
  {
   "id": "W39",
@@ -1738,16 +1846,16 @@
   "old": "\t\t    p[i] = c;\n\t\t    if (last - i < step) {\n\t\t        break;\n\t\t    }",
   "new": "\t\t    p[i] = c;\n\t\t    if (last - i <= step) {\n\t\t        break;\n\t\t    }",
   "cls": "changed:operator",
-  "line1": 2377,
-  "line2": 2380,
-  "total": 386,
+  "line1": 2597,
+  "line2": 2600,
+  "total": 414,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "bulk-8.1",
    "diff-4.1"
   ],
-  "secs": 27.6
+  "secs": 28.1
  },
  {
   "id": "W40",
@@ -1755,16 +1863,16 @@
   "old": "\t\tPutElem(b, i, val);\n\t\tif (last - i < step) {\n\t\t    break;\n\t\t}",
   "new": "\t\tPutElem(b, i, val);\n\t\tif (last - i <= step) {\n\t\t    break;\n\t\t}",
   "cls": "changed:operator",
-  "line1": 2385,
-  "line2": 2388,
-  "total": 386,
+  "line1": 2605,
+  "line2": 2608,
+  "total": 414,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "bulk-64.1",
    "diff-4.1"
   ],
-  "secs": 26.1
+  "secs": 27.8
  },
  {
   "id": "W41",
@@ -1772,11 +1880,11 @@
   "old": "\t    if (val) {                  // the array starts as all 0\n\t        PutElem(n, i, val);\n\t    }",
   "new": "\t    if (val > 1) {                  // the array starts as all 0\n\t        PutElem(n, i, val);\n\t    }",
   "cls": "changed:+tokens",
-  "line1": 2018,
-  "line2": 2020,
-  "total": 386,
+  "line1": 2238,
+  "line2": 2240,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "72 tests fail",
+  "how": "118 tests fail",
   "tests": [
    "from-1.1",
    "index-1.1",
@@ -1849,9 +1957,55 @@
    "cov-2.1",
    "cov-2.2",
    "cov-2.3",
-   "cov-2.4"
+   "cov-2.4",
+   "op-1.1.and",
+   "op-1.1.&&",
+   "op-1.1.&",
+   "op-1.2.or",
+   "op-1.2.||",
+   "op-1.2.|",
+   "op-1.3.xor",
+   "op-1.3.^",
+   "op-1.4.andnot",
+   "op-1.4.&~",
+   "op-1.4.&!",
+   "op-2.1.not",
+   "op-2.1.!",
+   "op-2.1.~",
+   "op-3.1",
+   "op-3.4",
+   "op-3.5",
+   "op-4.1",
+   "op-7.2",
+   "op-7.3",
+   "op-7.4",
+   "op-7.5",
+   "op-7.6",
+   "op-7.7",
+   "op-7.9",
+   "op-7.12",
+   "op-8.2",
+   "op-8.3",
+   "op-8.4",
+   "op-8.5",
+   "op-8.6",
+   "op-9.4",
+   "op-9.5",
+   "op-9.8",
+   "op-9.11",
+   "op-10.2",
+   "op-10.3",
+   "op-10.4",
+   "op-10.9",
+   "op-10.10",
+   "op-10.11",
+   "op-11.4",
+   "op-11.7",
+   "op-11.8",
+   "op-11.9",
+   "op-11.10"
   ],
-  "secs": 21.1
+  "secs": 24.8
  },
  {
   "id": "W42",
@@ -1859,9 +2013,9 @@
   "old": "memset(n->words, (int)val, (size_t)n->len);",
   "new": "memset(n->words, (int)val, (size_t)n->len - 1);",
   "cls": "changed:+tokens",
-  "line1": 1984,
-  "line2": 1984,
-  "total": 386,
+  "line1": 2204,
+  "line2": 2204,
+  "total": 414,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
@@ -1871,7 +2025,7 @@
    "elem-1.6",
    "bulk-w.1"
   ],
-  "secs": 27.9
+  "secs": 28.9
  },
  {
   "id": "W43",
@@ -1879,9 +2033,9 @@
   "old": "\t\tfor (i = 0; i < n->len; i++) {\n\t\t    PutElem(n, i, val);\n\t\t}",
   "new": "\t\tfor (i = 0; i < n->len - 1; i++) {\n\t\t    PutElem(n, i, val);\n\t\t}",
   "cls": "changed:+tokens",
-  "line1": 1986,
-  "line2": 1988,
-  "total": 386,
+  "line1": 2206,
+  "line2": 2208,
+  "total": 414,
   "result": "CAUGHT",
   "how": "6 tests fail",
   "tests": [
@@ -1892,7 +2046,7 @@
    "bulk-w.2",
    "signed-1.16"
   ],
-  "secs": 28.2
+  "secs": 30.1
  },
  {
   "id": "W44",
@@ -1900,9 +2054,9 @@
   "old": "(Tcl_WideInt)(last - first + 1) - cnt;",
   "new": "(Tcl_WideInt)(last - first) - cnt;",
   "cls": "deleted:clause",
-  "line1": 2100,
-  "line2": 2100,
-  "total": 386,
+  "line1": 2320,
+  "line2": 2320,
+  "total": 414,
   "result": "CAUGHT",
   "how": "4 tests fail",
   "tests": [
@@ -1911,7 +2065,7 @@
    "bulk-1.9",
    "diff-4.2"
   ],
-  "secs": 27.5
+  "secs": 29.6
  },
  {
   "id": "W45",
@@ -1919,9 +2073,9 @@
   "old": "\t    if (ParseValue(interp, valObj, b->width, b->isSigned, &val) != TCL_OK) {\n\t\treturn TCL_ERROR;\n\t    }\n\t    anyNZ = 0;",
   "new": "\t    if (ParseValue(interp, valObj, b->width, b->isSigned, &val) != TCL_OK) {\n\t\treturn TCL_ERROR;\n\t    }",
   "cls": "deleted:clause",
-  "line1": 2092,
-  "line2": 2095,
-  "total": 386,
+  "line1": 2312,
+  "line2": 2315,
+  "total": 414,
   "result": "CAUGHT",
   "how": "8 tests fail",
   "tests": [
@@ -1934,7 +2088,7 @@
    "diff-4.1",
    "diff-4.2"
   ],
-  "secs": 27.4
+  "secs": 31.4
  },
  {
   "id": "W46",
@@ -1942,9 +2096,9 @@
   "old": "\t    if (ParseValue(interp, valObjN, b->width, b->isSigned, &val) != TCL_OK) {\n\t\treturn TCL_ERROR;\n\t    }\n\t    anyNZ = 0;",
   "new": "\t    if (ParseValue(interp, valObjN, b->width, b->isSigned, &val) != TCL_OK) {\n\t\treturn TCL_ERROR;\n\t    }",
   "cls": "deleted:clause",
-  "line1": 2140,
-  "line2": 2143,
-  "total": 386,
+  "line1": 2360,
+  "line2": 2363,
+  "total": 414,
   "result": "CAUGHT",
   "how": "7 tests fail",
   "tests": [
@@ -1956,7 +2110,7 @@
    "signed-1.7",
    "signed-1.15"
   ],
-  "secs": 28.5
+  "secs": 30.0
  },
  {
   "id": "W47",
@@ -1966,12 +2120,12 @@
   "cls": "deleted:clause",
   "line1": 1315,
   "line2": 1318,
-  "total": 386,
+  "total": null,
   "result": "CAUGHT",
   "how": "crash rc=139",
   "tests": [],
   "running": "width-1.8",
-  "secs": 5.0
+  "secs": 5.3
  },
  {
   "id": "W48",
@@ -1981,9 +2135,9 @@
   "cls": "deleted:clause",
   "line1": 1286,
   "line2": 1286,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "30 tests fail",
+  "how": "34 tests fail",
   "tests": [
    "bitop-1.3",
    "bitop-1.4",
@@ -2014,9 +2168,13 @@
    "signed-1.1",
    "signed-1.19",
    "lpop-1.10",
-   "cov-2.1"
+   "cov-2.1",
+   "op-8.3",
+   "op-8.4",
+   "op-9.11",
+   "op-11.3"
   ],
-  "secs": 8.1
+  "secs": 8.2
  },
  {
   "id": "W49",
@@ -2026,14 +2184,14 @@
   "cls": "changed:expression",
   "line1": 672,
   "line2": 672,
-  "total": 386,
+  "total": null,
   "result": "CAUGHT",
   "how": "crash rc=139",
   "tests": [
    "lcmd-w8"
   ],
   "running": "shift-2.1",
-  "secs": 1.0
+  "secs": 1.4
  },
  {
   "id": "W50",
@@ -2043,7 +2201,7 @@
   "cls": "changed:expression",
   "line1": 953,
   "line2": 955,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "13 tests fail",
   "tests": [
@@ -2061,7 +2219,7 @@
    "signed-1.6",
    "signed-1.14"
   ],
-  "secs": 5.8
+  "secs": 6.9
  },
  {
   "id": "W51",
@@ -2071,9 +2229,9 @@
   "cls": "changed:expression",
   "line1": 1115,
   "line2": 1115,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "10 tests fail",
+  "how": "11 tests fail",
   "tests": [
    "lcmd-w8",
    "width-1.14",
@@ -2084,9 +2242,10 @@
    "mem-1.1",
    "signed-1.5",
    "signed-1.6",
-   "signed-1.14"
+   "signed-1.14",
+   "op-11.5"
   ],
-  "secs": 6.1
+  "secs": 7.2
  },
  {
   "id": "W52",
@@ -2096,14 +2255,14 @@
   "cls": "changed:expression",
   "line1": 1129,
   "line2": 1129,
-  "total": 386,
+  "total": null,
   "result": "CAUGHT",
   "how": "crash rc=139",
   "tests": [
    "elem-1.19"
   ],
   "running": "diff-4.1",
-  "secs": 4.9
+  "secs": 5.6
  },
  {
   "id": "W53",
@@ -2113,7 +2272,7 @@
   "cls": "added:code",
   "line1": 741,
   "line2": 743,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "7 tests fail",
   "tests": [
@@ -2125,7 +2284,7 @@
    "signed-1.9",
    "signed-1.10"
   ],
-  "secs": 27.8
+  "secs": 29.0
  },
  {
   "id": "P01",
@@ -2133,9 +2292,9 @@
   "old": "IsWord(objv[k], \"to\") ||",
   "new": "0 ||",
   "cls": "changed:expression",
-  "line1": 2296,
-  "line2": 2296,
-  "total": 386,
+  "line1": 2516,
+  "line2": 2516,
+  "total": 414,
   "result": "CAUGHT",
   "how": "12 tests fail",
   "tests": [
@@ -2152,7 +2311,7 @@
    "fill-w.25",
    "conv-2.5"
   ],
-  "secs": 28.0
+  "secs": 28.4
  },
  {
   "id": "P02",
@@ -2160,9 +2319,9 @@
   "old": "|| IsWord(objv[k], \"..\"))",
   "new": "|| 0)",
   "cls": "changed:expression",
-  "line1": 2296,
-  "line2": 2296,
-  "total": 386,
+  "line1": 2516,
+  "line2": 2516,
+  "total": 414,
   "result": "CAUGHT",
   "how": "3 tests fail",
   "tests": [
@@ -2170,7 +2329,7 @@
    "fill-w.6",
    "fill-w.11"
   ],
-  "secs": 27.1
+  "secs": 28.4
  },
  {
   "id": "P03",
@@ -2178,9 +2337,9 @@
   "old": "\tif (k < objc && IsWord(objv[k], \"with\")) {\n\t    k++;\n\t}",
   "new": "\t;",
   "cls": "deleted:clause",
-  "line1": 2303,
-  "line2": 2305,
-  "total": 386,
+  "line1": 2523,
+  "line2": 2525,
+  "total": 414,
   "result": "CAUGHT",
   "how": "16 tests fail",
   "tests": [
@@ -2201,7 +2360,7 @@
    "conv-2.5",
    "cov-1.7"
   ],
-  "secs": 25.8
+  "secs": 28.8
  },
  {
   "id": "P04",
@@ -2209,9 +2368,9 @@
   "old": "if (k < objc && IsWord(objv[k], \"by\")) {",
   "new": "if (0) {",
   "cls": "changed:expression",
-  "line1": 2310,
-  "line2": 2310,
-  "total": 386,
+  "line1": 2530,
+  "line2": 2530,
+  "total": 414,
   "result": "CAUGHT",
   "how": "8 tests fail",
   "tests": [
@@ -2224,7 +2383,7 @@
    "fill-w.17",
    "cov-1.7"
   ],
-  "secs": 28.4
+  "secs": 28.8
  },
  {
   "id": "P05",
@@ -2232,16 +2391,16 @@
   "old": "\t    if (k != objc - 1) {\n\t        goto fillUsage;\n\t    }",
   "new": "\t    ;",
   "cls": "deleted:clause",
-  "line1": 2312,
-  "line2": 2314,
-  "total": 386,
+  "line1": 2532,
+  "line2": 2534,
+  "total": 414,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "fill-w.12",
    "fill-w.16"
   ],
-  "secs": 29.9
+  "secs": 27.9
  },
  {
   "id": "P06",
@@ -2249,15 +2408,15 @@
   "old": "} else if (k < objc - 1) {",
   "new": "} else if (0) {",
   "cls": "changed:expression",
-  "line1": 2315,
-  "line2": 2315,
-  "total": 386,
+  "line1": 2535,
+  "line2": 2535,
+  "total": 414,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "fill-w.15"
   ],
-  "secs": 26.4
+  "secs": 27.5
  },
  {
   "id": "P07",
@@ -2267,15 +2426,16 @@
   "cls": "deleted:clause",
   "line1": 1263,
   "line2": 1263,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "3 tests fail",
+  "how": "4 tests fail",
   "tests": [
    "fill-w.26",
    "count-w.14",
-   "next-w.9"
+   "next-w.9",
+   "op-7.10"
   ],
-  "secs": 26.9
+  "secs": 28.2
  },
  {
   "id": "P08",
@@ -2283,16 +2443,16 @@
   "old": "IndexError(interp, first < 0 ? firstObj : lastObj);",
   "new": "IndexError(interp, lastObj);",
   "cls": "deleted:clause",
-  "line1": 2346,
-  "line2": 2346,
-  "total": 386,
+  "line1": 2566,
+  "line2": 2566,
+  "total": 414,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "fill-w.20",
    "diff-2.1"
   ],
-  "secs": 26.6
+  "secs": 29.2
  },
  {
   "id": "P09",
@@ -2300,9 +2460,9 @@
   "old": "IsWord(objv[kc], \"to\") ||",
   "new": "0 ||",
   "cls": "changed:expression",
-  "line1": 2058,
-  "line2": 2058,
-  "total": 386,
+  "line1": 2278,
+  "line2": 2278,
+  "total": 414,
   "result": "CAUGHT",
   "how": "6 tests fail",
   "tests": [
@@ -2313,7 +2473,7 @@
    "count-w.9",
    "count-w.10"
   ],
-  "secs": 26.6
+  "secs": 28.0
  },
  {
   "id": "P10",
@@ -2321,16 +2481,16 @@
   "old": "|| IsWord(objv[kc], \"..\"))",
   "new": "|| 0)",
   "cls": "changed:expression",
-  "line1": 2058,
-  "line2": 2058,
-  "total": 386,
+  "line1": 2278,
+  "line2": 2278,
+  "total": 414,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "count-w.2",
    "count-w.8"
   ],
-  "secs": 26.9
+  "secs": 27.1
  },
  {
   "id": "P11",
@@ -2338,9 +2498,9 @@
   "old": "if (kc < objc && IsWord(objv[kc], \"with\")) {",
   "new": "if (0) {",
   "cls": "changed:expression",
-  "line1": 2065,
-  "line2": 2065,
-  "total": 386,
+  "line1": 2285,
+  "line2": 2285,
+  "total": 414,
   "result": "CAUGHT",
   "how": "6 tests fail",
   "tests": [
@@ -2351,7 +2511,7 @@
    "count-w.9",
    "count-w.11"
   ],
-  "secs": 25.4
+  "secs": 29.1
  },
  {
   "id": "P12",
@@ -2359,15 +2519,15 @@
   "old": "\t    if (kc != objc) {               // anything left over is a usage error\n\t        goto countUsage;\n\t    }",
   "new": "\t    ;      // anything left over is a usage error",
   "cls": "deleted:clause",
-  "line1": 2074,
-  "line2": 2076,
-  "total": 386,
+  "line1": 2294,
+  "line2": 2296,
+  "total": 414,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "count-w.13"
   ],
-  "secs": 28.6
+  "secs": 30.0
  },
  {
   "id": "P13",
@@ -2375,9 +2535,9 @@
   "old": "hasVal = (valObj != NULL);",
   "new": "hasVal = 0;",
   "cls": "changed:expression",
-  "line1": 2077,
-  "line2": 2077,
-  "total": 386,
+  "line1": 2297,
+  "line2": 2297,
+  "total": 414,
   "result": "CAUGHT",
   "how": "9 tests fail",
   "tests": [
@@ -2391,7 +2551,7 @@
    "diff-4.1",
    "diff-4.2"
   ],
-  "secs": 27.2
+  "secs": 29.0
  },
  {
   "id": "P14",
@@ -2399,9 +2559,9 @@
   "old": "if (kn < objc && IsWord(objv[kn], \"with\")) {",
   "new": "if (0) {",
   "cls": "changed:expression",
-  "line1": 2123,
-  "line2": 2123,
-  "total": 386,
+  "line1": 2343,
+  "line2": 2343,
+  "total": 414,
   "result": "CAUGHT",
   "how": "6 tests fail",
   "tests": [
@@ -2412,7 +2572,7 @@
    "next-w.5",
    "cov-2.1"
   ],
-  "secs": 26.4
+  "secs": 29.9
  },
  {
   "id": "P15",
@@ -2420,15 +2580,15 @@
   "old": "\tif (kn != objc) {\n\t    goto nextUsage;\n\t}",
   "new": "\t;",
   "cls": "deleted:clause",
-  "line1": 2132,
-  "line2": 2134,
-  "total": 386,
+  "line1": 2352,
+  "line2": 2354,
+  "total": 414,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "next-w.6"
   ],
-  "secs": 27.3
+  "secs": 28.0
  },
  {
   "id": "Q01",
@@ -2436,9 +2596,9 @@
   "old": "\tif (nb > 0) {                                   // the bytes are the elements, as they are\n\t    memcpy(n->words, bytes, (size_t)nb);\n\t}",
   "new": "\tif (nb > 0) {                                       // the bytes are the elements, as they are\n\t    memcpy(n->words, bytes, (size_t)nb - 1);\n\t}",
   "cls": "changed:+tokens",
-  "line1": 2172,
-  "line2": 2174,
-  "total": 386,
+  "line1": 2392,
+  "line2": 2394,
+  "total": 414,
   "result": "CAUGHT",
   "how": "9 tests fail",
   "tests": [
@@ -2452,7 +2612,7 @@
    "conv-5.2",
    "signed-1.19"
   ],
-  "secs": 27.5
+  "secs": 29.9
  },
  {
   "id": "Q02",
@@ -2460,16 +2620,16 @@
   "old": "\tif (b->width != 8 || b->isSigned) {   // only unsigned 8-bit arrays are bytes\n\t    Tcl_SetObjResult(interp, Tcl_ObjPrintf(\n\t\t    \"tobytes: array has width %d; only width 8 can be written as bytes\",",
   "new": "\tif (b->isSigned) {\n\t    Tcl_SetObjResult(interp, Tcl_ObjPrintf(\n\t\t    \"tobytes: array has width %d; only width 8 can be written as bytes\",",
   "cls": "deleted:clause",
-  "line1": 2186,
-  "line2": 2188,
-  "total": 386,
+  "line1": 2406,
+  "line2": 2408,
+  "total": 414,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "conv-2.6",
    "conv-2.7"
   ],
-  "secs": 28.0
+  "secs": 29.1
  },
  {
   "id": "Q03",
@@ -2477,9 +2637,9 @@
   "old": "(const unsigned char *)b->words, b->len));",
   "new": "(const unsigned char *)b->words, b->len > 0 ? b->len - 1 : 0));",
   "cls": "changed:+tokens",
-  "line1": 2194,
-  "line2": 2194,
-  "total": 386,
+  "line1": 2414,
+  "line2": 2414,
+  "total": 414,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
@@ -2489,7 +2649,7 @@
    "conv-2.5",
    "conv-5.1"
   ],
-  "secs": 27.0
+  "secs": 27.8
  },
  {
   "id": "Q04",
@@ -2497,16 +2657,16 @@
   "old": "\twidth = 8;                                                 // the default width\n\tif (objc == 5) {",
   "new": "\twidth = 16;\n\tif (objc == 5) {",
   "cls": "changed:constant",
-  "line1": 2205,
-  "line2": 2206,
-  "total": 386,
+  "line1": 2425,
+  "line2": 2426,
+  "total": 414,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "conv-3.1",
    "conv-3.4"
   ],
-  "secs": 26.5
+  "secs": 27.8
  },
  {
   "id": "Q05",
@@ -2514,16 +2674,16 @@
   "old": "(uint64_t)ch > maxv",
   "new": "(uint64_t)ch >= maxv",
   "cls": "changed:operator",
-  "line1": 2225,
-  "line2": 2225,
-  "total": 386,
+  "line1": 2445,
+  "line2": 2445,
+  "total": 414,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "conv-3.2",
    "conv-4.1"
   ],
-  "secs": 27.4
+  "secs": 28.2
  },
  {
   "id": "Q06",
@@ -2531,15 +2691,15 @@
   "old": "\tif (isSigned || (width != 8 && width != 16 && width != 32)) {   // not signed, and 8, 16 or 32 only\n\t    Tcl_SetObjResult(interp, Tcl_NewStringObj(\n\t\t    \"fromchars: -width must be 8, 16 or 32\", -1));",
   "new": "\tif (isSigned || (width != 8 && width != 16 && width != 32 && width != 64)) {\n\t    Tcl_SetObjResult(interp, Tcl_NewStringObj(\n\t\t    \"fromchars: -width must be 8, 16 or 32\", -1));",
   "cls": "changed:+tokens",
-  "line1": 2215,
-  "line2": 2217,
-  "total": 386,
+  "line1": 2435,
+  "line2": 2437,
+  "total": 414,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "conv-3.6"
   ],
-  "secs": 26.1
+  "secs": 28.0
  },
  {
   "id": "Q07",
@@ -2547,15 +2707,15 @@
   "old": "\t    if (ch) {                           // zero is there already\n\t        PutElem(n, i, (uint64_t)ch);\n\t    }",
   "new": "\t    if (ch > 1) {                           // zero is there already\n\t        PutElem(n, i, (uint64_t)ch);\n\t    }",
   "cls": "changed:+tokens",
-  "line1": 2238,
-  "line2": 2240,
-  "total": 386,
+  "line1": 2458,
+  "line2": 2460,
+  "total": 414,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "conv-3.11"
   ],
-  "secs": 28.2
+  "secs": 27.9
  },
  {
   "id": "Q08",
@@ -2563,15 +2723,15 @@
   "old": "(v >= 0xD800 && v <= 0xDFFF)",
   "new": "0",
   "cls": "changed:expression",
-  "line1": 2264,
-  "line2": 2264,
-  "total": 386,
+  "line1": 2484,
+  "line2": 2484,
+  "total": 414,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "conv-4.6"
   ],
-  "secs": 26.4
+  "secs": 27.5
  },
  {
   "id": "Q09",
@@ -2579,15 +2739,15 @@
   "old": "v > 0x10FFFF",
   "new": "v > 0x110000",
   "cls": "changed:constant",
-  "line1": 2264,
-  "line2": 2264,
-  "total": 386,
+  "line1": 2484,
+  "line2": 2484,
+  "total": 414,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "conv-4.7"
   ],
-  "secs": 27.5
+  "secs": 28.9
  },
  {
   "id": "Q10",
@@ -2595,15 +2755,15 @@
   "old": "\tif ((b->width != 8 && b->width != 16 && b->width != 32) || b->isSigned) {   // unsigned 8, 16 or 32 only\n\t    Tcl_SetObjResult(interp, Tcl_ObjPrintf(\n\t\t    \"tochars: array has width %d; need width 8, 16 or 32\", SignedWidth(b)));",
   "new": "\tif ((b->width != 8 && b->width != 16 && b->width != 32 && b->width != 64) || b->isSigned) {\n\t    Tcl_SetObjResult(interp, Tcl_ObjPrintf(\n\t\t    \"tochars: array has width %d; need width 8, 16 or 32\", SignedWidth(b)));",
   "cls": "changed:+tokens",
-  "line1": 2256,
-  "line2": 2258,
-  "total": 386,
+  "line1": 2476,
+  "line2": 2478,
+  "total": 414,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "conv-4.5"
   ],
-  "secs": 26.0
+  "secs": 28.7
  },
  {
   "id": "Q11",
@@ -2611,9 +2771,9 @@
   "old": "Tcl_NewUnicodeObj(buf, b->len)",
   "new": "Tcl_NewUnicodeObj(buf, b->len > 0 ? b->len - 1 : 0)",
   "cls": "changed:+tokens",
-  "line1": 2276,
-  "line2": 2276,
-  "total": 386,
+  "line1": 2496,
+  "line2": 2496,
+  "total": 414,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
@@ -2623,7 +2783,7 @@
    "conv-5.1",
    "conv-5.2"
   ],
-  "secs": 27.4
+  "secs": 29.5
  },
  {
   "id": "Q12",
@@ -2631,9 +2791,9 @@
   "old": "\tfor (i = 0; i < b->len; i++) {\n\t    buf[i] = (Tcl_UniChar)GetElem(b, i);\n\t}",
   "new": "\tfor (i = 1; i < b->len; i++) {\n\t    buf[i] = (Tcl_UniChar)GetElem(b, i);\n\t}",
   "cls": "changed:constant",
-  "line1": 2273,
-  "line2": 2275,
-  "total": 386,
+  "line1": 2493,
+  "line2": 2495,
+  "total": 414,
   "result": "CAUGHT",
   "how": "3 tests fail",
   "tests": [
@@ -2641,7 +2801,7 @@
    "conv-5.1",
    "conv-5.2"
   ],
-  "secs": 28.2
+  "secs": 29.1
  },
  {
   "id": "Q13",
@@ -2649,16 +2809,16 @@
   "old": "ch, i, width));",
   "new": "ch, i + 1, width));",
   "cls": "changed:+tokens",
-  "line1": 2228,
-  "line2": 2228,
-  "total": 386,
+  "line1": 2448,
+  "line2": 2448,
+  "total": 414,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "conv-3.4",
    "conv-3.5"
   ],
-  "secs": 27.8
+  "secs": 27.0
  },
  {
   "id": "S01",
@@ -2668,7 +2828,7 @@
   "cls": "deleted:clause",
   "line1": 987,
   "line2": 989,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "12 tests fail",
   "tests": [
@@ -2685,7 +2845,7 @@
    "diff-3.1",
    "diff-4.2"
   ],
-  "secs": 27.0
+  "secs": 25.4
  },
  {
   "id": "S02",
@@ -2695,7 +2855,7 @@
   "cls": "changed:constant",
   "line1": 988,
   "line2": 988,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "11 tests fail",
   "tests": [
@@ -2711,7 +2871,7 @@
    "diff-3.1",
    "diff-4.2"
   ],
-  "secs": 30.0
+  "secs": 26.8
  },
  {
   "id": "S03",
@@ -2721,11 +2881,11 @@
   "cls": "deleted:clause",
   "line1": 990,
   "line2": 990,
-  "total": 386,
+  "total": 35,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 32.1
+  "secs": 28.4
  },
  {
   "id": "S04",
@@ -2735,11 +2895,11 @@
   "cls": "deleted:statement",
   "line1": 1004,
   "line2": 1004,
-  "total": 386,
+  "total": 35,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 31.6
+  "secs": 27.7
  },
  {
   "id": "S05",
@@ -2749,7 +2909,7 @@
   "cls": "deleted:clause",
   "line1": 1005,
   "line2": 1005,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "24 tests fail",
   "tests": [
@@ -2778,7 +2938,7 @@
    "lpop-1.11",
    "cov-2.3"
   ],
-  "secs": 29.4
+  "secs": 25.6
  },
  {
   "id": "S06",
@@ -2788,7 +2948,7 @@
   "cls": "changed:expression",
   "line1": 1006,
   "line2": 1007,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
@@ -2798,7 +2958,7 @@
    "diff-3.1",
    "diff-4.2"
   ],
-  "secs": 29.9
+  "secs": 25.5
  },
  {
   "id": "S07",
@@ -2808,7 +2968,7 @@
   "cls": "changed:constant",
   "line1": 1007,
   "line2": 1007,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "4 tests fail",
   "tests": [
@@ -2817,7 +2977,7 @@
    "diff-3.1",
    "diff-4.2"
   ],
-  "secs": 30.3
+  "secs": 25.5
  },
  {
   "id": "S08",
@@ -2827,7 +2987,7 @@
   "cls": "deleted:clause",
   "line1": 1009,
   "line2": 1009,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "4 tests fail",
   "tests": [
@@ -2836,7 +2996,7 @@
    "diff-3.1",
    "diff-4.2"
   ],
-  "secs": 30.8
+  "secs": 27.6
  },
  {
   "id": "S09",
@@ -2846,7 +3006,7 @@
   "cls": "changed:constant",
   "line1": 1009,
   "line2": 1009,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
@@ -2856,7 +3016,7 @@
    "diff-3.1",
    "diff-4.2"
   ],
-  "secs": 29.3
+  "secs": 26.6
  },
  {
   "id": "S10",
@@ -2866,11 +3026,11 @@
   "cls": "changed:token",
   "line1": 1020,
   "line2": 1021,
-  "total": 386,
+  "total": 35,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 30.6
+  "secs": 27.7
  },
  {
   "id": "S11",
@@ -2880,7 +3040,7 @@
   "cls": "changed:+tokens",
   "line1": 1056,
   "line2": 1056,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "11 tests fail",
   "tests": [
@@ -2896,7 +3056,7 @@
    "lpop-1.10",
    "lpop-1.11"
   ],
-  "secs": 28.6
+  "secs": 25.5
  },
  {
   "id": "S12",
@@ -2906,7 +3066,7 @@
   "cls": "changed:+tokens",
   "line1": 1077,
   "line2": 1077,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "9 tests fail",
   "tests": [
@@ -2920,7 +3080,7 @@
    "diff-4.2",
    "cov-2.3"
   ],
-  "secs": 27.5
+  "secs": 25.7
  },
  {
   "id": "S13",
@@ -2930,11 +3090,11 @@
   "cls": "deleted:clause",
   "line1": 1054,
   "line2": 1054,
-  "total": 386,
+  "total": 35,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 29.5
+  "secs": 27.4
  },
  {
   "id": "S14",
@@ -2944,7 +3104,7 @@
   "cls": "deleted:clause",
   "line1": 1074,
   "line2": 1074,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "9 tests fail",
   "tests": [
@@ -2958,7 +3118,7 @@
    "diff-4.2",
    "cov-2.3"
   ],
-  "secs": 28.6
+  "secs": 26.8
  },
  {
   "id": "S15",
@@ -2968,12 +3128,12 @@
   "cls": "deleted:clause",
   "line1": 1018,
   "line2": 1018,
-  "total": 386,
+  "total": null,
   "result": "CAUGHT",
   "how": "crash rc=139",
   "tests": [],
   "running": "diff-3.1",
-  "secs": 2.1
+  "secs": 2.3
  },
  {
   "id": "B01",
@@ -2983,9 +3143,9 @@
   "cls": "changed:operator",
   "line1": 1366,
   "line2": 1366,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "11 tests fail",
+  "how": "29 tests fail",
   "tests": [
    "bitop-1.1",
    "bitop-1.2",
@@ -2997,9 +3157,27 @@
    "bitop-2.7",
    "signed-1.11",
    "signed-1.13",
-   "signed-1.21"
+   "signed-1.21",
+   "op-3.1",
+   "op-3.2",
+   "op-3.3",
+   "op-3.4",
+   "op-4.1",
+   "op-7.2",
+   "op-7.5",
+   "op-7.6",
+   "op-7.7",
+   "op-7.8",
+   "op-7.9",
+   "op-8.2",
+   "op-9.6",
+   "op-10.3",
+   "op-10.4",
+   "op-10.9",
+   "op-10.10",
+   "op-11.1"
   ],
-  "secs": 28.9
+  "secs": 27.9
  },
  {
   "id": "B02",
@@ -3009,13 +3187,13 @@
   "cls": "deleted:clause",
   "line1": 1367,
   "line2": 1367,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "bitop-1.4"
   ],
-  "secs": 29.1
+  "secs": 28.1
  },
  {
   "id": "B03",
@@ -3025,48 +3203,9 @@
   "cls": "changed:operator",
   "line1": 1370,
   "line2": 1370,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "8 tests fail",
-  "tests": [
-   "bitop-1.1",
-   "bitop-1.2",
-   "bitop-1.3",
-   "bitop-1.4",
-   "bitop-2.2",
-   "bitop-2.3",
-   "bitop-2.7",
-   "signed-1.11"
-  ],
-  "secs": 28.5
- },
- {
-  "id": "B04",
-  "name": "B04 or: words past the end of y are cleared",
-  "old": "BO_LOOP(m, n, 0, xv | yv)",
-  "new": "BO_LOOP(m, n, 0, 0)",
-  "cls": "deleted:clause",
-  "line1": 1371,
-  "line2": 1371,
-  "total": 386,
-  "result": "CAUGHT",
-  "how": "1 tests fail",
-  "tests": [
-   "bitop-1.4"
-  ],
-  "secs": 30.4
- },
- {
-  "id": "B05",
-  "name": "B05 xor: uses OR on the common words",
-  "old": "BO_LOOP(0, m, y->words[k], xv ^ yv)",
-  "new": "BO_LOOP(0, m, y->words[k], xv | yv)",
-  "cls": "changed:operator",
-  "line1": 1374,
-  "line2": 1374,
-  "total": 386,
-  "result": "CAUGHT",
-  "how": "9 tests fail",
+  "how": "14 tests fail",
   "tests": [
    "bitop-1.1",
    "bitop-1.2",
@@ -3076,9 +3215,61 @@
    "bitop-2.3",
    "bitop-2.7",
    "signed-1.11",
-   "signed-1.21"
+   "op-3.1",
+   "op-3.2",
+   "op-4.1",
+   "op-7.2",
+   "op-7.6",
+   "op-11.1"
   ],
-  "secs": 28.6
+  "secs": 29.5
+ },
+ {
+  "id": "B04",
+  "name": "B04 or: words past the end of y are cleared",
+  "old": "BO_LOOP(m, n, 0, xv | yv)",
+  "new": "BO_LOOP(m, n, 0, 0)",
+  "cls": "deleted:clause",
+  "line1": 1371,
+  "line2": 1371,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "bitop-1.4"
+  ],
+  "secs": 29.7
+ },
+ {
+  "id": "B05",
+  "name": "B05 xor: uses OR on the common words",
+  "old": "BO_LOOP(0, m, y->words[k], xv ^ yv)",
+  "new": "BO_LOOP(0, m, y->words[k], xv | yv)",
+  "cls": "changed:operator",
+  "line1": 1374,
+  "line2": 1374,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "16 tests fail",
+  "tests": [
+   "bitop-1.1",
+   "bitop-1.2",
+   "bitop-1.3",
+   "bitop-1.4",
+   "bitop-2.2",
+   "bitop-2.3",
+   "bitop-2.7",
+   "signed-1.11",
+   "signed-1.21",
+   "op-3.1",
+   "op-3.2",
+   "op-3.5",
+   "op-7.2",
+   "op-7.6",
+   "op-7.7",
+   "op-7.12"
+  ],
+  "secs": 28.1
  },
  {
   "id": "B06",
@@ -3088,13 +3279,13 @@
   "cls": "deleted:clause",
   "line1": 1375,
   "line2": 1375,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "bitop-1.4"
   ],
-  "secs": 30.0
+  "secs": 28.4
  },
  {
   "id": "B07",
@@ -3104,9 +3295,9 @@
   "cls": "deleted:clause",
   "line1": 1378,
   "line2": 1378,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "7 tests fail",
+  "how": "10 tests fail",
   "tests": [
    "bitop-1.1",
    "bitop-1.2",
@@ -3114,9 +3305,12 @@
    "bitop-1.4",
    "bitop-2.3",
    "bitop-2.4",
-   "signed-1.11"
+   "signed-1.11",
+   "op-3.1",
+   "op-7.2",
+   "op-7.9"
   ],
-  "secs": 28.1
+  "secs": 28.8
  },
  {
   "id": "B08",
@@ -3126,13 +3320,13 @@
   "cls": "deleted:clause",
   "line1": 1379,
   "line2": 1379,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "bitop-1.4"
   ],
-  "secs": 27.9
+  "secs": 30.4
  },
  {
   "id": "B09",
@@ -3142,9 +3336,9 @@
   "cls": "deleted:clause",
   "line1": 1359,
   "line2": 1359,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "8 tests fail",
+  "how": "24 tests fail",
   "tests": [
    "bitop-1.1",
    "bitop-1.2",
@@ -3153,9 +3347,25 @@
    "bitop-2.2",
    "bitop-2.5",
    "bitop-2.6",
-   "signed-1.11"
+   "signed-1.11",
+   "op-2.1.not",
+   "op-2.1.!",
+   "op-2.1.~",
+   "op-3.2",
+   "op-3.5",
+   "op-3.7",
+   "op-7.3",
+   "op-7.7",
+   "op-7.12",
+   "op-8.2",
+   "op-8.7",
+   "op-10.2",
+   "op-10.10",
+   "op-10.11",
+   "op-11.1",
+   "op-11.2"
   ],
-  "secs": 27.7
+  "secs": 29.3
  },
  {
   "id": "B10",
@@ -3165,9 +3375,9 @@
   "cls": "changed:+tokens",
   "line1": 1363,
   "line2": 1363,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "13 tests fail",
+  "how": "34 tests fail",
   "tests": [
    "bitop-1.1",
    "bitop-1.2",
@@ -3181,9 +3391,30 @@
    "bitop-2.7",
    "signed-1.11",
    "signed-1.13",
-   "signed-1.21"
+   "signed-1.21",
+   "op-3.1",
+   "op-3.2",
+   "op-3.3",
+   "op-3.4",
+   "op-3.5",
+   "op-4.1",
+   "op-7.2",
+   "op-7.5",
+   "op-7.6",
+   "op-7.7",
+   "op-7.8",
+   "op-7.9",
+   "op-7.12",
+   "op-8.2",
+   "op-8.7",
+   "op-9.6",
+   "op-10.3",
+   "op-10.4",
+   "op-10.9",
+   "op-10.10",
+   "op-11.1"
   ],
-  "secs": 27.0
+  "secs": 28.5
  },
  {
   "id": "B11",
@@ -3193,11 +3424,11 @@
   "cls": "deleted:clause",
   "line1": 1402,
   "line2": 1404,
-  "total": 386,
+  "total": 35,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 27.5
+  "secs": 27.7
  },
  {
   "id": "B12",
@@ -3207,14 +3438,15 @@
   "cls": "changed:constant",
   "line1": 1400,
   "line2": 1400,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "2 tests fail",
+  "how": "3 tests fail",
   "tests": [
    "bitop-1.2",
-   "bitop-1.5"
+   "bitop-1.5",
+   "op-11.1"
   ],
-  "secs": 27.8
+  "secs": 29.3
  },
  {
   "id": "B13",
@@ -3224,11 +3456,11 @@
   "cls": "deleted:clause",
   "line1": 1408,
   "line2": 1410,
-  "total": 386,
+  "total": 35,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 26.8
+  "secs": 28.8
  },
  {
   "id": "B14",
@@ -3238,14 +3470,17 @@
   "cls": "deleted:clause",
   "line1": 1444,
   "line2": 1444,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "2 tests fail",
+  "how": "5 tests fail",
   "tests": [
    "bitop-3.1",
-   "signed-1.12"
+   "signed-1.12",
+   "op-4.3",
+   "op-4.4",
+   "op-7.10"
   ],
-  "secs": 26.2
+  "secs": 27.7
  },
  {
   "id": "B15",
@@ -3255,14 +3490,20 @@
   "cls": "deleted:clause",
   "line1": 1429,
   "line2": 1429,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "2 tests fail",
+  "how": "8 tests fail",
   "tests": [
    "bitop-1.4",
-   "bitop-2.7"
+   "bitop-2.7",
+   "op-4.1",
+   "op-7.5",
+   "op-8.5",
+   "op-9.8",
+   "op-10.4",
+   "op-11.1"
   ],
-  "secs": 26.7
+  "secs": 29.5
  },
  {
   "id": "B16",
@@ -3272,16 +3513,24 @@
   "cls": "deleted:clause",
   "line1": 1429,
   "line2": 1429,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "4 tests fail",
+  "how": "12 tests fail",
   "tests": [
    "bitop-1.4",
    "bitop-2.7",
    "bitop-3.2",
-   "bitop-3.8"
+   "bitop-3.8",
+   "op-4.1",
+   "op-4.2",
+   "op-7.5",
+   "op-8.5",
+   "op-9.8",
+   "op-10.4",
+   "op-11.1",
+   "op-12.4"
   ],
-  "secs": 27.8
+  "secs": 29.5
  },
  {
   "id": "B17",
@@ -3291,15 +3540,18 @@
   "cls": "deleted:clause",
   "line1": 1536,
   "line2": 1538,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "3 tests fail",
+  "how": "6 tests fail",
   "tests": [
    "bitop-1.1",
    "bitop-2.3",
-   "bitop-2.5"
+   "bitop-2.5",
+   "op-10.3",
+   "op-10.10",
+   "op-10.11"
   ],
-  "secs": 27.8
+  "secs": 28.0
  },
  {
   "id": "B18",
@@ -3309,13 +3561,13 @@
   "cls": "deleted:clause",
   "line1": 1539,
   "line2": 1540,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "bitop-2.6"
   ],
-  "secs": 26.5
+  "secs": 29.7
  },
  {
   "id": "B19",
@@ -3325,13 +3577,14 @@
   "cls": "changed:+tokens",
   "line1": 1553,
   "line2": 1556,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "1 tests fail",
+  "how": "2 tests fail",
   "tests": [
-   "bitop-2.7"
+   "bitop-2.7",
+   "op-4.1"
   ],
-  "secs": 28.1
+  "secs": 28.3
  },
  {
   "id": "B20",
@@ -3341,18 +3594,45 @@
   "cls": "deleted:clause",
   "line1": 1503,
   "line2": 1503,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "6 tests fail",
+  "how": "33 tests fail",
   "tests": [
    "bitop-2.2",
    "bitop-2.3",
    "bitop-2.4",
    "bitop-2.7",
    "signed-1.21",
-   "cov-1.10"
+   "cov-1.10",
+   "op-1.1.and",
+   "op-1.1.&&",
+   "op-1.1.&",
+   "op-1.2.or",
+   "op-1.2.||",
+   "op-1.2.|",
+   "op-1.3.xor",
+   "op-1.3.^",
+   "op-1.4.andnot",
+   "op-1.4.&~",
+   "op-1.4.&!",
+   "op-3.1",
+   "op-3.2",
+   "op-3.3",
+   "op-3.4",
+   "op-3.5",
+   "op-3.6",
+   "op-4.1",
+   "op-4.2",
+   "op-4.3",
+   "op-4.4",
+   "op-5.12",
+   "op-7.1",
+   "op-7.6",
+   "op-9.6",
+   "op-10.7",
+   "op-10.9"
   ],
-  "secs": 28.3
+  "secs": 29.8
  },
  {
   "id": "B21",
@@ -3362,14 +3642,20 @@
   "cls": "changed:2 tokens",
   "line1": 1508,
   "line2": 1508,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "2 tests fail",
+  "how": "8 tests fail",
   "tests": [
    "bitop-2.4",
-   "bitop-2.7"
+   "bitop-2.7",
+   "op-3.1",
+   "op-4.1",
+   "op-4.2",
+   "op-4.3",
+   "op-4.4",
+   "op-7.1"
   ],
-  "secs": 26.8
+  "secs": 30.4
  },
  {
   "id": "B22",
@@ -3379,14 +3665,17 @@
   "cls": "changed:+tokens",
   "line1": 1487,
   "line2": 1487,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "2 tests fail",
+  "how": "5 tests fail",
   "tests": [
    "bitop-1.4",
-   "bitop-2.7"
+   "bitop-2.7",
+   "op-4.1",
+   "op-4.2",
+   "op-10.4"
   ],
-  "secs": 26.9
+  "secs": 29.0
  },
  {
   "id": "B23",
@@ -3396,15 +3685,18 @@
   "cls": "changed:constant",
   "line1": 1487,
   "line2": 1488,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "3 tests fail",
+  "how": "6 tests fail",
   "tests": [
    "bitop-1.4",
    "bitop-2.7",
-   "bitop-3.7"
+   "bitop-3.7",
+   "op-4.1",
+   "op-4.2",
+   "op-10.4"
   ],
-  "secs": 26.1
+  "secs": 28.2
  },
  {
   "id": "B24",
@@ -3414,14 +3706,14 @@
   "cls": "changed:expression",
   "line1": 1506,
   "line2": 1506,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "bitop-2.1",
    "bitop-2.7"
   ],
-  "secs": 28.1
+  "secs": 31.3
  },
  {
   "id": "B25",
@@ -3431,13 +3723,13 @@
   "cls": "changed:expression",
   "line1": 1514,
   "line2": 1514,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "bitop-3.9"
   ],
-  "secs": 27.3
+  "secs": 30.0
  },
  {
   "id": "B26",
@@ -3447,13 +3739,13 @@
   "cls": "changed:expression",
   "line1": 1499,
   "line2": 1499,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "bitop-3.10"
   ],
-  "secs": 25.8
+  "secs": 28.7
  },
  {
   "id": "R01",
@@ -3463,7 +3755,7 @@
   "cls": "deleted:statement",
   "line1": 759,
   "line2": 759,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
@@ -3473,7 +3765,7 @@
    "diff-1.1",
    "diff-4.2"
   ],
-  "secs": 26.1
+  "secs": 29.8
  },
  {
   "id": "R02",
@@ -3483,7 +3775,7 @@
   "cls": "deleted:clause",
   "line1": 760,
   "line2": 760,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
@@ -3493,7 +3785,7 @@
    "diff-1.1",
    "diff-4.2"
   ],
-  "secs": 29.6
+  "secs": 30.4
  },
  {
   "id": "R03",
@@ -3503,14 +3795,14 @@
   "cls": "deleted:clause",
   "line1": 837,
   "line2": 837,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "rev-2.1",
    "diff-4.1"
   ],
-  "secs": 29.0
+  "secs": 29.3
  },
  {
   "id": "R04",
@@ -3520,18 +3812,19 @@
   "cls": "changed:+tokens",
   "line1": 806,
   "line2": 806,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "6 tests fail",
+  "how": "7 tests fail",
   "tests": [
    "range-1.1",
    "range-1.3",
    "lassign-1.1",
    "range-2.1",
    "diff-1.1",
-   "diff-4.2"
+   "diff-4.2",
+   "op-7.7"
   ],
-  "secs": 28.0
+  "secs": 30.8
  },
  {
   "id": "R05",
@@ -3541,11 +3834,11 @@
   "cls": "deleted:clause",
   "line1": 804,
   "line2": 804,
-  "total": 386,
+  "total": 35,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 27.4
+  "secs": 30.3
  },
  {
   "id": "R06",
@@ -3555,7 +3848,7 @@
   "cls": "changed:+tokens",
   "line1": 1064,
   "line2": 1064,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "4 tests fail",
   "tests": [
@@ -3564,7 +3857,7 @@
    "diff-3.1",
    "diff-4.2"
   ],
-  "secs": 27.7
+  "secs": 30.0
  },
  {
   "id": "R07",
@@ -3574,7 +3867,7 @@
   "cls": "changed:constant",
   "line1": 1064,
   "line2": 1064,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "6 tests fail",
   "tests": [
@@ -3585,7 +3878,7 @@
    "diff-3.1",
    "diff-4.2"
   ],
-  "secs": 25.6
+  "secs": 28.3
  },
  {
   "id": "R08",
@@ -3595,7 +3888,7 @@
   "cls": "changed:constant",
   "line1": 1067,
   "line2": 1069,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "6 tests fail",
   "tests": [
@@ -3606,7 +3899,7 @@
    "diff-1.1",
    "diff-3.1"
   ],
-  "secs": 26.7
+  "secs": 30.3
  },
  {
   "id": "G01",
@@ -3616,14 +3909,15 @@
   "cls": "changed:operator",
   "line1": 620,
   "line2": 620,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "2 tests fail",
+  "how": "3 tests fail",
   "tests": [
    "signed-1.3",
-   "signed-1.5"
+   "signed-1.5",
+   "op-11.6"
   ],
-  "secs": 29.2
+  "secs": 29.8
  },
  {
   "id": "G02",
@@ -3633,9 +3927,9 @@
   "cls": "changed:operator",
   "line1": 620,
   "line2": 620,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "7 tests fail",
+  "how": "11 tests fail",
   "tests": [
    "signed-1.2",
    "signed-1.6",
@@ -3643,9 +3937,13 @@
    "signed-1.8",
    "signed-1.10",
    "signed-1.11",
-   "signed-1.21"
+   "signed-1.21",
+   "op-3.3",
+   "op-7.8",
+   "op-9.11",
+   "op-11.3"
   ],
-  "secs": 30.8
+  "secs": 31.0
  },
  {
   "id": "G03",
@@ -3655,11 +3953,11 @@
   "cls": "deleted:clause",
   "line1": 621,
   "line2": 621,
-  "total": 386,
+  "total": 35,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 28.8
+  "secs": 30.6
  },
  {
   "id": "G04",
@@ -3669,18 +3967,21 @@
   "cls": "changed:name/variable",
   "line1": 358,
   "line2": 360,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "6 tests fail",
+  "how": "9 tests fail",
   "tests": [
    "signed-1.2",
    "signed-1.8",
    "signed-1.9",
    "signed-1.11",
    "signed-1.15",
-   "signed-1.21"
+   "signed-1.21",
+   "op-9.4",
+   "op-9.11",
+   "op-11.3"
   ],
-  "secs": 29.8
+  "secs": 30.2
  },
  {
   "id": "G05",
@@ -3690,15 +3991,21 @@
   "cls": "changed:name/variable",
   "line1": 361,
   "line2": 363,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "3 tests fail",
+  "how": "9 tests fail",
   "tests": [
    "signed-1.2",
    "signed-1.6",
-   "signed-1.14"
+   "signed-1.14",
+   "op-9.1",
+   "op-9.2",
+   "op-9.3",
+   "op-9.6",
+   "op-9.11",
+   "op-11.3"
   ],
-  "secs": 27.8
+  "secs": 30.4
  },
  {
   "id": "G06",
@@ -3708,15 +4015,17 @@
   "cls": "changed:name/variable",
   "line1": 364,
   "line2": 364,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "3 tests fail",
+  "how": "5 tests fail",
   "tests": [
    "signed-1.2",
    "signed-1.10",
-   "signed-1.16"
+   "signed-1.16",
+   "op-9.11",
+   "op-11.3"
   ],
-  "secs": 27.7
+  "secs": 29.6
  },
  {
   "id": "G07",
@@ -3726,9 +4035,9 @@
   "cls": "changed:expression",
   "line1": 357,
   "line2": 358,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "10 tests fail",
+  "how": "17 tests fail",
   "tests": [
    "signed-1.2",
    "signed-1.6",
@@ -3739,9 +4048,16 @@
    "signed-1.14",
    "signed-1.15",
    "signed-1.16",
-   "signed-1.21"
+   "signed-1.21",
+   "op-9.1",
+   "op-9.2",
+   "op-9.3",
+   "op-9.4",
+   "op-9.6",
+   "op-9.11",
+   "op-11.3"
   ],
-  "secs": 27.1
+  "secs": 30.5
  },
  {
   "id": "G08",
@@ -3751,9 +4067,9 @@
   "cls": "deleted:clause",
   "line1": 289,
   "line2": 289,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "16 tests fail",
+  "how": "27 tests fail",
   "tests": [
    "signed-1.1",
    "signed-1.2",
@@ -3770,9 +4086,20 @@
    "signed-1.16",
    "signed-1.17",
    "signed-1.21",
-   "lpop-1.10"
+   "lpop-1.10",
+   "op-3.3",
+   "op-7.8",
+   "op-9.1",
+   "op-9.2",
+   "op-9.3",
+   "op-9.4",
+   "op-9.6",
+   "op-9.11",
+   "op-11.3",
+   "op-11.5",
+   "op-11.6"
   ],
-  "secs": 28.6
+  "secs": 31.4
  },
  {
   "id": "G09",
@@ -3782,7 +4109,7 @@
   "cls": "changed:expression",
   "line1": 789,
   "line2": 789,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
@@ -3792,7 +4119,7 @@
    "signed-1.15",
    "signed-1.21"
   ],
-  "secs": 28.0
+  "secs": 33.5
  },
  {
   "id": "G10",
@@ -3802,13 +4129,13 @@
   "cls": "changed:expression",
   "line1": 819,
   "line2": 819,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "signed-1.14"
   ],
-  "secs": 27.4
+  "secs": 28.4
  },
  {
   "id": "G11",
@@ -3818,7 +4145,7 @@
   "cls": "changed:expression",
   "line1": 672,
   "line2": 672,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
@@ -3828,7 +4155,7 @@
    "signed-1.14",
    "lpop-1.10"
   ],
-  "secs": 25.6
+  "secs": 28.6
  },
  {
   "id": "G12",
@@ -3838,13 +4165,14 @@
   "cls": "changed:expression",
   "line1": 1553,
   "line2": 1554,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "1 tests fail",
+  "how": "2 tests fail",
   "tests": [
-   "signed-1.21"
+   "signed-1.21",
+   "op-3.3"
   ],
-  "secs": 27.2
+  "secs": 31.9
  },
  {
   "id": "G13",
@@ -3854,13 +4182,13 @@
   "cls": "deleted:clause",
   "line1": 1444,
   "line2": 1444,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "signed-1.12"
   ],
-  "secs": 27.1
+  "secs": 31.0
  },
  {
   "id": "G14",
@@ -3870,13 +4198,13 @@
   "cls": "deleted:clause",
   "line1": 393,
   "line2": 393,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "signed-1.13"
   ],
-  "secs": 27.3
+  "secs": 29.9
  },
  {
   "id": "G15",
@@ -3886,9 +4214,9 @@
   "cls": "deleted:clause",
   "line1": 386,
   "line2": 386,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "8 tests fail",
+  "how": "10 tests fail",
   "tests": [
    "signed-1.1",
    "signed-1.6",
@@ -3897,9 +4225,11 @@
    "signed-1.16",
    "signed-1.17",
    "signed-1.21",
-   "lpop-1.10"
+   "lpop-1.10",
+   "op-3.3",
+   "op-7.8"
   ],
-  "secs": 26.4
+  "secs": 29.2
  },
  {
   "id": "G16",
@@ -3909,9 +4239,9 @@
   "cls": "deleted:clause",
   "line1": 1294,
   "line2": 1294,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "18 tests fail",
+  "how": "30 tests fail",
   "tests": [
    "signed-1.1",
    "signed-1.2",
@@ -3930,9 +4260,21 @@
    "signed-1.17",
    "signed-1.18",
    "signed-1.21",
-   "lpop-1.10"
+   "lpop-1.10",
+   "op-3.3",
+   "op-7.8",
+   "op-8.3",
+   "op-9.1",
+   "op-9.2",
+   "op-9.3",
+   "op-9.4",
+   "op-9.6",
+   "op-9.11",
+   "op-11.3",
+   "op-11.5",
+   "op-11.6"
   ],
-  "secs": 27.3
+  "secs": 30.3
  },
  {
   "id": "G17",
@@ -3940,15 +4282,15 @@
   "old": "if (isSigned || (width != 8",
   "new": "if ((width != 8",
   "cls": "deleted:clause",
-  "line1": 2215,
-  "line2": 2215,
-  "total": 386,
+  "line1": 2435,
+  "line2": 2435,
+  "total": 414,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "signed-1.18"
   ],
-  "secs": 27.5
+  "secs": 30.5
  },
  {
   "id": "G18",
@@ -3956,15 +4298,15 @@
   "old": "if (b->width != 8 || b->isSigned) {",
   "new": "if (b->width != 8) {",
   "cls": "deleted:clause",
-  "line1": 2186,
-  "line2": 2186,
-  "total": 386,
+  "line1": 2406,
+  "line2": 2406,
+  "total": 414,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "signed-1.17"
   ],
-  "secs": 27.8
+  "secs": 30.8
  },
  {
   "id": "G19",
@@ -3972,15 +4314,15 @@
   "old": "(b->width != 8 && b->width != 16 && b->width != 32) || b->isSigned) {",
   "new": "(b->width != 8 && b->width != 16 && b->width != 32)) {",
   "cls": "deleted:clause",
-  "line1": 2256,
-  "line2": 2256,
-  "total": 386,
+  "line1": 2476,
+  "line2": 2476,
+  "total": 414,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "signed-1.17"
   ],
-  "secs": 27.1
+  "secs": 29.6
  },
  {
   "id": "G20",
@@ -3990,13 +4332,13 @@
   "cls": "deleted:clause",
   "line1": 1241,
   "line2": 1241,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "signed-1.8"
   ],
-  "secs": 27.6
+  "secs": 31.9
  },
  {
   "id": "G21",
@@ -4006,9 +4348,9 @@
   "cls": "deleted:clause",
   "line1": 718,
   "line2": 718,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "9 tests fail",
+  "how": "11 tests fail",
   "tests": [
    "signed-1.2",
    "signed-1.6",
@@ -4018,9 +4360,11 @@
    "signed-1.14",
    "signed-1.15",
    "signed-1.16",
-   "signed-1.21"
+   "signed-1.21",
+   "op-9.6",
+   "op-11.3"
   ],
-  "secs": 27.8
+  "secs": 31.2
  },
  {
   "id": "G22",
@@ -4030,14 +4374,16 @@
   "cls": "deleted:clause",
   "line1": 637,
   "line2": 637,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "2 tests fail",
+  "how": "4 tests fail",
   "tests": [
    "signed-1.3",
-   "signed-1.5"
+   "signed-1.5",
+   "op-11.5",
+   "op-11.6"
   ],
-  "secs": 28.6
+  "secs": 30.3
  },
  {
   "id": "G23",
@@ -4047,7 +4393,7 @@
   "cls": "changed:expression",
   "line1": 379,
   "line2": 379,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "3 tests fail",
   "tests": [
@@ -4055,7 +4401,7 @@
    "signed-1.9",
    "signed-1.10"
   ],
-  "secs": 27.8
+  "secs": 30.3
  },
  {
   "id": "G24",
@@ -4065,18 +4411,21 @@
   "cls": "deleted:clause",
   "line1": 1287,
   "line2": 1287,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "6 tests fail",
+  "how": "9 tests fail",
   "tests": [
    "signed-1.1",
    "signed-1.2",
    "signed-1.3",
    "signed-1.10",
    "signed-1.16",
-   "lpop-1.10"
+   "lpop-1.10",
+   "op-8.3",
+   "op-9.11",
+   "op-11.3"
   ],
-  "secs": 26.5
+  "secs": 29.1
  },
  {
   "id": "G25",
@@ -4086,14 +4435,14 @@
   "cls": "deleted:clause",
   "line1": 1295,
   "line2": 1295,
-  "total": 386,
+  "total": null,
   "result": "CAUGHT",
   "how": "crash rc=132",
   "tests": [
    "signed-1.1"
   ],
   "running": "signed-1.2",
-  "secs": 27.0
+  "secs": 29.6
  },
  {
   "id": "H01",
@@ -4103,7 +4452,7 @@
   "cls": "changed:operator",
   "line1": 1212,
   "line2": 1214,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "3 tests fail",
   "tests": [
@@ -4111,7 +4460,7 @@
    "diff-1.1",
    "diff-4.2"
   ],
-  "secs": 27.1
+  "secs": 30.5
  },
  {
   "id": "H02",
@@ -4121,14 +4470,14 @@
   "cls": "deleted:clause",
   "line1": 1212,
   "line2": 1214,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "in-1.3",
    "in-1.4"
   ],
-  "secs": 26.8
+  "secs": 29.5
  },
  {
   "id": "H03",
@@ -4138,7 +4487,7 @@
   "cls": "changed:constant",
   "line1": 1210,
   "line2": 1214,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "3 tests fail",
   "tests": [
@@ -4146,7 +4495,7 @@
    "diff-1.1",
    "diff-4.2"
   ],
-  "secs": 29.9
+  "secs": 28.8
  },
  {
   "id": "H04",
@@ -4156,17 +4505,18 @@
   "cls": "changed:operator",
   "line1": 1210,
   "line2": 1214,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "5 tests fail",
+  "how": "6 tests fail",
   "tests": [
    "in-1.2",
    "in-1.3",
    "in-1.4",
    "diff-1.1",
-   "diff-4.2"
+   "diff-4.2",
+   "op-9.7"
   ],
-  "secs": 28.4
+  "secs": 29.2
  },
  {
   "id": "H05",
@@ -4176,11 +4526,11 @@
   "cls": "deleted:clause",
   "line1": 1217,
   "line2": 1217,
-  "total": 386,
+  "total": 35,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 27.4
+  "secs": 30.5
  },
  {
   "id": "H06",
@@ -4190,17 +4540,18 @@
   "cls": "deleted:clause",
   "line1": 1217,
   "line2": 1217,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "5 tests fail",
+  "how": "6 tests fail",
   "tests": [
    "in-1.2",
    "in-1.3",
    "in-1.4",
    "diff-1.1",
-   "diff-4.2"
+   "diff-4.2",
+   "op-9.7"
   ],
-  "secs": 28.5
+  "secs": 29.3
  },
  {
   "id": "H07",
@@ -4210,13 +4561,13 @@
   "cls": "deleted:clause",
   "line1": 1208,
   "line2": 1209,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "in-1.3"
   ],
-  "secs": 29.6
+  "secs": 30.4
  },
  {
   "id": "H08",
@@ -4226,17 +4577,18 @@
   "cls": "changed:constant",
   "line1": 1209,
   "line2": 1209,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "5 tests fail",
+  "how": "6 tests fail",
   "tests": [
    "in-1.2",
    "in-1.3",
    "in-1.4",
    "diff-1.1",
-   "diff-4.2"
+   "diff-4.2",
+   "op-9.7"
   ],
-  "secs": 29.2
+  "secs": 29.5
  },
  {
   "id": "H09",
@@ -4246,7 +4598,7 @@
   "cls": "deleted:clause",
   "line1": 1205,
   "line2": 1208,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "3 tests fail",
   "tests": [
@@ -4254,7 +4606,7 @@
    "diff-1.1",
    "diff-4.2"
   ],
-  "secs": 29.8
+  "secs": 31.7
  },
  {
   "id": "H10",
@@ -4264,18 +4616,20 @@
   "cls": "changed:token",
   "line1": 1230,
   "line2": 1230,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "6 tests fail",
+  "how": "8 tests fail",
   "tests": [
    "in-1.1",
    "in-1.2",
    "in-1.3",
    "in-1.4",
    "diff-1.1",
-   "diff-4.2"
+   "diff-4.2",
+   "op-7.9",
+   "op-9.7"
   ],
-  "secs": 27.4
+  "secs": 31.5
  },
  {
   "id": "L01",
@@ -4285,14 +4639,14 @@
   "cls": "changed:operator",
   "line1": 943,
   "line2": 944,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "lpop-1.6",
    "lpop-1.8"
   ],
-  "secs": 28.3
+  "secs": 32.3
  },
  {
   "id": "L02",
@@ -4302,12 +4656,12 @@
   "cls": "deleted:clause",
   "line1": 947,
   "line2": 948,
-  "total": 386,
+  "total": null,
   "result": "CAUGHT",
   "how": "crash rc=132",
   "tests": [],
   "running": "lpop-1.2",
-  "secs": 26.4
+  "secs": 31.0
  },
  {
   "id": "L03",
@@ -4317,7 +4671,7 @@
   "cls": "changed:constant",
   "line1": 948,
   "line2": 948,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "7 tests fail",
   "tests": [
@@ -4329,7 +4683,7 @@
    "lpop-1.10",
    "lpop-1.11"
   ],
-  "secs": 27.6
+  "secs": 32.1
  },
  {
   "id": "L04",
@@ -4339,12 +4693,12 @@
   "cls": "changed:+tokens",
   "line1": 942,
   "line2": 942,
-  "total": 386,
+  "total": null,
   "result": "CAUGHT",
   "how": "crash rc=139",
   "tests": [],
   "running": "lpop-1.1",
-  "secs": 27.8
+  "secs": 31.1
  },
  {
   "id": "I01",
@@ -4354,14 +4708,14 @@
   "cls": "changed:expression",
   "line1": 232,
   "line2": 232,
-  "total": 386,
+  "total": 35,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "fi-6.1",
    "fi-6.2"
   ],
-  "secs": 27.0
+  "secs": 30.8
  },
  {
   "id": "I02",
@@ -4371,13 +4725,13 @@
   "cls": "changed:expression",
   "line1": 254,
   "line2": 255,
-  "total": 386,
+  "total": 35,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "fi-6.3"
   ],
-  "secs": 27.6
+  "secs": 30.6
  },
  {
   "id": "I03",
@@ -4385,13 +4739,13 @@
   "old": "\t    BA_IMPOSSIBLE(\"objc too small\", objc);",
   "new": "\t    return TCL_ERROR;",
   "cls": "changed:expression",
-  "line1": 2300,
-  "line2": 2300,
-  "total": 386,
+  "line1": 2520,
+  "line2": 2520,
+  "total": 35,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 26.6
+  "secs": 33.8
  },
  {
   "id": "I04",
@@ -4399,13 +4753,13 @@
   "old": "    BA_IMPOSSIBLE(\"no case matched\", 0);",
   "new": "    return TCL_OK;",
   "cls": "changed:expression",
-  "line1": 2403,
-  "line2": 2403,
-  "total": 386,
+  "line1": 2623,
+  "line2": 2623,
+  "total": 35,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 26.9
+  "secs": 32.8
  },
  {
   "id": "I05",
@@ -4415,12 +4769,12 @@
   "cls": "changed:constant",
   "line1": 229,
   "line2": 229,
-  "total": 386,
+  "total": null,
   "result": "CAUGHT",
   "how": "crash rc=132",
   "tests": [],
   "running": "bitop-1.3",
-  "secs": 0.9
+  "secs": 1.4
  },
  {
   "id": "I06",
@@ -4430,12 +4784,12 @@
   "cls": "changed:constant",
   "line1": 252,
   "line2": 252,
-  "total": 386,
+  "total": null,
   "result": "CAUGHT",
   "how": "crash rc=132",
   "tests": [],
   "running": "bitop-1.3",
-  "secs": 0.8
+  "secs": 1.4
  },
  {
   "id": "I07",
@@ -4445,12 +4799,12 @@
   "cls": "changed:constant",
   "line1": 241,
   "line2": 242,
-  "total": 386,
+  "total": null,
   "result": "CAUGHT",
   "how": "crash rc=132",
   "tests": [],
   "running": "from-1.1",
-  "secs": 0.8
+  "secs": 1.4
  },
  {
   "id": "O01",
@@ -4460,15 +4814,17 @@
   "cls": "changed:name/variable",
   "line1": 1580,
   "line2": 1580,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "3 tests fail",
+  "how": "5 tests fail",
   "tests": [
    "op-1.3.^",
    "op-3.2",
-   "op-4.4"
+   "op-4.4",
+   "op-10.1",
+   "op-11.3"
   ],
-  "secs": 15.0
+  "secs": 30.9
  },
  {
   "id": "O02",
@@ -4478,14 +4834,16 @@
   "cls": "changed:name/variable",
   "line1": 1581,
   "line2": 1581,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "2 tests fail",
+  "how": "4 tests fail",
   "tests": [
    "op-1.4.&~",
-   "op-4.4"
+   "op-4.4",
+   "op-10.1",
+   "op-11.3"
   ],
-  "secs": 15.8
+  "secs": 31.1
  },
  {
   "id": "O03",
@@ -4495,13 +4853,14 @@
   "cls": "changed:name/variable",
   "line1": 1581,
   "line2": 1581,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "1 tests fail",
+  "how": "2 tests fail",
   "tests": [
-   "op-1.4.&!"
+   "op-1.4.&!",
+   "op-10.1"
   ],
-  "secs": 15.2
+  "secs": 31.2
  },
  {
   "id": "O04",
@@ -4511,17 +4870,18 @@
   "cls": "changed:name/variable",
   "line1": 1582,
   "line2": 1582,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "5 tests fail",
+  "how": "6 tests fail",
   "tests": [
    "op-2.1.~",
    "op-3.2",
    "op-7.3",
    "op-8.1",
-   "op-8.2"
+   "op-8.2",
+   "op-10.2"
   ],
-  "secs": 14.9
+  "secs": 30.9
  },
  {
   "id": "O05",
@@ -4531,9 +4891,9 @@
   "cls": "changed:name/variable",
   "line1": 1585,
   "line2": 1585,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "7 tests fail",
+  "how": "9 tests fail",
   "tests": [
    "op-2.1.!",
    "op-3.5",
@@ -4541,9 +4901,11 @@
    "op-8.1",
    "op-8.2",
    "op-8.6",
-   "op-8.7"
+   "op-8.7",
+   "op-11.1",
+   "op-11.2"
   ],
-  "secs": 14.3
+  "secs": 30.2
  },
  {
   "id": "O06",
@@ -4553,15 +4915,17 @@
   "cls": "changed:name/variable",
   "line1": 1579,
   "line2": 1579,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "3 tests fail",
+  "how": "5 tests fail",
   "tests": [
    "op-1.2.|",
    "op-3.2",
-   "op-8.1"
+   "op-8.1",
+   "op-10.1",
+   "op-11.3"
   ],
-  "secs": 14.4
+  "secs": 29.6
  },
  {
   "id": "O07",
@@ -4571,7 +4935,7 @@
   "cls": "changed:name/variable",
   "line1": 1584,
   "line2": 1584,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
@@ -4581,7 +4945,7 @@
    "op-8.4",
    "op-8.6"
   ],
-  "secs": 16.3
+  "secs": 31.8
  },
  {
   "id": "O08",
@@ -4591,17 +4955,20 @@
   "cls": "changed:name/variable",
   "line1": 1578,
   "line2": 1578,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "5 tests fail",
+  "how": "8 tests fail",
   "tests": [
    "op-1.1.&",
    "op-3.2",
    "op-3.3",
    "op-8.1",
-   "op-8.2"
+   "op-8.2",
+   "op-10.1",
+   "op-11.3",
+   "op-12.4"
   ],
-  "secs": 15.9
+  "secs": 30.7
  },
  {
   "id": "O09",
@@ -4611,17 +4978,18 @@
   "cls": "changed:name/variable",
   "line1": 1583,
   "line2": 1583,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "5 tests fail",
+  "how": "6 tests fail",
   "tests": [
    "op-1.1.&&",
    "op-8.1",
    "op-8.2",
    "op-8.4",
-   "op-8.6"
+   "op-8.6",
+   "op-9.6"
   ],
-  "secs": 17.0
+  "secs": 29.5
  },
  {
   "id": "O10",
@@ -4629,15 +4997,13 @@
   "old": "\"and\", \"or\", \"xor\", \"andnot\", \"not\", \"land\", \"lor\", \"lnot\",",
   "new": "\"and\", \"or\", \"andnot\", \"xor\", \"not\", \"land\", \"lor\", \"lnot\",",
   "cls": "changed:2 tokens",
-  "line1": 1594,
-  "line2": 1594,
-  "total": 386,
-  "result": "CAUGHT",
-  "how": "1 tests fail",
-  "tests": [
-   "op-4.4"
-  ],
-  "secs": 14.4
+  "line1": 1596,
+  "line2": 1596,
+  "total": 35,
+  "result": "MISSED",
+  "how": "",
+  "tests": [],
+  "secs": 29.8
  },
  {
   "id": "O11",
@@ -4645,11 +5011,11 @@
   "old": "if (rest < 2 || rest > 5) {",
   "new": "if (rest < 2 || rest > 4) {",
   "cls": "changed:constant",
-  "line1": 1811,
-  "line2": 1811,
-  "total": 386,
+  "line1": 1976,
+  "line2": 1976,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "29 tests fail",
+  "how": "47 tests fail",
   "tests": [
    "op-1.1.and",
    "op-1.1.&&",
@@ -4679,9 +5045,27 @@
    "op-7.1",
    "op-7.6",
    "op-8.6",
-   "op-8.9"
+   "op-8.9",
+   "op-9.6",
+   "op-10.1",
+   "op-10.3",
+   "op-10.4",
+   "op-10.5",
+   "op-10.6",
+   "op-10.7",
+   "op-10.8",
+   "op-10.9",
+   "op-10.10",
+   "op-11.6",
+   "op-11.7",
+   "op-11.8",
+   "op-11.10",
+   "op-11.11",
+   "op-12.2",
+   "op-12.3",
+   "op-12.4"
   ],
-  "secs": 16.0
+  "secs": 32.0
  },
  {
   "id": "O12",
@@ -4689,15 +5073,15 @@
   "old": "\tif (ISBA(objv[idx + 1]) || !IsWord(objv[idx + 1], \"=\")) {",
   "new": "\tif (ISBA(objv[idx + 1])) {",
   "cls": "deleted:clause",
-  "line1": 1815,
-  "line2": 1815,
-  "total": 386,
+  "line1": 1984,
+  "line2": 1984,
+  "total": 414,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "op-5.2"
   ],
-  "secs": 15.7
+  "secs": 30.5
  },
  {
   "id": "O13",
@@ -4705,16 +5089,16 @@
   "old": "\tif (!IS_UNARY(op)) {\n",
   "new": "\tif (!IS_UNARY(op) && 0) {\n",
   "cls": "changed:+tokens",
-  "line1": 1827,
-  "line2": 1827,
-  "total": 386,
+  "line1": 1999,
+  "line2": 1999,
+  "total": null,
   "result": "CAUGHT",
   "how": "crash rc=139",
   "tests": [
    "op-5.6"
   ],
   "running": "op-7.10",
-  "secs": 14.3
+  "secs": 30.2
  },
  {
   "id": "O14",
@@ -4722,17 +5106,18 @@
   "old": "\tif (IS_UNARY(op)) {\n",
   "new": "\tif (IS_UNARY(op) && 0) {\n",
   "cls": "changed:+tokens",
-  "line1": 1838,
-  "line2": 1838,
-  "total": 386,
+  "line1": 2010,
+  "line2": 2010,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "3 tests fail",
+  "how": "4 tests fail",
   "tests": [
    "op-5.7",
    "op-7.10",
-   "op-8.9"
+   "op-8.9",
+   "op-11.6"
   ],
-  "secs": 14.6
+  "secs": 29.9
  },
  {
   "id": "O15",
@@ -4740,11 +5125,11 @@
   "old": "srcA = objv[first];\n\tsrcB = objv[first + 2];",
   "new": "srcA = objv[first + 2];\n\tsrcB = objv[first];",
   "cls": "changed:9 tokens",
-  "line1": 1842,
-  "line2": 1843,
-  "total": 386,
+  "line1": 2014,
+  "line2": 2015,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "12 tests fail",
+  "how": "33 tests fail",
   "tests": [
    "op-1.4.andnot",
    "op-1.4.&~",
@@ -4757,9 +5142,30 @@
    "op-7.2",
    "op-7.5",
    "op-7.10",
-   "op-8.5"
+   "op-8.5",
+   "op-9.1",
+   "op-9.2",
+   "op-9.3",
+   "op-9.4",
+   "op-9.5",
+   "op-9.6",
+   "op-9.7",
+   "op-9.8",
+   "op-9.11",
+   "op-10.1",
+   "op-10.3",
+   "op-10.4",
+   "op-10.10",
+   "op-11.2",
+   "op-11.3",
+   "op-11.4",
+   "op-11.7",
+   "op-11.10",
+   "op-11.11",
+   "op-12.4",
+   "op-12.6"
   ],
-  "secs": 15.3
+  "secs": 29.8
  },
  {
   "id": "O16",
@@ -4767,9 +5173,9 @@
   "old": "if (hasLength && IS_UNARY(op)) {",
   "new": "if (hasLength && IS_UNARY(op) && 0) {",
   "cls": "changed:+tokens",
-  "line1": 1845,
-  "line2": 1845,
-  "total": 386,
+  "line1": 2017,
+  "line2": 2017,
+  "total": 414,
   "result": "CAUGHT",
   "how": "3 tests fail",
   "tests": [
@@ -4777,7 +5183,7 @@
    "op-7.10",
    "op-8.9"
   ],
-  "secs": 15.7
+  "secs": 28.4
  },
  {
   "id": "O17",
@@ -4785,16 +5191,17 @@
   "old": "\targv[n++] = objv[2];\n\targv[n++] = objv[3];",
   "new": "\targv[n++] = objv[3];\n\targv[n++] = objv[2];",
   "cls": "changed:2 tokens",
-  "line1": 1884,
-  "line2": 1885,
-  "total": 386,
+  "line1": 2110,
+  "line2": 2111,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "2 tests fail",
+  "how": "3 tests fail",
   "tests": [
    "op-4.1",
-   "op-4.2"
+   "op-4.2",
+   "op-10.4"
   ],
-  "secs": 15.1
+  "secs": 31.7
  },
  {
   "id": "O18",
@@ -4802,15 +5209,16 @@
   "old": "\targv[n++] = objv[2];\n\targv[n++] = objv[3];\n",
   "new": "",
   "cls": "deleted:statement",
-  "line1": 1884,
-  "line2": 1885,
-  "total": 386,
+  "line1": 2110,
+  "line2": 2111,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "1 tests fail",
+  "how": "2 tests fail",
   "tests": [
-   "op-4.1"
+   "op-4.1",
+   "op-10.4"
   ],
-  "secs": 15.3
+  "secs": 32.4
  },
  {
   "id": "O19",
@@ -4818,11 +5226,11 @@
   "old": "argv[n++] = objv[idx];\n    if (sameName) {",
   "new": "argv[n++] = objv[idx + 2];\n    if (sameName) {",
   "cls": "changed:+tokens",
-  "line1": 1894,
-  "line2": 1895,
-  "total": 395,
+  "line1": 2113,
+  "line2": 2114,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "24 tests fail",
+  "how": "27 tests fail",
   "tests": [
    "op-1.1.and",
    "op-1.1.&",
@@ -4847,9 +5255,12 @@
    "op-7.6",
    "op-9.6",
    "op-10.2",
-   "op-10.9"
+   "op-10.7",
+   "op-10.9",
+   "op-10.10",
+   "op-10.11"
   ],
-  "secs": 13.8
+  "secs": 30.2
  },
  {
   "id": "O20",
@@ -4857,11 +5268,11 @@
   "old": "\targv[n++] = arrowObj;\n\targv[n++] = srcA;",
   "new": "\targv[n++] = srcA;",
   "cls": "deleted:clause",
-  "line1": 1900,
-  "line2": 1901,
-  "total": 395,
+  "line1": 2119,
+  "line2": 2120,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "29 tests fail",
+  "how": "28 tests fail",
   "tests": [
    "op-1.1.and",
    "op-1.1.&",
@@ -4885,15 +5296,14 @@
    "op-4.2",
    "op-4.3",
    "op-4.4",
-   "op-5.11",
    "op-5.12",
    "op-7.1",
    "op-7.6",
    "op-9.6",
-   "op-10.6",
+   "op-10.7",
    "op-10.9"
   ],
-  "secs": 14.3
+  "secs": 29.7
  },
  {
   "id": "O21",
@@ -4901,19 +5311,20 @@
   "old": "    result = BitOpCmd(interp, n, argv, op);",
   "new": "    result = BitOpCmd(interp, n, argv, op); result = TCL_OK;",
   "cls": "added:code",
-  "line1": 1893,
-  "line2": 1893,
-  "total": 386,
+  "line1": 2125,
+  "line2": 2125,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "5 tests fail",
+  "how": "6 tests fail",
   "tests": [
    "op-4.2",
    "op-4.3",
    "op-4.4",
-   "op-5.11",
-   "op-5.12"
+   "op-5.12",
+   "op-10.4",
+   "op-10.5"
   ],
-  "secs": 15.1
+  "secs": 32.7
  },
  {
   "id": "O22",
@@ -4921,13 +5332,13 @@
   "old": "    Tcl_IncrRefCount(subObj);\n",
   "new": "",
   "cls": "deleted:statement",
-  "line1": 1879,
-  "line2": 1879,
-  "total": 386,
+  "line1": 2105,
+  "line2": 2105,
+  "total": 35,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 15.0
+  "secs": 32.0
  },
  {
   "id": "O23",
@@ -4935,30 +5346,29 @@
   "old": "    if (ISBA(obj)) {\n\treturn -1;\n    }\n    for (i = 0; opWords",
   "new": "    for (i = 0; opWords",
   "cls": "deleted:clause",
-  "line1": 1667,
-  "line2": 1670,
-  "total": 386,
+  "line1": 1674,
+  "line2": 1677,
+  "total": 35,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 15.0
+  "secs": 30.8
  },
  {
   "id": "O24",
-  "name": "O24 op: an array where the operator belongs gives bad operator, not usage",
-  "old": "\tif (ISBA(bad)) {   // an array where the operator belongs: the words are in the wrong places, say how they go\n\t    goto usage;\n\t}\n",
-  "new": "",
-  "cls": "deleted:statement",
-  "line1": 1902,
-  "line2": 1904,
-  "total": 386,
+  "name": "O24 op: an array in the operator place (middle) gives bad operator, not usage",
+  "old": "if (ISBA(w1)) {   // an array where the operator belongs: the words are in the wrong places\n\t    return OpUsage(interp);\n\t}\n\tbad = w1;",
+  "new": "bad = w1;",
+  "cls": "deleted:clause",
+  "line1": 1931,
+  "line2": 1934,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "2 tests fail",
+  "how": "1 tests fail",
   "tests": [
-   "op-5.3",
-   "op-5.10"
+   "op-12.5"
   ],
-  "secs": 15.0
+  "secs": 30.2
  },
  {
   "id": "O25",
@@ -4966,11 +5376,11 @@
   "old": "case S_OP:     return OpCmd(interp, objc, objv);",
   "new": "case S_OP:     return BitOpCmd(interp, objc, objv, BO_AND);",
   "cls": "changed:expression",
-  "line1": 1947,
-  "line2": 1947,
-  "total": 386,
+  "line1": 2167,
+  "line2": 2167,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "57 tests fail",
+  "how": "95 tests fail",
   "tests": [
    "op-1.1.and",
    "op-1.1.&&",
@@ -5028,9 +5438,47 @@
    "op-8.6",
    "op-8.7",
    "op-8.8",
-   "op-8.9"
+   "op-8.9",
+   "op-9.1",
+   "op-9.2",
+   "op-9.3",
+   "op-9.4",
+   "op-9.5",
+   "op-9.6",
+   "op-9.7",
+   "op-9.8",
+   "op-9.9",
+   "op-9.10",
+   "op-9.11",
+   "op-10.1",
+   "op-10.2",
+   "op-10.3",
+   "op-10.4",
+   "op-10.5",
+   "op-10.6",
+   "op-10.7",
+   "op-10.8",
+   "op-10.9",
+   "op-10.10",
+   "op-10.11",
+   "op-11.1",
+   "op-11.2",
+   "op-11.3",
+   "op-11.4",
+   "op-11.5",
+   "op-11.6",
+   "op-11.7",
+   "op-11.8",
+   "op-11.9",
+   "op-11.10",
+   "op-11.11",
+   "op-12.1",
+   "op-12.2",
+   "op-12.3",
+   "op-12.4",
+   "op-12.6"
   ],
-  "secs": 15.2
+  "secs": 30.8
  },
  {
   "id": "O26",
@@ -5038,15 +5486,15 @@
   "old": "\tif (idx + 1 >= objc) {\n\t    goto usage;\n\t}\n\tif (Tcl_GetIndexFromObj(interp, objv[idx + 1], modes, \"length mode\", TCL_EXACT, &mode)",
   "new": "\tif (Tcl_GetIndexFromObj(interp, objv[idx + 1], modes, \"length mode\", TCL_EXACT, &mode)",
   "cls": "deleted:clause",
-  "line1": 1801,
-  "line2": 1804,
-  "total": 386,
+  "line1": 1966,
+  "line2": 1969,
+  "total": 414,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "op-5.9"
   ],
-  "secs": 15.2
+  "secs": 32.4
  },
  {
   "id": "O27",
@@ -5054,11 +5502,11 @@
   "old": "\t    Tcl_SetObjResult(interp, res);\n\t    return TCL_OK;",
   "new": "\t    return TCL_OK;",
   "cls": "deleted:clause",
-  "line1": 1868,
-  "line2": 1869,
-  "total": 386,
+  "line1": 2094,
+  "line2": 2095,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "15 tests fail",
+  "how": "30 tests fail",
   "tests": [
    "op-7.1",
    "op-7.2",
@@ -5074,19 +5522,34 @@
    "op-8.4",
    "op-8.5",
    "op-8.7",
-   "op-8.8"
+   "op-8.8",
+   "op-9.1",
+   "op-9.2",
+   "op-9.3",
+   "op-9.4",
+   "op-9.5",
+   "op-9.6",
+   "op-9.7",
+   "op-9.8",
+   "op-9.9",
+   "op-9.11",
+   "op-11.2",
+   "op-11.3",
+   "op-11.4",
+   "op-11.5",
+   "op-11.9"
   ],
-  "secs": 15.9
+  "secs": 32.7
  },
  {
   "id": "O28",
   "name": "O28 op value form: the three-word form is not recognized",
-  "old": "if (rest < 4 || op >= BO_LAND) {",
-  "new": "if (rest < 3 || op >= BO_LAND) {",
+  "old": "if (rest < 4 || op >= BO_LAND || scalar) {",
+  "new": "if (rest < 3 || op >= BO_LAND || scalar) {",
   "cls": "changed:constant",
-  "line1": 1848,
-  "line2": 1848,
-  "total": 386,
+  "line1": 2061,
+  "line2": 2061,
+  "total": 414,
   "result": "CAUGHT",
   "how": "11 tests fail",
   "tests": [
@@ -5102,27 +5565,28 @@
    "op-8.1",
    "op-8.2"
   ],
-  "secs": 15.7
+  "secs": 30.1
  },
  {
   "id": "O29",
   "name": "O29 op: the logical operators with a variable go to the bitwise code",
-  "old": "if (rest < 4 || op >= BO_LAND) {",
-  "new": "if (rest < 4) {",
+  "old": "if (rest < 4 || op >= BO_LAND || scalar) {",
+  "new": "if (rest < 4 || scalar) {",
   "cls": "deleted:clause",
-  "line1": 1848,
-  "line2": 1848,
-  "total": 386,
+  "line1": 2061,
+  "line2": 2061,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "5 tests fail",
+  "how": "6 tests fail",
   "tests": [
    "op-1.1.&&",
    "op-1.2.||",
    "op-3.5",
    "op-7.1",
-   "op-8.6"
+   "op-8.6",
+   "op-9.6"
   ],
-  "secs": 14.8
+  "secs": 30.4
  },
  {
   "id": "O30",
@@ -5130,91 +5594,9 @@
   "old": "(op == BO_LAND) ? (r && other) : (r || other)",
   "new": "(op == BO_LAND) ? (r || other) : (r && other)",
   "cls": "changed:2 tokens",
-  "line1": 1646,
-  "line2": 1646,
-  "total": 386,
-  "result": "CAUGHT",
-  "how": "10 tests fail",
-  "tests": [
-   "op-1.1.&&",
-   "op-1.2.||",
-   "op-8.1",
-   "op-8.2",
-   "op-8.3",
-   "op-8.4",
-   "op-8.5",
-   "op-8.6",
-   "op-8.7",
-   "op-8.8"
-  ],
-  "secs": 14.6
- },
- {
-  "id": "O31",
-  "name": "O31 OpValue: lnot does not invert",
-  "old": "\t    r = !r;",
-  "new": "\t    r = r;",
-  "cls": "deleted:clause",
-  "line1": 1648,
-  "line2": 1648,
-  "total": 386,
-  "result": "CAUGHT",
-  "how": "9 tests fail",
-  "tests": [
-   "op-2.1.!",
-   "op-3.5",
-   "op-7.3",
-   "op-7.12",
-   "op-8.1",
-   "op-8.2",
-   "op-8.3",
-   "op-8.6",
-   "op-8.7"
-  ],
-  "secs": 15.1
- },
- {
-  "id": "O32",
-  "name": "O32 OpValue: a missing element of the second array counts as 1",
-  "old": "ElemNonzero(y, i) : 0;",
-  "new": "ElemNonzero(y, i) : 1;",
-  "cls": "changed:constant",
-  "line1": 1644,
-  "line2": 1644,
-  "total": 386,
-  "result": "CAUGHT",
-  "how": "1 tests fail",
-  "tests": [
-   "op-8.5"
-  ],
-  "secs": 15.3
- },
- {
-  "id": "O33",
-  "name": "O33 ElemNonzero: only the low bit of a wide element",
-  "old": "return GetElem(b, i) != 0;",
-  "new": "return (GetElem(b, i) & 1) != 0;",
-  "cls": "changed:+tokens",
-  "line1": 1609,
-  "line2": 1609,
-  "total": 386,
-  "result": "CAUGHT",
-  "how": "2 tests fail",
-  "tests": [
-   "op-8.2",
-   "op-8.8"
-  ],
-  "secs": 14.1
- },
- {
-  "id": "O34",
-  "name": "O34 OpValue: the logical result has the width of the first array",
-  "old": "NewRep(interp, x->len, 1, 0)",
-  "new": "NewRep(interp, x->len, x->width, 0)",
-  "cls": "changed:expression",
-  "line1": 1637,
-  "line2": 1637,
-  "total": 386,
+  "line1": 1653,
+  "line2": 1653,
+  "total": 414,
   "result": "CAUGHT",
   "how": "7 tests fail",
   "tests": [
@@ -5223,10 +5605,87 @@
    "op-8.4",
    "op-8.5",
    "op-8.6",
+   "op-8.8",
+   "op-11.1"
+  ],
+  "secs": 29.7
+ },
+ {
+  "id": "O31",
+  "name": "O31 OpValue: lnot does not invert",
+  "old": "\t    r = !r;",
+  "new": "\t    r = r;",
+  "cls": "deleted:clause",
+  "line1": 1655,
+  "line2": 1655,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "5 tests fail",
+  "tests": [
+   "op-8.2",
+   "op-8.3",
+   "op-8.6",
    "op-8.7",
+   "op-11.1"
+  ],
+  "secs": 30.5
+ },
+ {
+  "id": "O32",
+  "name": "O32 OpValue: a missing element of the second array counts as 1",
+  "old": "ElemNonzero(y, i) : 0;",
+  "new": "ElemNonzero(y, i) : 1;",
+  "cls": "changed:constant",
+  "line1": 1651,
+  "line2": 1651,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "2 tests fail",
+  "tests": [
+   "op-8.5",
+   "op-11.1"
+  ],
+  "secs": 29.1
+ },
+ {
+  "id": "O33",
+  "name": "O33 ElemNonzero: only the low bit of a wide element",
+  "old": "return GetElem(b, i) != 0;",
+  "new": "return (GetElem(b, i) & 1) != 0;",
+  "cls": "changed:+tokens",
+  "line1": 1611,
+  "line2": 1611,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "2 tests fail",
+  "tests": [
+   "op-8.2",
    "op-8.8"
   ],
-  "secs": 14.3
+  "secs": 29.7
+ },
+ {
+  "id": "O34",
+  "name": "O34 OpValue: the logical result has the width of the first array",
+  "old": "NewRep(interp, x->len, 1, 0)",
+  "new": "NewRep(interp, x->len, x->width, 0)",
+  "cls": "changed:expression",
+  "line1": 1639,
+  "line2": 1639,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "8 tests fail",
+  "tests": [
+   "op-8.2",
+   "op-8.3",
+   "op-8.4",
+   "op-8.5",
+   "op-8.6",
+   "op-8.7",
+   "op-8.8",
+   "op-11.1"
+  ],
+  "secs": 31.5
  },
  {
   "id": "O35",
@@ -5234,32 +5693,33 @@
   "old": "op >= BO_LAND ? BitLenCompat(",
   "new": "0 ? BitLenCompat(",
   "cls": "changed:expression",
-  "line1": 1625,
-  "line2": 1625,
-  "total": 386,
+  "line1": 1627,
+  "line2": 1627,
+  "total": 414,
   "result": "CAUGHT",
   "how": "2 tests fail",
   "tests": [
    "op-8.4",
    "op-8.5"
   ],
-  "secs": 14.7
+  "secs": 30.5
  },
  {
   "id": "O36",
   "name": "O36 OpValue: the logical operators do not check the lengths",
-  "old": "op >= BO_LAND ? BitLenCompat(interp, opNames[op], x, y, zero)",
+  "old": "op >= BO_LAND ? BitLenCompat(interp, opMsgNames[op], x, y, zero)",
   "new": "op >= BO_LAND ? TCL_OK",
   "cls": "changed:expression",
-  "line1": 1625,
-  "line2": 1625,
-  "total": 386,
+  "line1": 1627,
+  "line2": 1627,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "1 tests fail",
+  "how": "2 tests fail",
   "tests": [
-   "op-8.5"
+   "op-8.5",
+   "op-12.4"
   ],
-  "secs": 14.5
+  "secs": 30.5
  },
  {
   "id": "O37",
@@ -5267,16 +5727,17 @@
   "old": "OpValue(interp, op, x, y, hasLength && mode)",
   "new": "OpValue(interp, op, x, y, 0)",
   "cls": "changed:expression",
-  "line1": 1863,
-  "line2": 1863,
-  "total": 386,
+  "line1": 2089,
+  "line2": 2089,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "2 tests fail",
+  "how": "3 tests fail",
   "tests": [
    "op-7.5",
-   "op-8.5"
+   "op-8.5",
+   "op-11.1"
   ],
-  "secs": 14.3
+  "secs": 30.9
  },
  {
   "id": "O38",
@@ -5284,15 +5745,15 @@
   "old": "\tif ((d = NewRep(interp, x->len, x->width, x->isSigned)) == NULL) {\n\t    return NULL;",
   "new": "\tif ((d = NewRep(interp, x->len, x->width, 0)) == NULL) {\n\t    return NULL;",
   "cls": "changed:expression",
-  "line1": 1630,
-  "line2": 1631,
-  "total": 386,
+  "line1": 1632,
+  "line2": 1633,
+  "total": 414,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "op-7.8"
   ],
-  "secs": 14.2
+  "secs": 29.7
  },
  {
   "id": "O39",
@@ -5300,13 +5761,13 @@
   "old": "\tBitOpWords(d, x, y, op);\n\tMaskTail(d);\n\treturn WrapRep(d);",
   "new": "\tBitOpWords(d, x, y, op);\n\treturn WrapRep(d);",
   "cls": "deleted:clause",
-  "line1": 1633,
-  "line2": 1635,
-  "total": 386,
+  "line1": 1635,
+  "line2": 1637,
+  "total": 35,
   "result": "MISSED",
   "how": "",
   "tests": [],
-  "secs": 14.8
+  "secs": 32.5
  },
  {
   "id": "O40",
@@ -5314,11 +5775,11 @@
   "old": "#define IS_UNARY(op)\t((op) == BO_NOT || (op) == BO_LNOT)",
   "new": "#define IS_UNARY(op)\t((op) == BO_NOT)",
   "cls": "deleted:clause",
-  "line1": 1597,
-  "line2": 1597,
-  "total": 386,
+  "line1": 1599,
+  "line2": 1599,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "11 tests fail",
+  "how": "14 tests fail",
   "tests": [
    "op-2.1.!",
    "op-3.5",
@@ -5330,9 +5791,12 @@
    "op-8.6",
    "op-8.7",
    "op-8.8",
-   "op-8.9"
+   "op-8.9",
+   "op-11.1",
+   "op-11.2",
+   "op-12.2"
   ],
-  "secs": 15.0
+  "secs": 31.5
  },
  {
   "id": "O41",
@@ -5342,9 +5806,9 @@
   "cls": "changed:name/variable",
   "line1": 1586,
   "line2": 1586,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "7 tests fail",
+  "how": "8 tests fail",
   "tests": [
    "op-9.1",
    "op-9.2",
@@ -5352,9 +5816,10 @@
    "op-9.4",
    "op-9.5",
    "op-9.8",
-   "op-9.11"
+   "op-9.11",
+   "op-11.2"
   ],
-  "secs": 14.3
+  "secs": 30.9
  },
  {
   "id": "O42",
@@ -5364,17 +5829,18 @@
   "cls": "changed:name/variable",
   "line1": 1588,
   "line2": 1588,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "5 tests fail",
+  "how": "6 tests fail",
   "tests": [
    "op-9.1",
    "op-9.2",
    "op-9.4",
    "op-9.5",
-   "op-9.11"
+   "op-9.11",
+   "op-12.4"
   ],
-  "secs": 14.3
+  "secs": 30.9
  },
  {
   "id": "O43",
@@ -5384,17 +5850,18 @@
   "cls": "changed:name/variable",
   "line1": 1591,
   "line2": 1591,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "5 tests fail",
+  "how": "6 tests fail",
   "tests": [
    "op-9.1",
    "op-9.2",
    "op-9.3",
    "op-9.5",
-   "op-9.11"
+   "op-9.11",
+   "op-11.2"
   ],
-  "secs": 13.9
+  "secs": 31.3
  },
  {
   "id": "O44",
@@ -5404,7 +5871,7 @@
   "cls": "changed:name/variable",
   "line1": 1589,
   "line2": 1589,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "3 tests fail",
   "tests": [
@@ -5412,7 +5879,7 @@
    "op-9.2",
    "op-9.11"
   ],
-  "secs": 13.9
+  "secs": 29.4
  },
  {
   "id": "O45",
@@ -5422,13 +5889,13 @@
   "cls": "changed:name/variable",
   "line1": 1587,
   "line2": 1587,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "op-9.1"
   ],
-  "secs": 13.3
+  "secs": 30.7
  },
  {
   "id": "O46",
@@ -5438,7 +5905,7 @@
   "cls": "changed:name/variable",
   "line1": 1590,
   "line2": 1590,
-  "total": 386,
+  "total": 414,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
@@ -5448,95 +5915,98 @@
    "op-9.8",
    "op-9.11"
   ],
-  "secs": 13.4
+  "secs": 29.9
  },
  {
   "id": "O47",
-  "name": "O47 RelValue: lt is <=",
-  "old": "case BO_LT: r = (a < b); break;",
-  "new": "case BO_LT: r = (a <= b); break;",
+  "name": "O47 RelTest: lt is <=",
+  "old": "case BO_LT: return a < b;",
+  "new": "case BO_LT: return a <= b;",
   "cls": "changed:operator",
-  "line1": 1763,
-  "line2": 1763,
-  "total": 386,
+  "line1": 1737,
+  "line2": 1737,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "5 tests fail",
+  "how": "6 tests fail",
   "tests": [
    "op-9.1",
    "op-9.2",
    "op-9.4",
    "op-9.5",
-   "op-9.11"
+   "op-9.11",
+   "op-11.1"
   ],
-  "secs": 14.3
+  "secs": 31.7
  },
  {
   "id": "O48",
-  "name": "O48 RelValue: le is <",
-  "old": "case BO_LE: r = (a <= b); break;",
-  "new": "case BO_LE: r = (a < b); break;",
+  "name": "O48 RelTest: le is <",
+  "old": "case BO_LE: return a <= b;",
+  "new": "case BO_LE: return a < b;",
   "cls": "changed:operator",
-  "line1": 1764,
-  "line2": 1764,
-  "total": 386,
+  "line1": 1738,
+  "line2": 1738,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "3 tests fail",
+  "how": "4 tests fail",
   "tests": [
    "op-9.1",
    "op-9.2",
-   "op-9.11"
+   "op-9.11",
+   "op-11.1"
   ],
-  "secs": 14.5
+  "secs": 29.9
  },
  {
   "id": "O49",
-  "name": "O49 RelValue: gt is >=",
-  "old": "case BO_GT: r = (a > b); break;",
-  "new": "case BO_GT: r = (a >= b); break;",
+  "name": "O49 RelTest: gt is >=",
+  "old": "case BO_GT: return a > b;",
+  "new": "case BO_GT: return a >= b;",
   "cls": "changed:operator",
-  "line1": 1765,
-  "line2": 1765,
-  "total": 386,
+  "line1": 1739,
+  "line2": 1739,
+  "total": 414,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
    "op-9.1",
    "op-9.2",
-   "op-9.5",
    "op-9.8",
-   "op-9.11"
+   "op-9.11",
+   "op-11.1"
   ],
-  "secs": 13.1
+  "secs": 30.2
  },
  {
   "id": "O50",
-  "name": "O50 RelValue: ge is >",
-  "old": "default:    r = (a >= b); break;   // BO_GE",
-  "new": "default:    r = (a > b); break;   // BO_GE",
+  "name": "O50 RelTest: ge is >",
+  "old": "default:    return a >= b;",
+  "new": "default:    return a > b;",
   "cls": "changed:operator",
-  "line1": 1766,
-  "line2": 1766,
-  "total": 386,
+  "line1": 1740,
+  "line2": 1740,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "5 tests fail",
+  "how": "6 tests fail",
   "tests": [
    "op-9.1",
    "op-9.2",
    "op-9.3",
-   "op-9.5",
-   "op-9.11"
+   "op-9.11",
+   "op-11.1",
+   "op-11.2"
   ],
-  "secs": 12.9
+  "secs": 29.3
  },
  {
   "id": "O51",
-  "name": "O51 RelValue: eq is !=",
-  "old": "case BO_EQ: r = (a == b); break;",
-  "new": "case BO_EQ: r = (a != b); break;",
+  "name": "O51 RelTest: eq is !=",
+  "old": "case BO_EQ: return a == b;",
+  "new": "case BO_EQ: return a != b;",
   "cls": "changed:operator",
-  "line1": 1761,
-  "line2": 1761,
-  "total": 386,
+  "line1": 1735,
+  "line2": 1735,
+  "total": 414,
   "result": "CAUGHT",
   "how": "7 tests fail",
   "tests": [
@@ -5544,31 +6014,31 @@
    "op-9.2",
    "op-9.3",
    "op-9.4",
-   "op-9.5",
    "op-9.8",
-   "op-9.11"
+   "op-9.11",
+   "op-11.1"
   ],
-  "secs": 14.2
+  "secs": 28.7
  },
  {
   "id": "O52",
-  "name": "O52 RelValue: ne is ==",
-  "old": "case BO_NE: r = (a != b); break;",
-  "new": "case BO_NE: r = (a == b); break;",
+  "name": "O52 RelTest: ne is ==",
+  "old": "case BO_NE: return a != b;",
+  "new": "case BO_NE: return a == b;",
   "cls": "changed:operator",
-  "line1": 1762,
-  "line2": 1762,
-  "total": 386,
+  "line1": 1736,
+  "line2": 1736,
+  "total": 414,
   "result": "CAUGHT",
   "how": "5 tests fail",
   "tests": [
    "op-9.1",
    "op-9.2",
-   "op-9.5",
    "op-9.6",
-   "op-9.11"
+   "op-9.11",
+   "op-11.1"
   ],
-  "secs": 14.3
+  "secs": 27.7
  },
  {
   "id": "O53",
@@ -5576,21 +6046,20 @@
   "old": "return ElemWide(b, GetElem(b, i));",
   "new": "return (Tcl_WideInt)GetElem(b, i);",
   "cls": "changed:expression",
-  "line1": 1689,
-  "line2": 1689,
-  "total": 386,
+  "line1": 1696,
+  "line2": 1696,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "7 tests fail",
+  "how": "6 tests fail",
   "tests": [
    "op-9.1",
    "op-9.2",
    "op-9.3",
    "op-9.4",
    "op-9.6",
-   "op-9.8",
    "op-9.11"
   ],
-  "secs": 13.5
+  "secs": 30.6
  },
  {
   "id": "O54",
@@ -5598,16 +6067,15 @@
   "old": "return (Tcl_WideInt)GETBIT(b, i);",
   "new": "return (Tcl_WideInt)(GETBIT(b, i) & 0);",
   "cls": "changed:+tokens",
-  "line1": 1687,
-  "line2": 1687,
-  "total": 386,
+  "line1": 1694,
+  "line2": 1694,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "2 tests fail",
+  "how": "1 tests fail",
   "tests": [
-   "op-9.5",
    "op-9.11"
   ],
-  "secs": 13.5
+  "secs": 30.0
  },
  {
   "id": "O55",
@@ -5615,15 +6083,16 @@
   "old": "? ElemAt(y, i) : 0;",
   "new": "? ElemAt(y, i) : 1;",
   "cls": "changed:constant",
-  "line1": 1757,
-  "line2": 1757,
-  "total": 386,
+  "line1": 1825,
+  "line2": 1825,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "1 tests fail",
+  "how": "2 tests fail",
   "tests": [
-   "op-9.8"
+   "op-9.8",
+   "op-11.1"
   ],
-  "secs": 15.2
+  "secs": 31.6
  },
  {
   "id": "O56",
@@ -5631,15 +6100,16 @@
   "old": "len = (x != NULL) ? x->len : y->len;",
   "new": "len = (y != NULL) ? y->len : x->len;",
   "cls": "changed:3 tokens",
-  "line1": 1751,
-  "line2": 1751,
-  "total": 386,
+  "line1": 1814,
+  "line2": 1814,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "1 tests fail",
+  "how": "2 tests fail",
   "tests": [
-   "op-9.8"
+   "op-9.8",
+   "op-11.1"
   ],
-  "secs": 14.6
+  "secs": 31.6
  },
  {
   "id": "O57",
@@ -5647,14 +6117,14 @@
   "old": "if (x == NULL && y == NULL) {",
   "new": "if (x == NULL && y == NULL && 0) {",
   "cls": "changed:+tokens",
-  "line1": 1739,
-  "line2": 1739,
-  "total": 386,
+  "line1": 1802,
+  "line2": 1802,
+  "total": null,
   "result": "CAUGHT",
   "how": "crash rc=139",
   "tests": [],
   "running": "op-9.10",
-  "secs": 14.2
+  "secs": 30.3
  },
  {
   "id": "O58",
@@ -5662,31 +6132,32 @@
   "old": "} else if (hasLength) {",
   "new": "} else if (hasLength && 0) {",
   "cls": "changed:+tokens",
-  "line1": 1747,
-  "line2": 1747,
-  "total": 386,
+  "line1": 1810,
+  "line2": 1810,
+  "total": 414,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "op-9.10"
   ],
-  "secs": 14.3
+  "secs": 31.5
  },
  {
   "id": "O59",
   "name": "O59 RelValue: the lengths of two arrays are not checked",
-  "old": "if (BitLenCompat(interp, opNames[op], x, y, zero) != TCL_OK) {\n\t    return NULL;",
-  "new": "if (0 && BitLenCompat(interp, opNames[op], x, y, zero) != TCL_OK) {\n\t    return NULL;",
+  "old": "if (BitLenCompat(interp, opMsgNames[op], x, y, zero) != TCL_OK) {",
+  "new": "if (0 && BitLenCompat(interp, opMsgNames[op], x, y, zero) != TCL_OK) {",
   "cls": "changed:+tokens",
-  "line1": 1744,
-  "line2": 1745,
-  "total": 386,
+  "line1": 1807,
+  "line2": 1807,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "1 tests fail",
+  "how": "2 tests fail",
   "tests": [
-   "op-9.8"
+   "op-9.8",
+   "op-12.4"
   ],
-  "secs": 14.0
+  "secs": 28.9
  },
  {
   "id": "O60",
@@ -5694,15 +6165,15 @@
   "old": "op >= BO_EQ ? \"operands\" : \"arrays\"",
   "new": "\"arrays\"",
   "cls": "deleted:clause",
-  "line1": 1829,
-  "line2": 1829,
-  "total": 386,
+  "line1": 2001,
+  "line2": 2001,
+  "total": 414,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "op-9.10"
   ],
-  "secs": 14.5
+  "secs": 28.9
  },
  {
   "id": "O61",
@@ -5710,9 +6181,53 @@
   "old": "if (op >= BO_EQ) {   // the relational operators",
   "new": "if (op > BO_GE) {   // the relational operators",
   "cls": "changed:2 tokens",
-  "line1": 1852,
-  "line2": 1852,
-  "total": 386,
+  "line1": 2065,
+  "line2": 2065,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "13 tests fail",
+  "tests": [
+   "op-9.1",
+   "op-9.2",
+   "op-9.3",
+   "op-9.4",
+   "op-9.5",
+   "op-9.6",
+   "op-9.7",
+   "op-9.8",
+   "op-9.9",
+   "op-9.10",
+   "op-9.11",
+   "op-11.1",
+   "op-11.2"
+  ],
+  "secs": 29.1
+ },
+ {
+  "id": "O62",
+  "name": "O62 op: -length is not passed to RelValue",
+  "old": "RelValue(interp, op, srcA, srcB, hasLength, hasLength && mode)",
+  "new": "RelValue(interp, op, srcA, srcB, 0, hasLength && mode)",
+  "cls": "changed:token",
+  "line1": 2066,
+  "line2": 2066,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "op-9.10"
+  ],
+  "secs": 31.2
+ },
+ {
+  "id": "O63",
+  "name": "O63 op: the operands of RelValue swapped",
+  "old": "RelValue(interp, op, srcA, srcB,",
+  "new": "RelValue(interp, op, srcB, srcA,",
+  "cls": "changed:2 tokens",
+  "line1": 2066,
+  "line2": 2066,
+  "total": 414,
   "result": "CAUGHT",
   "how": "11 tests fail",
   "tests": [
@@ -5724,51 +6239,11 @@
    "op-9.6",
    "op-9.7",
    "op-9.8",
-   "op-9.9",
-   "op-9.10",
-   "op-9.11"
+   "op-9.11",
+   "op-11.2",
+   "op-12.4"
   ],
-  "secs": 14.0
- },
- {
-  "id": "O62",
-  "name": "O62 op: -length is not passed to RelValue",
-  "old": "RelValue(interp, op, srcA, srcB, hasLength, hasLength && mode)",
-  "new": "RelValue(interp, op, srcA, srcB, 0, hasLength && mode)",
-  "cls": "changed:token",
-  "line1": 1853,
-  "line2": 1853,
-  "total": 386,
-  "result": "CAUGHT",
-  "how": "1 tests fail",
-  "tests": [
-   "op-9.10"
-  ],
-  "secs": 13.8
- },
- {
-  "id": "O63",
-  "name": "O63 op: the operands of RelValue swapped",
-  "old": "RelValue(interp, op, srcA, srcB,",
-  "new": "RelValue(interp, op, srcB, srcA,",
-  "cls": "changed:2 tokens",
-  "line1": 1853,
-  "line2": 1853,
-  "total": 386,
-  "result": "CAUGHT",
-  "how": "9 tests fail",
-  "tests": [
-   "op-9.1",
-   "op-9.2",
-   "op-9.3",
-   "op-9.4",
-   "op-9.5",
-   "op-9.6",
-   "op-9.7",
-   "op-9.8",
-   "op-9.11"
-  ],
-  "secs": 14.1
+  "secs": 31.2
  },
  {
   "id": "O64",
@@ -5776,15 +6251,16 @@
   "old": "hasLength, hasLength && mode)",
   "new": "hasLength, 0)",
   "cls": "changed:expression",
-  "line1": 1853,
-  "line2": 1853,
-  "total": 386,
+  "line1": 2066,
+  "line2": 2066,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "1 tests fail",
+  "how": "2 tests fail",
   "tests": [
-   "op-9.8"
+   "op-9.8",
+   "op-11.1"
   ],
-  "secs": 14.1
+  "secs": 30.4
  },
  {
   "id": "O65",
@@ -5792,11 +6268,11 @@
   "old": "if (Tcl_GetWideIntFromObj(NULL, obj, wPtr) == TCL_OK) {   // NULL: our own message below",
   "new": "if (0 && Tcl_GetWideIntFromObj(NULL, obj, wPtr) == TCL_OK) {   // NULL: our own message below",
   "cls": "changed:+tokens",
-  "line1": 1713,
-  "line2": 1713,
-  "total": 386,
+  "line1": 1720,
+  "line2": 1720,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "9 tests fail",
+  "how": "11 tests fail",
   "tests": [
    "op-9.2",
    "op-9.3",
@@ -5806,9 +6282,11 @@
    "op-9.7",
    "op-9.9",
    "op-9.10",
-   "op-9.11"
+   "op-9.11",
+   "op-11.1",
+   "op-11.2"
   ],
-  "secs": 14.3
+  "secs": 30.8
  },
  {
   "id": "O66",
@@ -5816,18 +6294,23 @@
   "old": "if (rest >= 4 && op < BO_LAND && !ISBA(srcA) && IsWord(srcA, Tcl_GetString(objv[idx]))) {",
   "new": "if (0 && rest >= 4 && op < BO_LAND && !ISBA(srcA) && IsWord(srcA, Tcl_GetString(objv[idx]))) {",
   "cls": "changed:+tokens",
-  "line1": 1852,
-  "line2": 1852,
-  "total": 395,
+  "line1": 2020,
+  "line2": 2020,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "4 tests fail",
+  "how": "9 tests fail",
   "tests": [
    "op-10.1",
    "op-10.2",
    "op-10.3",
-   "op-10.4"
+   "op-10.4",
+   "op-10.10",
+   "op-10.11",
+   "op-11.7",
+   "op-11.10",
+   "op-11.11"
   ],
-  "secs": 13.4
+  "secs": 30.9
  },
  {
   "id": "O67",
@@ -5835,15 +6318,16 @@
   "old": "if (rest >= 4 && op < BO_LAND && !ISBA(srcA) && IsWord(srcA, Tcl_GetString(objv[idx]))) {",
   "new": "if (rest >= 4 && op < BO_LAND && !ISBA(srcA)) {",
   "cls": "deleted:clause",
-  "line1": 1852,
-  "line2": 1852,
-  "total": 395,
+  "line1": 2020,
+  "line2": 2020,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "1 tests fail",
+  "how": "2 tests fail",
   "tests": [
-   "op-10.6"
+   "op-10.6",
+   "op-11.7"
   ],
-  "secs": 13.9
+  "secs": 29.4
  },
  {
   "id": "O69",
@@ -5851,33 +6335,1008 @@
   "old": "    if (sameName) {   // the one-array form",
   "new": "    if (0 && sameName) {   // the one-array form",
   "cls": "changed:+tokens",
-  "line1": 1895,
-  "line2": 1895,
-  "total": 395,
+  "line1": 2114,
+  "line2": 2114,
+  "total": 414,
   "result": "CAUGHT",
-  "how": "4 tests fail",
+  "how": "6 tests fail",
   "tests": [
    "op-10.1",
    "op-10.2",
    "op-10.3",
-   "op-10.4"
+   "op-10.4",
+   "op-10.10",
+   "op-10.11"
   ],
-  "secs": 13.5
+  "secs": 30.4
  },
  {
   "id": "O70",
   "name": "O70 OpCmd: an integer variable name is accepted",
-  "old": "if (Tcl_GetWideIntFromObj(NULL, objv[idx], &probe) == TCL_OK) {   // a name",
-  "new": "if (0 && Tcl_GetWideIntFromObj(NULL, objv[idx], &probe) == TCL_OK) {   // a name",
+  "old": "if (Tcl_GetWideIntFromObj(NULL, objv[idx], &probe) == TCL_OK || (",
+  "new": "if (0 && Tcl_GetWideIntFromObj(NULL, objv[idx], &probe) == TCL_OK || (",
   "cls": "changed:+tokens",
-  "line1": 1819,
-  "line2": 1819,
-  "total": 395,
+  "line1": 1987,
+  "line2": 1987,
+  "total": 414,
   "result": "CAUGHT",
   "how": "1 tests fail",
   "tests": [
    "op-10.7"
   ],
-  "secs": 13.4
+  "secs": 28.3
+ },
+ {
+  "id": "O71",
+  "name": "O71 OpValue 1-bit fast path: land is computed as or",
+  "old": "op == BO_LAND ? BO_AND : op == BO_LOR ? BO_OR : BO_NOT",
+  "new": "op == BO_LAND ? BO_OR : op == BO_LOR ? BO_OR : BO_NOT",
+  "cls": "changed:name/variable",
+  "line1": 1643,
+  "line2": 1643,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "4 tests fail",
+  "tests": [
+   "op-1.1.&&",
+   "op-8.1",
+   "op-9.6",
+   "op-11.1"
+  ],
+  "secs": 30.2
+ },
+ {
+  "id": "O72",
+  "name": "O72 OpValue 1-bit fast path: lor is computed as and",
+  "old": "op == BO_LAND ? BO_AND : op == BO_LOR ? BO_OR : BO_NOT",
+  "new": "op == BO_LAND ? BO_AND : op == BO_LOR ? BO_AND : BO_NOT",
+  "cls": "changed:name/variable",
+  "line1": 1643,
+  "line2": 1643,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "4 tests fail",
+  "tests": [
+   "op-1.2.||",
+   "op-8.1",
+   "op-8.7",
+   "op-11.1"
+  ],
+  "secs": 29.9
+ },
+ {
+  "id": "O73",
+  "name": "O73 OpValue 1-bit fast path: lnot is a copy",
+  "old": "op == BO_LAND ? BO_AND : op == BO_LOR ? BO_OR : BO_NOT",
+  "new": "op == BO_LAND ? BO_AND : op == BO_LOR ? BO_OR : BO_OR",
+  "cls": "changed:name/variable",
+  "line1": 1643,
+  "line2": 1643,
+  "total": null,
+  "result": "CAUGHT",
+  "how": "crash rc=139",
+  "tests": [],
+  "running": "op-2.1.!",
+  "secs": 29.7
+ },
+ {
+  "id": "O74",
+  "name": "O74 OpValue 1-bit fast path: taken when the second array is wider",
+  "old": "if (x->width == 1 && (y == NULL || y->width == 1)) {",
+  "new": "if (x->width == 1) {",
+  "cls": "deleted:clause",
+  "line1": 1642,
+  "line2": 1642,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "op-8.5"
+  ],
+  "secs": 31.2
+ },
+ {
+  "id": "O75",
+  "name": "O75 OpValue 1-bit fast path: taken when the first array is wider",
+  "old": "if (x->width == 1 && (y == NULL || y->width == 1)) {",
+  "new": "if (y == NULL || y->width == 1) {",
+  "cls": "deleted:clause",
+  "line1": 1642,
+  "line2": 1642,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "7 tests fail",
+  "tests": [
+   "op-8.2",
+   "op-8.3",
+   "op-8.4",
+   "op-8.5",
+   "op-8.6",
+   "op-8.7",
+   "op-11.1"
+  ],
+  "secs": 31.4
+ },
+ {
+  "id": "O76",
+  "name": "O76 OpValue 1-bit fast path: tail bits not cleared",
+  "old": "BO_OR : BO_NOT);\n\tMaskTail(d);",
+  "new": "BO_OR : BO_NOT);",
+  "cls": "deleted:clause",
+  "line1": 1643,
+  "line2": 1644,
+  "total": 35,
+  "result": "MISSED",
+  "how": "",
+  "tests": [],
+  "secs": 30.7
+ },
+ {
+  "id": "O77",
+  "name": "O77 RelBits: eq is ne",
+  "old": "case BO_EQ: r = ~(xv ^ yv); break;",
+  "new": "case BO_EQ: r = xv ^ yv; break;",
+  "cls": "deleted:clause",
+  "line1": 1761,
+  "line2": 1761,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "3 tests fail",
+  "tests": [
+   "op-9.5",
+   "op-11.1",
+   "op-11.2"
+  ],
+  "secs": 30.2
+ },
+ {
+  "id": "O78",
+  "name": "O78 RelBits: ne is eq",
+  "old": "case BO_NE: r = xv ^ yv; break;",
+  "new": "case BO_NE: r = ~(xv ^ yv); break;",
+  "cls": "changed:+tokens",
+  "line1": 1762,
+  "line2": 1762,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "2 tests fail",
+  "tests": [
+   "op-9.5",
+   "op-11.1"
+  ],
+  "secs": 30.6
+ },
+ {
+  "id": "O79",
+  "name": "O79 RelBits: lt is gt",
+  "old": "case BO_LT: r = ~xv & yv; break;",
+  "new": "case BO_LT: r = xv & ~yv; break;",
+  "cls": "changed:3 tokens",
+  "line1": 1763,
+  "line2": 1763,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "op-11.1"
+  ],
+  "secs": 31.0
+ },
+ {
+  "id": "O80",
+  "name": "O80 RelBits: le is ge",
+  "old": "case BO_LE: r = ~xv | yv; break;",
+  "new": "case BO_LE: r = xv | ~yv; break;",
+  "cls": "changed:3 tokens",
+  "line1": 1764,
+  "line2": 1764,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "op-11.1"
+  ],
+  "secs": 30.6
+ },
+ {
+  "id": "O81",
+  "name": "O81 RelBits: gt is lt",
+  "old": "case BO_GT: r = xv & ~yv; break;",
+  "new": "case BO_GT: r = ~xv & yv; break;",
+  "cls": "changed:3 tokens",
+  "line1": 1765,
+  "line2": 1765,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "2 tests fail",
+  "tests": [
+   "op-9.5",
+   "op-11.1"
+  ],
+  "secs": 30.5
+ },
+ {
+  "id": "O82",
+  "name": "O82 RelBits: ge is le",
+  "old": "default:    r = xv | ~yv; break;",
+  "new": "default:    r = ~xv | yv; break;",
+  "cls": "changed:3 tokens",
+  "line1": 1766,
+  "line2": 1766,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "2 tests fail",
+  "tests": [
+   "op-9.5",
+   "op-11.1"
+  ],
+  "secs": 32.7
+ },
+ {
+  "id": "O83",
+  "name": "O83 RelBits: words past the end of the second array count as 1",
+  "old": "(k < y->nwords) ? y->words[k] : 0, r;",
+  "new": "(k < y->nwords) ? y->words[k] : ~(uint64_t)0, r;",
+  "cls": "changed:+tokens",
+  "line1": 1758,
+  "line2": 1758,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "op-11.1"
+  ],
+  "secs": 32.3
+ },
+ {
+  "id": "O84",
+  "name": "O84 RelBits: integer first operand tested as second",
+  "old": "RelTest(op, w, 0);   // the answer for an element 0",
+  "new": "RelTest(op, 0, w);   // the answer for an element 0",
+  "cls": "changed:2 tokens",
+  "line1": 1772,
+  "line2": 1772,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "2 tests fail",
+  "tests": [
+   "op-11.1",
+   "op-11.2"
+  ],
+  "secs": 29.5
+ },
+ {
+  "id": "O85",
+  "name": "O85 RelBits: integer first operand tested as second (element 1)",
+  "old": "RelTest(op, w, 1);   // and for an element 1",
+  "new": "RelTest(op, 1, w);   // and for an element 1",
+  "cls": "changed:2 tokens",
+  "line1": 1773,
+  "line2": 1773,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "op-11.1"
+  ],
+  "secs": 29.5
+ },
+ {
+  "id": "O86",
+  "name": "O86 RelBits: array-vs-integer never gives the array itself",
+  "old": "d->words[k] = (r1 ? av : 0) | (r0 ? ~av : 0);",
+  "new": "d->words[k] = (r1 ? 0 : 0) | (r0 ? ~av : 0);",
+  "cls": "changed:token",
+  "line1": 1778,
+  "line2": 1778,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "op-11.1"
+  ],
+  "secs": 31.1
+ },
+ {
+  "id": "O87",
+  "name": "O87 RelBits: array-vs-integer gives the array for both answers",
+  "old": "d->words[k] = (r1 ? av : 0) | (r0 ? ~av : 0);",
+  "new": "d->words[k] = (r1 ? av : 0) | (r0 ? av : 0);",
+  "cls": "deleted:clause",
+  "line1": 1778,
+  "line2": 1778,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "3 tests fail",
+  "tests": [
+   "op-9.5",
+   "op-11.1",
+   "op-11.2"
+  ],
+  "secs": 30.9
+ },
+ {
+  "id": "O88",
+  "name": "O88 RelValue 1-bit path: taken for a wide first array",
+  "old": "if ((x != NULL && x->width == 1 && (y == NULL || y->width == 1))",
+  "new": "if ((x != NULL && (y == NULL || y->width == 1))",
+  "cls": "deleted:clause",
+  "line1": 1818,
+  "line2": 1818,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "7 tests fail",
+  "tests": [
+   "op-9.2",
+   "op-9.3",
+   "op-9.4",
+   "op-9.6",
+   "op-9.7",
+   "op-9.11",
+   "op-11.1"
+  ],
+  "secs": 30.9
+ },
+ {
+  "id": "O89",
+  "name": "O89 RelValue 1-bit path: integer taken from the wrong side",
+  "old": "RelBits(d, op, x, y, x == NULL ? wx : wy);",
+  "new": "RelBits(d, op, x, y, x == NULL ? wy : wx);",
+  "cls": "changed:2 tokens",
+  "line1": 1819,
+  "line2": 1819,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "3 tests fail",
+  "tests": [
+   "op-9.5",
+   "op-11.1",
+   "op-11.2"
+  ],
+  "secs": 30.3
+ },
+ {
+  "id": "O90",
+  "name": "O90 RelValue 1-bit path: tail bits not cleared",
+  "old": "RelBits(d, op, x, y, x == NULL ? wx : wy);\n\tMaskTail(d);",
+  "new": "RelBits(d, op, x, y, x == NULL ? wx : wy);",
+  "cls": "deleted:clause",
+  "line1": 1819,
+  "line2": 1820,
+  "total": 35,
+  "result": "MISSED",
+  "how": "",
+  "tests": [],
+  "secs": 29.9
+ },
+ {
+  "id": "O91",
+  "name": "O91 ScalarWord: only one element of the word is filled",
+  "old": "for (j = 0; j < 64 / a->width; j++) {",
+  "new": "for (j = 0; j < 1; j++) {",
+  "cls": "changed:expression",
+  "line1": 1857,
+  "line2": 1857,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "6 tests fail",
+  "tests": [
+   "op-11.3",
+   "op-11.4",
+   "op-11.7",
+   "op-11.8",
+   "op-11.9",
+   "op-11.11"
+  ],
+  "secs": 29.8
+ },
+ {
+  "id": "O92",
+  "name": "O92 ScalarWord: the last element of the word is not filled",
+  "old": "for (j = 0; j < 64 / a->width; j++) {",
+  "new": "for (j = 0; j < 64 / a->width - 1; j++) {",
+  "cls": "changed:+tokens",
+  "line1": 1857,
+  "line2": 1857,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "op-11.3"
+  ],
+  "secs": 30.6
+ },
+ {
+  "id": "O93",
+  "name": "O93 ScalarWord: the range is checked as unsigned",
+  "old": "ParseValue(interp, kObj, a->width, a->isSigned, &v)",
+  "new": "ParseValue(interp, kObj, a->width, 0, &v)",
+  "cls": "changed:expression",
+  "line1": 1852,
+  "line2": 1852,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "2 tests fail",
+  "tests": [
+   "op-11.3",
+   "op-11.6"
+  ],
+  "secs": 30.1
+ },
+ {
+  "id": "O94",
+  "name": "O94 ScalarWord: a non-number is not refused here",
+  "old": "if (Tcl_GetWideIntFromObj(NULL, kObj, &probe) != TCL_OK) {   // not a number at all",
+  "new": "if (0 && Tcl_GetWideIntFromObj(NULL, kObj, &probe) != TCL_OK) {   // not a number at all",
+  "cls": "changed:+tokens",
+  "line1": 1848,
+  "line2": 1848,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "5 tests fail",
+  "tests": [
+   "op-5.11",
+   "op-7.10",
+   "op-10.6",
+   "op-11.6",
+   "op-12.6"
+  ],
+  "secs": 30.3
+ },
+ {
+  "id": "O95",
+  "name": "O95 ScalarWord: the word is built with width 1",
+  "old": "tmp.width = a->width;",
+  "new": "tmp.width = 1;",
+  "cls": "changed:expression",
+  "line1": 1856,
+  "line2": 1856,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "5 tests fail",
+  "tests": [
+   "op-11.3",
+   "op-11.7",
+   "op-11.8",
+   "op-11.9",
+   "op-11.11"
+  ],
+  "secs": 31.2
+ },
+ {
+  "id": "O96",
+  "name": "O96 ScalarApply: and is or",
+  "old": "case BO_AND: dst->words[k] = xv & pat; break;",
+  "new": "case BO_AND: dst->words[k] = xv | pat; break;",
+  "cls": "changed:operator",
+  "line1": 1878,
+  "line2": 1878,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "4 tests fail",
+  "tests": [
+   "op-11.3",
+   "op-11.4",
+   "op-11.7",
+   "op-11.8"
+  ],
+  "secs": 29.4
+ },
+ {
+  "id": "O97",
+  "name": "O97 ScalarApply: or is xor",
+  "old": "case BO_OR:  dst->words[k] = xv | pat; break;",
+  "new": "case BO_OR:  dst->words[k] = xv ^ pat; break;",
+  "cls": "changed:operator",
+  "line1": 1879,
+  "line2": 1879,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "3 tests fail",
+  "tests": [
+   "op-11.3",
+   "op-11.4",
+   "op-11.9"
+  ],
+  "secs": 28.9
+ },
+ {
+  "id": "O98",
+  "name": "O98 ScalarApply: xor is or",
+  "old": "case BO_XOR: dst->words[k] = xv ^ pat; break;",
+  "new": "case BO_XOR: dst->words[k] = xv | pat; break;",
+  "cls": "changed:operator",
+  "line1": 1880,
+  "line2": 1880,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "5 tests fail",
+  "tests": [
+   "op-11.3",
+   "op-11.4",
+   "op-11.7",
+   "op-11.8",
+   "op-11.9"
+  ],
+  "secs": 30.0
+ },
+ {
+  "id": "O99",
+  "name": "O99 ScalarApply: andnot order reversed",
+  "old": "scalarFirst ? (pat & ~xv) : (xv & ~pat)",
+  "new": "scalarFirst ? (xv & ~pat) : (pat & ~xv)",
+  "cls": "changed:4 tokens",
+  "line1": 1881,
+  "line2": 1881,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "3 tests fail",
+  "tests": [
+   "op-11.3",
+   "op-11.4",
+   "op-11.11"
+  ],
+  "secs": 30.1
+ },
+ {
+  "id": "O100",
+  "name": "O100 op integer operand: the integer-first flag is wrong",
+  "old": "ScalarApply(d, x, pat, op, scalar == 2);",
+  "new": "ScalarApply(d, x, pat, op, scalar == 1);",
+  "cls": "changed:constant",
+  "line1": 2079,
+  "line2": 2079,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "2 tests fail",
+  "tests": [
+   "op-11.3",
+   "op-11.4"
+  ],
+  "secs": 32.2
+ },
+ {
+  "id": "O101",
+  "name": "O101 op integer operand in place: the integer-first flag is set",
+  "old": "ScalarApply(d, d, pat, op, 0);",
+  "new": "ScalarApply(d, d, pat, op, 1);",
+  "cls": "changed:constant",
+  "line1": 2053,
+  "line2": 2053,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "op-11.11"
+  ],
+  "secs": 31.4
+ },
+ {
+  "id": "O102",
+  "name": "O102 op: an integer operand needs an array on both sides unless in place",
+  "old": "if (sameName ? !bArr : aArr != bArr) {",
+  "new": "if (aArr != bArr) {",
+  "cls": "deleted:clause",
+  "line1": 2026,
+  "line2": 2026,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "7 tests fail",
+  "tests": [
+   "op-10.1",
+   "op-10.3",
+   "op-10.4",
+   "op-10.10",
+   "op-11.7",
+   "op-11.10",
+   "op-11.11"
+  ],
+  "secs": 30.8
+ },
+ {
+  "id": "O103",
+  "name": "O103 op: which side the integer is on is reversed",
+  "old": "scalar = aArr ? 1 : 2;",
+  "new": "scalar = aArr ? 2 : 1;",
+  "cls": "changed:2 tokens",
+  "line1": 2027,
+  "line2": 2027,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "11 tests fail",
+  "tests": [
+   "op-5.11",
+   "op-7.10",
+   "op-10.6",
+   "op-11.3",
+   "op-11.4",
+   "op-11.5",
+   "op-11.6",
+   "op-11.7",
+   "op-11.8",
+   "op-11.9",
+   "op-12.6"
+  ],
+  "secs": 30.6
+ },
+ {
+  "id": "O104",
+  "name": "O104 op: -length with an integer operand is not refused (bitwise)",
+  "old": "scalar = aArr ? 1 : 2;\n\t    if (hasLength) {",
+  "new": "scalar = aArr ? 1 : 2;\n\t    if (0 && hasLength) {",
+  "cls": "changed:+tokens",
+  "line1": 2027,
+  "line2": 2028,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "op-11.6"
+  ],
+  "secs": 31.4
+ },
+ {
+  "id": "O105",
+  "name": "O105 op: two integers counted as one integer",
+  "old": "if (okA && okB) {",
+  "new": "if (okA || okB) {",
+  "cls": "changed:operator",
+  "line1": 2036,
+  "line2": 2036,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "op-12.6"
+  ],
+  "secs": 31.3
+ },
+ {
+  "id": "O106",
+  "name": "O106 op: the word named in the bad-operand message is the wrong one",
+  "old": "Tcl_GetString(okA ? srcB : srcA)",
+  "new": "Tcl_GetString(okA ? srcA : srcB)",
+  "cls": "changed:2 tokens",
+  "line1": 2040,
+  "line2": 2040,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "op-12.6"
+  ],
+  "secs": 32.1
+ },
+ {
+  "id": "O107",
+  "name": "O107 op in place with an integer: a shared value is changed in place",
+  "old": "ScalarWord(interp, srcB, x, &pat) != TCL_OK) {\n\t    return TCL_ERROR;\n\t}\n\twork = Tcl_IsShared(obj) ? Tcl_DuplicateObj(obj) : obj;",
+  "new": "ScalarWord(interp, srcB, x, &pat) != TCL_OK) {\n\t    return TCL_ERROR;\n\t}\n\twork = obj;",
+  "cls": "deleted:clause",
+  "line1": 2048,
+  "line2": 2051,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "op-11.7"
+  ],
+  "secs": 31.6
+ },
+ {
+  "id": "O108",
+  "name": "O108 op in place with an integer: tail bits not cleared",
+  "old": "ScalarApply(d, d, pat, op, 0);\n\tMaskTail(d);",
+  "new": "ScalarApply(d, d, pat, op, 0);",
+  "cls": "deleted:clause",
+  "line1": 2053,
+  "line2": 2054,
+  "total": 35,
+  "result": "MISSED",
+  "how": "",
+  "tests": [],
+  "secs": 32.1
+ },
+ {
+  "id": "O109",
+  "name": "O109 op in place with an integer: value not marked changed",
+  "old": "MaskTail(d);\n\tTouch(work);\n\tTcl_IncrRefCount(work);",
+  "new": "MaskTail(d);\n\tTcl_IncrRefCount(work);",
+  "cls": "deleted:clause",
+  "line1": 2054,
+  "line2": 2056,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "op-11.11"
+  ],
+  "secs": 31.7
+ },
+ {
+  "id": "O110",
+  "name": "O110 op integer operand, value form: tail bits not cleared",
+  "old": "ScalarApply(d, x, pat, op, scalar == 2);\n\t    MaskTail(d);",
+  "new": "ScalarApply(d, x, pat, op, scalar == 2);",
+  "cls": "deleted:clause",
+  "line1": 2079,
+  "line2": 2080,
+  "total": 35,
+  "result": "MISSED",
+  "how": "",
+  "tests": [],
+  "secs": 34.0
+ },
+ {
+  "id": "O111",
+  "name": "O111 op integer operand, value form: result is unsigned",
+  "old": "if ((d = NewRep(interp, x->len, x->width, x->isSigned)) == NULL) {\n\t\treturn TCL_ERROR;\n\t    }\n\t    ScalarApply(d, x,",
+  "new": "if ((d = NewRep(interp, x->len, x->width, 0)) == NULL) {\n\t\treturn TCL_ERROR;\n\t    }\n\t    ScalarApply(d, x,",
+  "cls": "changed:expression",
+  "line1": 2076,
+  "line2": 2079,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "2 tests fail",
+  "tests": [
+   "op-11.3",
+   "op-11.5"
+  ],
+  "secs": 33.0
+ },
+ {
+  "id": "O112",
+  "name": "O112 op integer operand: the array is taken from the first word always",
+  "old": "NeedBA(interp, scalar == 1 ? srcA : srcB, &x)",
+  "new": "NeedBA(interp, srcA, &x)",
+  "cls": "deleted:clause",
+  "line1": 2073,
+  "line2": 2073,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "5 tests fail",
+  "tests": [
+   "op-10.6",
+   "op-11.3",
+   "op-11.4",
+   "op-11.7",
+   "op-12.6"
+  ],
+  "secs": 31.9
+ },
+ {
+  "id": "O113",
+  "name": "O113 op integer operand: the integer is taken from the second word always",
+  "old": "ScalarWord(interp, scalar == 1 ? srcB : srcA, x, &pat)",
+  "new": "ScalarWord(interp, srcB, x, &pat)",
+  "cls": "deleted:clause",
+  "line1": 2073,
+  "line2": 2073,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "5 tests fail",
+  "tests": [
+   "op-10.6",
+   "op-11.3",
+   "op-11.4",
+   "op-11.7",
+   "op-12.6"
+  ],
+  "secs": 31.0
+ },
+ {
+  "id": "O114",
+  "name": "O114 op: after \"name =\" message only for two words",
+  "old": "if (rest <= 3 && !ISBA(objv[idx + 1]) && IsWord(objv[idx + 1], \"=\")) {",
+  "new": "if (rest <= 2 && !ISBA(objv[idx + 1]) && IsWord(objv[idx + 1], \"=\")) {",
+  "cls": "changed:constant",
+  "line1": 1979,
+  "line2": 1979,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "op-12.1"
+  ],
+  "secs": 31.7
+ },
+ {
+  "id": "O115",
+  "name": "O115 op: a name beginning with a digit is accepted",
+  "old": "[0] >= '0' && Tcl_GetString(objv[idx])[0] <= '9')",
+  "new": "[0] >= '0' && Tcl_GetString(objv[idx])[0] <= '0')",
+  "cls": "changed:token",
+  "line1": 1987,
+  "line2": 1987,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "op-10.7"
+  ],
+  "secs": 31.1
+ },
+ {
+  "id": "O116",
+  "name": "O116 op: too many words is not a usage error",
+  "old": "if (rest < 2 || rest > 5) {",
+  "new": "if (rest < 2 || rest > 6) {",
+  "cls": "changed:constant",
+  "line1": 1976,
+  "line2": 1976,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "op-5.4"
+  ],
+  "secs": 30.4
+ },
+ {
+  "id": "O117",
+  "name": "O117 OpPositionError: needs-two message says arrays for the relational operators",
+  "old": "opWords[k].word, o >= BO_EQ ? \"operands\" : \"arrays\", pre,",
+  "new": "opWords[k].word, \"arrays\", pre,",
+  "cls": "deleted:clause",
+  "line1": 1914,
+  "line2": 1914,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "op-12.2"
+  ],
+  "secs": 29.9
+ },
+ {
+  "id": "O118",
+  "name": "O118 OpPositionError: varName = missing from the messages",
+  "old": "const char *pre = (rest >= 4) ? \"varName = \" : \"\";",
+  "new": "const char *pre = \"\";",
+  "cls": "deleted:clause",
+  "line1": 1904,
+  "line2": 1904,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "2 tests fail",
+  "tests": [
+   "op-5.3",
+   "op-12.2"
+  ],
+  "secs": 31.5
+ },
+ {
+  "id": "O119",
+  "name": "O119 OpPositionError: four words are taken for the operator in the middle",
+  "old": "int front = (rest == 2 || rest == 4);",
+  "new": "int front = (rest == 2);",
+  "cls": "deleted:clause",
+  "line1": 1903,
+  "line2": 1903,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "3 tests fail",
+  "tests": [
+   "op-5.3",
+   "op-12.2",
+   "op-12.3"
+  ],
+  "secs": 31.6
+ },
+ {
+  "id": "O120",
+  "name": "O120 OpPositionError: a one-array operator after the array reported as binary",
+  "old": "if ((k = FindOperator(w1)) >= 0 && !IS_UNARY(opWords[k].op)) {",
+  "new": "if ((k = FindOperator(w1)) >= 0 && IS_UNARY(opWords[k].op)) {",
+  "cls": "deleted:clause",
+  "line1": 1910,
+  "line2": 1910,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "2 tests fail",
+  "tests": [
+   "op-5.3",
+   "op-12.2"
+  ],
+  "secs": 30.3
+ },
+ {
+  "id": "O121",
+  "name": "O121 OpPositionError: an array in the operator place (front) gives bad operator",
+  "old": "if (ISBA(w0)) {",
+  "new": "if (0 && ISBA(w0)) {",
+  "cls": "changed:+tokens",
+  "line1": 1921,
+  "line2": 1921,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "op-5.10"
+  ],
+  "secs": 31.0
+ },
+ {
+  "id": "O122",
+  "name": "O122 OpPositionError: an array in the operator place (middle) gives bad operator",
+  "old": "if (ISBA(w1)) {",
+  "new": "if (0 && ISBA(w1)) {",
+  "cls": "changed:+tokens",
+  "line1": 1931,
+  "line2": 1931,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "op-12.5"
+  ],
+  "secs": 30.7
+ },
+ {
+  "id": "O123",
+  "name": "O123 OpPositionError: the wrong word is blamed (front)",
+  "old": "? w1 : w0;",
+  "new": "? w0 : w1;",
+  "cls": "changed:2 tokens",
+  "line1": 1925,
+  "line2": 1925,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "2 tests fail",
+  "tests": [
+   "op-7.10",
+   "op-12.3"
+  ],
+  "secs": 30.9
+ },
+ {
+  "id": "O124",
+  "name": "O124 OpPositionError: the wrong word is blamed (middle)",
+  "old": "bad = w1;",
+  "new": "bad = w0;",
+  "cls": "changed:name/variable",
+  "line1": 1934,
+  "line2": 1934,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "3 tests fail",
+  "tests": [
+   "op-5.5",
+   "op-7.10",
+   "op-12.3"
+  ],
+  "secs": 30.2
+ },
+ {
+  "id": "O125",
+  "name": "O125 OpPositionError: goes-between tests the second word",
+  "old": "if ((k = FindOperator(w0)) >= 0) {",
+  "new": "if ((k = FindOperator(w1)) >= 0) {",
+  "cls": "changed:name/variable",
+  "line1": 1927,
+  "line2": 1927,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "op-12.2"
+  ],
+  "secs": 30.6
+ },
+ {
+  "id": "O126",
+  "name": "O126 op: the takes-one-array message lacks varName =",
+  "old": "opWords[k].word, rest == 5 ? \"varName = \" : \"\", opWords[k].word));",
+  "new": "opWords[k].word, \"\", opWords[k].word));",
+  "cls": "deleted:clause",
+  "line1": 2012,
+  "line2": 2012,
+  "total": 414,
+  "result": "CAUGHT",
+  "how": "1 tests fail",
+  "tests": [
+   "op-5.7"
+  ],
+  "secs": 30.9
  }
 ]

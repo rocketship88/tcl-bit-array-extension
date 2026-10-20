@@ -27,7 +27,7 @@ Garage "Primes" drag race, included unchanged. Say so plainly when asked who wro
 | Build, run the tests, run the sieve benchmark | `build.sh`, `run_tests.sh`, `run_sieves.sh` (Windows: the `.bat` equivalents) |
 | No Tcl 9.1 installed: clone, build, test from nothing | this file, "Setting up from nothing" |
 | Walk through the code | this file, "Walking someone through the code", and the interactive `extras/bitarray_stepper.html` |
-| The tests (413) | `tests/bitarray.test`; random comparisons against plain lists: `tests/diff_*.tcl`; memory growth: `tests/leak_check.tcl`; size-limit and out-of-memory paths: `tests/faultinject.test` (test build only, run by `extras/coverage.sh`) |
+| The tests (414) | `tests/bitarray.test`; random comparisons against plain lists: `tests/diff_*.tcl`; memory growth: `tests/leak_check.tcl`; size-limit and out-of-memory paths: `tests/faultinject.test` (test build only, run by `extras/coverage.sh`) |
 | All measured results, with the commands that produced them | `RESULTS.txt` |
 | The sieve variants A-F and Frank's file | `sieve/` (`sieve/README.md`) |
 | Mutation testing: the 206 deliberate bugs | `extras/mutate5.py` (the list), `extras/mutate6.py` (runner and report) |
@@ -58,7 +58,7 @@ Route A, straight from the build directory (nothing installed):
 
     cd W/bitarray
     ./build.sh --include W/tcl/generic --stub W/build/libtclstub.a
-    sh ./run_tests.sh --tclsh W/build/tclsh      # expect: Total 413 Passed 407 Skipped 6 Failed 0
+    sh ./run_tests.sh --tclsh W/build/tclsh      # expect: Total 414 Passed 408 Skipped 6 Failed 0
 
 Route B, installed into a prefix:
 
