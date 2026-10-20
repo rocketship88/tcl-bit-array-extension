@@ -160,8 +160,8 @@ In the synopses and examples below:
 
 * `array` is a bitarray **value**, for example `$a` or the result of `bitarray new 8`, in the way that `list` is a list value in
   `lindex list index`. It is not a variable name.
-* `varName` is the **name** of a variable that holds a bitarray, written without a `$`, as in the Tcl manual pages for `lset`. Only `fill` and the bitwise commands
-  (`and`, `or`, `xor`, `andnot`, `not`, and `op` which is written differently) take one, because they change an array in place; `fill $a ...` is an error
+* `varName` is the **name** of a variable that holds a bitarray, written without a `$`, as in the Tcl manual pages for `lset`. Only `fill`, `op` (in its `varName =` form) and the older bitwise commands
+  (`and`, `or`, `xor`, `andnot`, `not`) take one, because they store their result in that variable; `fill $a ...` is an error
   (`can't read "1 0 1 ...": no such variable`).
 * `?...?` marks an optional part. `size`, `first`, `last`, `start` and `step` are integers; the index arguments `first`, `last` and
   `start` also accept `end` and `end-N`.
@@ -181,92 +181,106 @@ that do not mention `$a` or `$w` create their own arrays. With no `value` given,
 | `new` | `bitarray new size ?value? ?-width w?`<br><br>**Returns** a new bitarray of `size` elements, all `value` (default 0). `-width` may come before or after `value`.<br><br>`bitarray new 4` => `0 0 0 0`<br>`bitarray new 4 7 -width 8` => `7 7 7 7`<br>`bitarray new 3 -width 16 500` => `500 500 500` |
 | `newfrom` | `bitarray newfrom list ?-width w?`<br><br>**Returns** a new bitarray packed from a list of integers.<br><br>`bitarray newfrom {200 5 255} -width 8` => `200 5 255` |
 | `width` | `bitarray width array`<br><br>**Returns** the element width in bits, as it was given when the array was created: `1`, `8`, `16`, `32`, `64`, or `-8`, `-16`, `-32`, `-64` for the signed ones.<br><br>`bitarray width [bitarray new 3]` => `1`<br>`bitarray width [bitarray new 3 -width -16]` => `-16` |
-| `version` | `bitarray version`<br><br>**Returns** the version of the extension, for example `0.9.4` (the same string `package require bitarray` returns). Takes no arguments.<br><br>`bitarray version` => `0.7.0` |
+| `version` | `bitarray version`<br><br>**Returns** the version of the extension, for example `0.9.4` (the same string `package require bitarray` returns). Takes no arguments.<br><br>`bitarray version` => `0.9.4` |
 | `is` | `bitarray is value`<br><br>**Returns** `1` if `value` currently has the bitarray representation, `0` if not (any value is accepted).<br><br>`a` -> `{1 0 1 1 0 1 1 1}`<br>`bitarray is $a` => `1`<br>`bitarray is {1 0 1}` => `0` |
 | `count` | `bitarray count array ?first ?to? last ?with? ?value??`<br><br>**Returns** the number of elements equal to `value`, or the number of non-zero elements if no `value`; whole array or an index range (`end-N` allowed). `value` needs a range.<br><br>For 1-bit arrays without `value` this is a popcount.<br><br>`a` -> `{1 0 1 1 0 1 1 1}`<br>`bitarray count $a` => `6`<br>`bitarray count $a 0 3 1` => `3`<br>`bitarray count $a 4 end 0` => `1`<br>`bitarray count $a 2 end-1 1` => `4`<br>`bitarray count $a 0 to 3 with 1` => `3`<br>`bitarray count $a 4 .. end with 0` => `1`<br>`w` -> `{0 7 0 9}`<br>`bitarray count $w` => `2` (value omitted means != 0) |
 | `next` | `bitarray next array start ?with? ?value?`<br><br>**Returns** the index of the first element **at or after** `start` equal to `value` (non-zero if omitted), or `-1` if there is none.<br><br>`a` -> `{1 0 1 1 0 1 1 1}`<br>`bitarray next $a 0 0` => `1`<br>`bitarray next $a 2 0` => `4`<br>`bitarray next $a 5 0` => `-1`<br>`bitarray next $a 2 with 0` => `4`<br>`w` -> `{0 7 0 9}`<br>`bitarray next $w 0` => `1` (value omitted means != 0)<br>`bitarray next $w 0 0` => `0` (element 0 is itself 0) |
 | `fill` | `bitarray fill varName first ?to? last ?with? value ?by? ?step?`<br><br>Sets every element from `first` to `last` to `value`, or only every `step`-th one if `step` is given, in the array stored in variable `varName`. **Returns** the empty string; the result is the changed array in `varName`.<br><br>`set b [bitarray new 10 1]` => `1 1 1 1 1 1 1 1 1 1`<br>`bitarray fill b 0 end 0 2` -> `0 1 0 1 0 1 0 1 0 1`<br>`set b [bitarray new 10 1]` => `1 1 1 1 1 1 1 1 1 1`<br>`bitarray fill b 0 to end with 0 by 2` -> `0 1 0 1 0 1 0 1 0 1`<br>`set c [bitarray new 10 5 -width 8]` => `5 5 5 5 5 5 5 5 5 5`<br>`bitarray fill c 2 5 0` -> `5 5 0 0 0 0 5 5 5 5`<br>`bitarray fill c 2 .. 5 with 0` -> same result |
-| `and or xor andnot not` | `bitarray and\|or\|xor\|andnot ?-length strict\|zero? varName ?<-? array ?array?`<br>`bitarray not varName ?<-? array?`<br><br>The older bitwise commands. `bitarray op` does everything they do (see the table above and the Appendix at the end, which lists them with the `op` spelling of each), so new code should use `op`.<br><br>They are still here, and still the fastest way to update an array in place, but they are not guaranteed to be in future versions. |
+| `and or xor andnot not` | `bitarray and\|or\|xor\|andnot ?-length strict\|zero? varName ?<-? array ?array?`<br>`bitarray not varName ?<-? array?`<br><br>The older bitwise commands. `bitarray op` does everything they do (see `op` below and the Appendix at the end, which gives the `op` spelling of each), so new code should use `op`.<br><br>They are still here, and still the fastest way to update an array in place, but they are not guaranteed to be in future versions. |
 | `frombytes` | `bitarray frombytes data`<br><br>**Returns** a new 8-bit array with one element per byte of `data`, without making a temporary list. Characters 0 to 255 are taken as bytes (read a file with `open ... rb`); a character above 255 is an error.<br><br>`bitarray frombytes "Hi!"` => `72 105 33` |
 | `tobytes` | `bitarray tobytes array`<br><br>**Returns** the elements of an 8-bit `array` as binary data (a byte array), the reverse of `frombytes`. Any other width, and a signed one (`-8`), is an error.<br><br>`bitarray tobytes [bitarray frombytes "Hi!"]` => `Hi!` |
 | `fromchars` | `bitarray fromchars string ?-width w?`<br><br>**Returns** a new array with one element per character of `string`, holding its code point.<br><br>`w` is 8 (the default), 16 or 32; a character that does not fit is an error that names it (`character U+20AC at index 1 does not fit in width 8`).<br><br>`bitarray fromchars "Hi"` => `72 105`<br>`bitarray fromchars "A\u20ac" -width 16` => `65 8364` |
 | `tochars` | `bitarray tochars array`<br><br>**Returns** the string whose characters have the code points held in a width 8, 16 or 32 `array`, the reverse of `fromchars`. Width 1 and 64 arrays, signed arrays, surrogate codes and values above 0x10FFFF are errors.<br><br>`bitarray tochars [bitarray newfrom {72 105 8364} -width 16]` => `Hi€` |
-| `op` | `bitarray op ?-length strict\|zero? varName = array1 operator array2`<br>`bitarray op ?-length strict\|zero? varName = operator array`<br>`bitarray op ?-length strict\|zero? array1 operator array2`<br>`bitarray op operator array`<br><br>The operations written as an expression: bitwise, logical and relational. See **The `op` sub-command** below. |
+| `op` | `bitarray op ?-length strict\|zero? varName = array1 operator array2`<br>`bitarray op ?-length strict\|zero? varName = operator array`<br>`bitarray op ?-length strict\|zero? array1 operator array2`<br>`bitarray op operator array`<br><br>Whole-array operations written like an expression, for example `bitarray op $a and $b`: bitwise, logical and relational. Add `varName =` to store the result in a variable instead of returning it. Full rules in **The `op` sub-command** below. |
 
 ### The `op` sub-command
 
-The operations written as an expression: bitwise, logical and relational.
+`op` works on whole arrays at once and is written like an expression: operand, operator, operand. The operators are bitwise, logical or relational.
 
+**Ways to write it**
 
-- **Assignments with `varName =`**
+| Form | Result |
+|---|---|
+| `bitarray op array1 operator array2` | returns a new array |
+| `bitarray op operator array` | returns a new array (for the one-operand operators `not` `~` `lnot` `!`) |
+| `bitarray op varName = array1 operator array2` | stores the result in `varName` and returns the empty string |
+| `bitarray op varName = operator array` | the same, for a one-operand operator |
 
-  **With `varName =`** the result is stored in the variable (created if it does not exist; the arrays are never changed, but `varName` may be the name of one of them) and the command **returns** the empty string.
+`-length strict|zero` may follow `op` in any form that has two array operands (see **-length** below).
 
-  **Without it** the command **returns** the new array, so `set r [bitarray op $a and $b]` and `bitarray op not $a` work as values; the number of words tells which form it is.
+With `varName =`, the variable is created if it does not exist and the result is stored in it. The operand arrays are not changed, except when the destination is also an operand: `bitarray op a = $a and $b` replaces `a` with a new array, and `bitarray op a = a and $b` modifies the array in `a` in place (see **Updating in place**). Without `varName =` the result is returned, so `set r [bitarray op $a and $b]` works. A `=` after the destination name is what marks the storing form.
 
-  - **The destination.** After `varName =`, the destination may be written again, without the `$`, as the first operand:
+**Operators.** Each one can be written as a word or as a symbol.
 
-    `bitarray op a = a and $b` updates `a` in place: no new array is allocated, so it is faster, which is its whole point (most noticeable on large arrays updated again and again in a loop).
+| Kind | Operators | Result | Rules |
+|---|---|---|---|
+| Bitwise | `and` `&`, `or` `\|`, `xor` `^`, `andnot` `&~` `&!`, `not` `~` | same width and sign as the inputs | Combines the bits of the elements. Both arrays need the same width **and** sign. |
+| Logical | `land` `&&`, `lor` `\|\|`, `lnot` `!` | 1-bit array, same length | An element counts as true if it is not 0. The arrays may differ in width. Arrays only, no integers. |
+| Relational | `eq` `==`, `ne` `!=`, `lt` `<`, `le` `<=`, `gt` `>`, `ge` `>=` | 1-bit array, same length | Compares the numbers the elements stand for, whatever the widths and signs. `eq` and `ne` compare numbers here, not strings as in `expr`. |
 
-    `bitarray op a = $a and $b` builds a new array and stores it in `a`.
+`not` (`~`) and `lnot` (`!`) go in front of their one array. `andnot` keeps the bits of the first array that are not set in the second. On 1-bit arrays the logical operators give the same result as the bitwise ones, and are computed the same way, a word (64 elements) at a time.
 
-    `bitarray op a and $b` is an error. There is no `=`, so it is the value form, and the bare `a` is neither an array nor an integer (`expected a bitarray or an integer ... but got "a"`).
+**Operands**
 
-    A destination variable name that is an integer or begins with a digit (`5`, `-3`, `5x`) is an error in every `op varName = ...` form: it could not be told from an operand.
+* An array operand is a value: `$a`, or a command in brackets that returns one, such as `[lrange $c 0 7]` or `[bitarray op $a and $b]`. Write the `$`; a bare name is only meaningful as the in-place destination (next section).
+* For the bitwise and relational operators, one of the two operands may be an integer instead of an array, on either side: `bitarray op $a and 0x0F`, `bitarray op 0 <= $a`. Two integers are an error (`at least one operand must be a bitarray`).
+  * Bitwise: the integer is combined with every element, and the result has the array's width and sign. It must be a value the elements can hold (`0..255` for an 8-bit array, `-128..127` for `-8`, `0` or `1` for a 1-bit array; same rule and messages as `lset`). Set a flag bit in every element: `bitarray op flags = $flags or 128`; clear it: `bitarray op flags = flags andnot 128`.
+  * Relational: the integer may be up to 64 bits, and may be a literal, a variable or `[expr ...]`.
+* `not` and the logical operators take arrays only.
+* A 1-element array that has been turned into text (written to a file and read back, say) is treated as an integer.
 
-- **Operands.** In the synopsis, `array`, `array1` and `array2` are values of type bitarray: a variable `$var`, or a command that returns one, such as `[lrange $c 0 7]` or `[bitarray op $a and $b]`.
+**Updating in place (bitwise operators only)**
 
-  For the bitwise and relational operators, one of the two operands may be an integer instead: `bitarray op $a and 0x0F`, `bitarray op 0 <= $a`. `not` and the logical operators take arrays only.
+When the first operand is the bare name of the destination variable, with no `$`, the array held in that variable is modified where it is, so that operand **is** changed, and no new array is allocated (unless the array is shared, see below). This is the fastest form, most noticeable for large arrays updated again and again in a loop. It is the same as the older `bitarray and a $b`.
 
-  A variable is written with the `$`: `bitarray op $a and $b`. A 1-element array that has been turned into text (written to a file and read back, say) is treated as an integer.
+| You write | What happens |
+|---|---|
+| `bitarray op a = a and $b` | the array in `a` is modified in place |
+| `bitarray op a = $a and $b` | the same result, but a new array is always built and stored in `a`; the old array is not modified (`$a` is a value that something else may also hold) |
+| `bitarray op a and $b` | error: there is no `=`, so this is the value form, and the bare `a` is neither an array nor an integer (`expected a bitarray or an integer ... but got "a"`) |
 
-- **-length** takes only the keyword `strict` or `zero`, not a number, and goes right after `op`: `bitarray op -length zero r = $a and $b`. It applies when both operands are arrays and the operator takes two operands (unlike `not` or `lnot`, which take only one); it is an error with an integer operand.
+**Shared arrays.** As everywhere in Tcl, `set b $a` copies only a pointer: `a` and `b` then share one array object. If `a`'s array is shared like this, `bitarray op a = a and $b` first makes a private copy of the data for `a`, then modifies that copy in place; `b` keeps the original and is not affected. Once `a` owns its array, further in-place operations on `a` copy nothing, until the array is shared again. So the in-place form is fastest on an array that is not shared.
 
-  `strict` (the default): two arrays of different lengths are an error.
+In place also works with `not` (`bitarray op a = not a`) and with an integer operand (`bitarray op a = a and 0x0F`). A destination name that is an integer or begins with a digit (`5`, `-3`, `5x`) is an error in every `varName =` form, because it could not be told from an operand.
 
-  `zero`: different lengths are allowed. The result has the length of the first array. If the second array is shorter, its missing elements count as 0; if it is longer, its extra elements are ignored.
+**-length strict|zero**
 
-- **Bitwise** (combine the bits of the elements; both arrays need the same width): `and` *or* `&`, `or` *or* `|`, `xor` *or* `^`, `andnot` *or* `&~` *or* `&!` (the bits of the first array that are not set in the second), as well as `not` *or* `~` in front of its array.
+Goes right after `op` and takes only the keyword `strict` or `zero`, not a number: `bitarray op -length zero r = $a and $b`. It applies when both operands are arrays and the operator takes two operands; it is an error with `not`, `lnot` or an integer operand.
 
-  - **In place** (bitwise operators only): when the first operand is the bare name of the destination variable, with no `$`, as in `bitarray op a = a and $b` or `bitarray op a = not a`, the variable is updated where it is, with no new array, exactly like `bitarray and a $b` (the fastest form, for loops that update the same array again and again).
+* `strict` (the default): arrays of different lengths are an error.
+* `zero`: different lengths are allowed. The result has the length of the first array. If the second array is shorter, its missing elements count as 0; if it is longer, its extra elements are ignored.
 
-    `bitarray op a = $a and $b` gives the same result but builds a new array and stores it in `a`, because `$a` is a value that something else may also hold.
+**Asking questions about a result: all, none, some, how many, where**
 
-  - **An integer as one operand of a bitwise operator** (`and`, `or`, `xor`, `andnot`, on either side): the integer is combined with every element, and the result has the array's width and sign.
+The logical and relational operators give a 1-bit array of true (1) and false (0) results. `in` and `ni` are Tcl's own `expr` operators (write them inside `expr`); each returns 1 or 0. For a result `$m`:
 
-    The integer must be a value the elements can hold (`0..255` for an 8-bit array, `-128..127` for `-8`, `0` or `1` for a 1-bit array; the same rule and messages as `lset`).
-
-    Two integers are an error (`at least one operand must be a bitarray`). An integer also works in place: `bitarray op a = a and 0x0F`.
-
-    A set of flag bits in every element: `bitarray op flags = $flags or 128`; clear a bit: `bitarray op flags = flags andnot 128`.
-
-- **Logical** (test each element for "not 0", the result is a 1-bit array of the same length; the two arrays may differ in width): `land` or `&&`, `lor` or `||`, and `lnot` or `!` in front of its array.
-
-  With `w` = `{0 5 255 0}` and `v` = `{0 0 3 7}` (8-bit): `bitarray op $w land $v` -> `0 0 1 0` (both non-zero), `bitarray op $w lor $v` -> `0 1 1 1` (either non-zero), `bitarray op lnot $w` -> `1 0 0 1` (is zero). It is often useful to follow the creation of such a 1-bit array with `count` (how many are 1) and `next` (where is the next 1); see example 3 below.
-
-  On 1-bit arrays they give the same as the bitwise ones, and are computed the same way, a word (64 elements) at a time.
-
-- **Relational** (compare the numbers the elements stand for, whatever the widths and signs of the arrays; the result is a 1-bit array of the same length): `eq` or `==`, `ne` or `!=`, `lt` or `<`, `le` or `<=`, `gt` or `>`, `ge` or `>=`.
-
-  Either operand may be an integer (64 bits at most, a literal, a variable or `[expr ...]`) instead of an array, on either side, but not both: `bitarray op m = $a > 100`, `bitarray op 0 <= $a`.
-
-  `eq` and `ne` compare numbers here, not strings as they do in `expr`. `in` and `ni` return 1 or 0, so each answers one yes/no question about the result, and one or two of them give "all, none or some": `0 ni $m` is 1 if every comparison was true (there is no 0), `1 ni $m` is 1 if none was true (there is no 1), `1 in $m` is 1 if at least one was true, `0 in $m` is 1 if at least one was false. Some, but not all, is `1 in $m` and `0 in $m` both 1.
+| Question | Write |
+|---|---|
+| Was every comparison true (there is no 0)? | `0 ni $m` |
+| Was none true (there is no 1)? | `1 ni $m` |
+| Was at least one true? | `1 in $m` |
+| Was at least one false? | `0 in $m` |
+| Some, but not all? | `1 in $m` and `0 in $m` are both 1 |
+| How many were true? | `bitarray count $m` |
+| Where is the first true one at or after index `i`? | `bitarray next $m i 1` (`-1` if none) |
 
 **Examples**
 
-`a` -> `{1 0 1 1 0 1 1 1}`, `m` -> `{1 1 0 0 1 1 0 0}`  
-`bitarray op r = $a and $m` -> `r` is `1 0 0 0 0 1 0 0`  
-`bitarray op $a | $m` -> `1 1 1 1 1 1 1 1`  
-`bitarray op $a ^ $m` -> `0 1 1 1 1 0 1 1`  
-`bitarray op $a &~ $m` -> `0 0 1 1 0 0 1 1`  
-`bitarray op ~ $a` -> `0 1 0 0 1 0 0 0`  
-`bitarray op a = $a and $m` -> `a` becomes `1 0 0 0 0 1 0 0` (a new array)  
-`bitarray op a = a and $m` -> the same result, `a` updated in place  
-`b` -> `{1 2 3 4}` (8-bit): `bitarray op $b or 8` -> `9 10 11 12`; `bitarray op 255 xor $b` -> `254 253 252 251`  
-`w` -> `{0 5 255 0}` (8-bit), `bitarray op ! $w` -> `1 0 0 1`; `bitarray op $w && $w` -> `0 1 1 0`; `bitarray op ~ $w` -> `255 250 0 255` (bitwise)  
-`w` -> `{0 5 255 0}` (8-bit), `bitarray op $w > 4` -> `0 1 1 0`; `bitarray op $w == $w` -> `1 1 1 1`; `bitarray op 5 <= $w` -> `0 1 1 0`  
-`bitarray op r = $a nand $m` => error: `bad operator "nand": must be one of: and  &  or  |  xor  ^  andnot  &~  &!  not  ~  land  &&  lor  ||  lnot  !  eq  ==  ne  !=  lt  <  le  <=  gt  >  ge  >=`  
-`bitarray op and $a` => error: `bitarray op: "and" needs two arrays: array1 and array2`
+* `a` -> `{1 0 1 1 0 1 1 1}`, `m` -> `{1 1 0 0 1 1 0 0}`
+* `bitarray op r = $a and $m` -> `r` is `1 0 0 0 0 1 0 0`
+* `bitarray op $a | $m` -> `1 1 1 1 1 1 1 1`
+* `bitarray op $a ^ $m` -> `0 1 1 1 1 0 1 1`
+* `bitarray op $a &~ $m` -> `0 0 1 1 0 0 1 1`
+* `bitarray op ~ $a` -> `0 1 0 0 1 0 0 0`
+* `bitarray op a = $a and $m` -> `a` becomes `1 0 0 0 0 1 0 0` (a new array)
+* `bitarray op a = a and $m` -> the same result, `a` updated in place
+* `b` -> `{1 2 3 4}` (8-bit): `bitarray op $b or 8` -> `9 10 11 12`; `bitarray op 255 xor $b` -> `254 253 252 251`
+* `w` -> `{0 5 255 0}`, `v` -> `{0 0 3 7}` (8-bit): `bitarray op $w land $v` -> `0 0 1 0` (both non-zero); `bitarray op $w lor $v` -> `0 1 1 1` (either non-zero); `bitarray op lnot $w` -> `1 0 0 1` (is zero)
+* `w` -> `{0 5 255 0}` (8-bit), `bitarray op ! $w` -> `1 0 0 1`; `bitarray op $w && $w` -> `0 1 1 0`; `bitarray op ~ $w` -> `255 250 0 255` (bitwise)
+* `w` -> `{0 5 255 0}` (8-bit), `bitarray op $w > 4` -> `0 1 1 0`; `bitarray op $w == $w` -> `1 1 1 1`; `bitarray op 5 <= $w` -> `0 1 1 0`
+* `s` -> `{1 1 1}`: `bitarray op -length zero r = $a and $s` -> `r` is `1 0 1 0 0 0 0 0` (without `-length zero` the different lengths are an error)
+* `bitarray op r = $a nand $m` => error: `bad operator "nand": must be one of: and  &  or  |  xor  ^  andnot  &~  &!  not  ~  land  &&  lor  ||  lnot  !  eq  ==  ne  !=  lt  <  le  <=  gt  >  ge  >=`
+* `bitarray op and $a` => error: `bitarray op: "and" needs two arrays: array1 and array2`
 
 `op` cannot be written as just `o`: that is ambiguous with `or`, which is still `or`.
 
