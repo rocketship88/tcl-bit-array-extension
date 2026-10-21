@@ -72,6 +72,8 @@ If you must build up an array element by element on 9.0, use `lset a end+1 $v` o
 
 ## Get it, build it, test it
 
+### On Linux
+
 Download the repository as a ZIP (or `git clone`) and unpack it **anywhere**. Nothing depends on where it lives or on
 what its neighbours are called. You tell the scripts where your Tcl 9.1 is. No location is built in; if you give nothing,
 they look for a Tcl 9 `tclsh` on your `PATH`. They stop with a message if what they find is not Tcl 9.
