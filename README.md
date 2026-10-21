@@ -95,7 +95,20 @@ On Tcl 9.0.4 the last line is `Total	434	Passed	417	Skipped	17	Failed	0` and a b
 
 ### On Windows (Visual Studio 2022)
 
-`build.bat`, `run_tests.bat` and `run_sieves.bat` do the same three jobs with Microsoft Visual C. To run them one after the other on one line, put `call` in front of each (`call build.bat ... && call run_tests.bat ... && call run_sieves.bat ...`): without `call`, Windows `cmd` ignores a batch file's failure code and goes on to the next command even after a build error or a mistyped option. Version 0.7.0 has been built and run on Windows by the repository owner (a 64-bit machine, Visual Studio 2022, Tcl 9.1.1 built from trunk): no build warnings, `Total 282  Passed 281  Skipped 1  Failed 0`, the sieve passed, and `listbench.tcl` ran; the output is saved in `extras/windows_0.7.0_run.txt`. Version 0.8.0 was run the same way (same machine and Tcl 9.1.1): `Total 288  Passed 281  Skipped 7  Failed 0` (`extras/windows_0.8.0_run.txt`). The latest Windows run is of the code that became version 1.0 (same machine and Tcl 9.1.1): no build warnings, `Total 434  Passed 427  Skipped 7  Failed 0` (6 are the `--testbug` tests, 1 is the procfs test), the sieve passed, and `listbench.tcl` ran with the same answers in every column (`extras/windows_0.9.5_run.txt`; later runs with the faster 8-bit loops: `extras/windows_0.9.5_wideops_run.txt`, `extras/windows_0.9.5_sse2_run.txt`). The previous run, of 0.9.3, had `Total 407  Passed 400  Skipped 7` (`extras/windows_0.9.3_run.txt`). Earlier versions were also run on Windows (see `RESULTS.txt`). A 32-bit build and other Visual Studio versions are untried.
+`build.bat`, `run_tests.bat` and `run_sieves.bat` do the same three jobs with Microsoft Visual C.
+
+To run them one after the other on one line, put `call` in front of each (`call build.bat ... && call run_tests.bat ... && call run_sieves.bat ...`). Without `call`, Windows `cmd` ignores a batch file's failure code and goes on to the next command even after a build error or a mistyped option.
+
+The repository owner has built and run the code on Windows (a 64-bit machine, Visual Studio 2022, Tcl 9.1.1 built from trunk). In each run the sieve passed and `listbench.tcl` ran, and the output is saved in `extras/`:
+
+* Latest, of the code that became 1.0 (the version string is the only difference): no build warnings, `Total 434  Passed 427  Skipped 7  Failed 0` (6 are the `--testbug` tests, 1 is the procfs test), and `listbench.tcl` gave the same answers in every column: `extras/windows_0.9.5_434_run.txt`.
+* Earlier runs of 0.9.5 with the faster loops: `extras/windows_0.9.5_run.txt`, `extras/windows_0.9.5_wideops_run.txt`, `extras/windows_0.9.5_sse2_run.txt`.
+* 0.9.3: `Total 407  Passed 400  Skipped 7`, in `extras/windows_0.9.3_run.txt`.
+* 0.8.0: `Total 288  Passed 281  Skipped 7`, in `extras/windows_0.8.0_run.txt`.
+* 0.7.0: `Total 282  Passed 281  Skipped 1`, in `extras/windows_0.7.0_run.txt`.
+* Other earlier versions were also run on Windows (see `RESULTS.txt`).
+
+A 32-bit build and other Visual Studio versions are untried.
 
 Unpack the ZIP anywhere and, from a Command Prompt, go into the unpacked folder and run the three scripts:
 
@@ -106,10 +119,9 @@ run_tests.bat  --tclsh C:\path\to\tcl9.1\bin\tclsh91.exe
 run_sieves.bat --tclsh C:\path\to\tcl9.1\bin\tclsh91.exe     rem optional: the prime-sieve benchmark, see below
 ```
 
-`build.bat` finds the headers and the stubs library (`include\tcl.h`, `lib\tclstub.lib`) from the shell you name, or from
-`--tcl-prefix DIR`, finds Visual Studio itself with `vswhere` if `cl` is not already on your `PATH` (so a plain `cmd` window works; it was run that way on 2026-10-13 and set up `vcvars64.bat` itself), and builds the 64-bit or
-32-bit DLL to match the shell. `run_tests.bat` should end with `Total 434  Passed 427  Skipped 7  Failed 0` (the last Windows run, of the code that became 1.0, gave exactly that, with no build warnings): one test, which
-reads `/proc`, is skipped on Windows, and so are the 6 `--testbug` tests (to run those: `tclsh91 tests\bitarray.test -constraints coreTypeLoss`). `--help` on each prints the options.
+`build.bat` finds the headers and the stubs library (`include\tcl.h`, `lib\tclstub.lib`) from the shell you name, or from `--tcl-prefix DIR`. It finds Visual Studio itself with `vswhere` if `cl` is not already on your `PATH`, so a plain `cmd` window works (it was run that way on 2026-10-13 and set up `vcvars64.bat` itself), and it builds the 64-bit or 32-bit DLL to match the shell.
+
+`run_tests.bat` should end with `Total 434  Passed 427  Skipped 7  Failed 0` (the last Windows run gave exactly that, with no build warnings). One test, which reads `/proc`, is skipped on Windows, and so are the 6 `--testbug` tests (to run those: `tclsh91 tests\bitarray.test -constraints coreTypeLoss`). `--help` on each prints the options.
 
 ### Telling `build.sh` where Tcl is
 
