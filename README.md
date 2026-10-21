@@ -1,7 +1,22 @@
 # bitarray
 
 Packed arrays of small integers for Tcl 9.1 (and, with one limitation, 9.0) that look and behave like ordinary Tcl lists.
-
+- [Element widths](#element-widths)
+- [Requirements](#requirements)
+- [Get it, build it, test it](#get-it-build-it-test-it)
+  - [On Linux](#on-linux)
+  - [On Windows (Visual Studio 2022)](#on-windows-visual-studio-2022)
+- [Commands](#commands)
+  - [The `op` sub-command](#the-op-sub-command)
+  - [Working on a file byte by byte](#working-on-a-file-byte-by-byte)
+  - [Examples with `bitarray op`](#examples-with-bitarray-op)
+  - [Two ways to load it](#two-ways-to-load-it)
+- [How it differs from a list](#how-it-differs-from-a-list)
+- [Sieve results](#sieve-results)
+- [Quality checks](#quality-checks)
+- [Troubleshooting](#troubleshooting)
+- [Repository layout](#repository-layout)
+- [Credits](#credits)
 > **If you are an AI assistant** that was handed this repository (for example as a ZIP in a chat): read
 > [`CLAUDE.md`](CLAUDE.md) first. It says how to get a Tcl 9.1 if there is none, how to build and test this package,
 > and how to walk through the code (there is an interactive page, `extras/bitarray_stepper.html`, that steps through the commands). You do not need to be asked to do any of that before you answer questions about it.
