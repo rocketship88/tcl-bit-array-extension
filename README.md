@@ -95,21 +95,6 @@ On Tcl 9.0.4 the last line is `Total	434	Passed	417	Skipped	17	Failed	0` and a b
 
 ### On Windows (Visual Studio 2022)
 
-`build.bat`, `run_tests.bat` and `run_sieves.bat` do the same three jobs with Microsoft Visual C.
-
-To run them one after the other on one line, put `call` in front of each (`call build.bat ... && call run_tests.bat ... && call run_sieves.bat ...`). Without `call`, Windows `cmd` ignores a batch file's failure code and goes on to the next command even after a build error or a mistyped option.
-
-The repository owner has built and run the code on Windows (a 64-bit machine, Visual Studio 2022, Tcl 9.1.1 built from trunk). In each run the sieve passed and `listbench.tcl` ran, and the output is saved in `extras/`:
-
-* Latest, of the code that became 1.0 (the version string is the only difference): no build warnings, `Total 434  Passed 427  Skipped 7  Failed 0` (6 are the `--testbug` tests, 1 is the procfs test), and `listbench.tcl` gave the same answers in every column: `extras/windows_0.9.5_434_run.txt`.
-* Earlier runs of 0.9.5 with the faster loops: `extras/windows_0.9.5_run.txt`, `extras/windows_0.9.5_wideops_run.txt`, `extras/windows_0.9.5_sse2_run.txt`.
-* 0.9.3: `Total 407  Passed 400  Skipped 7`, in `extras/windows_0.9.3_run.txt`.
-* 0.8.0: `Total 288  Passed 281  Skipped 7`, in `extras/windows_0.8.0_run.txt`.
-* 0.7.0: `Total 282  Passed 281  Skipped 1`, in `extras/windows_0.7.0_run.txt`.
-* Other earlier versions were also run on Windows (see `RESULTS.txt`).
-
-A 32-bit build and other Visual Studio versions are untried.
-
 Unpack the ZIP anywhere and, from a Command Prompt, go into the unpacked folder and run the three scripts:
 
 ```bat
