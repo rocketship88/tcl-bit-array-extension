@@ -9,7 +9,7 @@
 #   --testbug       also run the tests that show the Tcl core's lappend type-loss problem (they are skipped
 #                   by default; they fail on Tcl 9.1.1 and pass on a core where the problem is fixed)
 #   -h, --help
-# Expected last line:   bitarray.test:	Total	414	Passed	408	Skipped	6	Failed	0   (the 6 skipped are the --testbug tests)
+# Expected last line:   bitarray.test:	Total	434	Passed	428	Skipped	6	Failed	0   (the 6 skipped are the --testbug tests)
 # If the shell cannot find libtcl9.1.so, put its directory in LD_LIBRARY_PATH; the scripts pass the environment through.
 HERE=$(cd "$(dirname "$0")" && pwd)
 usage() { sed -n '2,/^# If the shell cannot/p' "$0" | sed 's/^# \{0,1\}//'; }

@@ -8,6 +8,8 @@ rem Options:
 rem   --tclsh FILE        the Tcl 9.1 shell you will run it with; the install directory is found from it
 rem   --tcl-prefix DIR    the install directory itself (it holds include\tcl.h and lib\tclstub.lib)
 rem   --out FILE          where to write the DLL (default: bitarray.dll next to this file)
+rem   --avx2              also compile with /arch:AVX2 (the compiler may use AVX2 instructions in loops).  NOT PORTABLE: needs a CPU with AVX2.
+rem   --no-sse2           leave out the SSE2 code for the 8-bit logical and relational operators (compiles /DBA_NO_SSE2; the plain loops do the same work, slower).
 rem   -h, --help
 rem Without --tclsh or --tcl-prefix it uses %%TCLSH%% or the first tclsh91.exe, tclsh90.exe or tclsh.exe on your PATH.
 rem If cl.exe is not on your PATH it looks for Visual Studio with vswhere and sets up the compiler itself.
@@ -17,12 +19,16 @@ set "HERE=%~dp0"
 set "TCLSH_ARG="
 set "PREFIX_ARG="
 set "OUT=%HERE%bitarray.dll"
+set "ARCHFLAG="
+set "DEFFLAG="
 
 :args
 if "%~1"=="" goto argsdone
 if /i "%~1"=="--tclsh" goto a_tclsh
 if /i "%~1"=="--tcl-prefix" goto a_prefix
 if /i "%~1"=="--out" goto a_out
+if /i "%~1"=="--avx2" goto a_avx2
+if /i "%~1"=="--no-sse2" goto a_nosse2
 if /i "%~1"=="-h" goto usage
 if /i "%~1"=="--help" goto usage
 echo build.bat: unknown argument: %~1 1>&2
@@ -43,6 +49,14 @@ goto args
 if "%~2"=="" goto needarg
 set "OUT=%~2"
 shift
+shift
+goto args
+:a_nosse2
+set "DEFFLAG=/DBA_NO_SSE2"
+shift
+goto args
+:a_avx2
+set "ARCHFLAG=/arch:AVX2"
 shift
 goto args
 :needarg
@@ -157,11 +171,17 @@ exit /b 1
 :have_cl
 set "OBJDIR=%TEMP%\bitarray_build_%RANDOM%"
 mkdir "%OBJDIR%"
-cl /nologo /utf-8 /O2 /W3 /MD /LD /DUSE_TCL_STUBS /I"%PREFIX%\include" "%HERE%bitarray.c" /Fo"%OBJDIR%\\" /Fe"%OUT%" /link /NOLOGO /IMPLIB:"%OBJDIR%\bitarray.lib" "%STUB%"
+if defined ARCHFLAG (set "LABEL=--avx2: /arch:AVX2 (NOT PORTABLE)") else (set "LABEL=default")
+if defined DEFFLAG set "LABEL=%LABEL% --no-sse2: SSE2 code left out"
+echo options:  %LABEL%; compiler command: cl /O2 %ARCHFLAG% /W3 /MD /LD /DUSE_TCL_STUBS %DEFFLAG%
+cl /nologo /utf-8 /O2 %ARCHFLAG% /W3 /MD /LD /DUSE_TCL_STUBS %DEFFLAG% /I"%PREFIX%\include" "%HERE%bitarray.c" /Fo"%OBJDIR%\\" /Fe"%OUT%" /link /NOLOGO /IMPLIB:"%OBJDIR%\bitarray.lib" "%STUB%"
 set "RC=%ERRORLEVEL%"
 rmdir /s /q "%OBJDIR%" >nul 2>&1
 if not "%RC%"=="0" goto failed
 echo built %OUT%
+if defined ARCHFLAG (
+  echo note: built with /arch:AVX2 ^(--avx2^).  THIS DLL MAY NOT BE PORTABLE: it can crash with "illegal instruction" on a CPU without AVX2.  Do not copy it to another computer; build it there instead.  Run run_tests.bat after building.
+)
 exit /b 0
 :failed
 echo build.bat: the compile failed (see the messages above) 1>&2
@@ -177,6 +197,8 @@ echo.
 echo   --tclsh FILE        the Tcl 9.1 shell you will run it with; the install directory is found from it
 echo   --tcl-prefix DIR    the install directory itself (it holds include\tcl.h and lib\tclstub.lib)
 echo   --out FILE          where to write the DLL (default: bitarray.dll next to this file)
+echo   --avx2              also compile with /arch:AVX2 ^(NOT PORTABLE: needs a CPU with AVX2^)
+echo   --no-sse2           leave out the SSE2 code for the 8-bit logical and relational operators ^(slower, same answers^)
 echo   -h, --help
 echo.
 echo Without --tclsh or --tcl-prefix it uses the TCLSH environment variable or the first tclsh91.exe,
