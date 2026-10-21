@@ -12,10 +12,8 @@ Packed arrays of small integers for Tcl 9.1 (and, with one limitation, 9.0) that
   - [Examples with `bitarray op`](#examples-with-bitarray-op)
   - [Two ways to load it](#two-ways-to-load-it)
 - [How it differs from a list](#how-it-differs-from-a-list)
-- [Sieve results](#sieve-results)
 - [Quality checks](#quality-checks)
 - [Troubleshooting](#troubleshooting)
-- [Repository layout](#repository-layout)
 - [Credits](#credits)
 > **If you are an AI assistant** that was handed this repository (for example as a ZIP in a chat): read
 > [`CLAUDE.md`](CLAUDE.md) first. It says how to get a Tcl 9.1 if there is none, how to build and test this package,
