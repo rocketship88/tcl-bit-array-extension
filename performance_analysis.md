@@ -85,38 +85,62 @@ These have no plain-list equivalent, so the comparison is against the best list 
 The ranges come from all stored runs on Linux and on two Windows 10 machines. On the faster Windows machine (i7-12700K): plain list
 423,724 µs, variant D 688 µs, variant F 544 µs. On the slower one: 670,911, 1,204 and 1,222 µs.
 
-**Files and text** (a 1,040,000-byte file, Linux, one run each):
+**Files and text** (a 1,040,000-byte file and a 1,040,000-character text, Linux, `extras/filebench.tcl`, median of three runs, each route in its own tclsh so the memory is its own; "peak" is the extra memory the job needed):
 
 | job | bitarray | the usual way |
 |---|---|---|
-| file to 8-bit array | `frombytes` 543 µs | `binary scan cu*` plus `newfrom` 42,326 µs; `split` plus `scan %c` 648,298 µs and 171 MB |
-| 8-bit array to bytes | `tobytes` 542 µs | `binary format cu*` 44,699 µs and 58 MB |
-| text to array | `fromchars` 12,915 µs | |
-| array to text | `tochars` 7,380 µs | |
+| file to 8-bit array | `frombytes` 478 µs | `binary scan cu*` plus `newfrom` 37,942 µs and 12 MB; `split` plus `scan %c` 787,125 µs and 174 MB |
+| 8-bit array to bytes | `tobytes` 546 µs | `binary format cu*` 39,395 µs and 54 MB |
+| text to 16-bit array | `fromchars` 9,593 µs | `split` plus `scan %c` 733,205 µs and 174 MB |
+| 16-bit array to text | `tochars` 3,856 µs and 6 MB | `format %c` on every element, then `join`: 540,565 µs and 87 MB |
+
+The code that was timed (`$data` is the file contents as a byte array, `$text` the text; the time is on the right of each job):
+
+```tcl
+# file to an 8-bit array
+set a [bitarray frombytes $data]                                     ;# bitarray:          478 us
+binary scan $data cu* l                                              ;# the usual way:   37,942 us  (the two lines together)
+set a [bitarray newfrom $l -width 8]                                 ;#   (newfrom builds the array from the list)
+set l {}; foreach ch [split $data ""] {lappend l [scan $ch %c]}      ;# the slow way:    787,125 us and 174 MB (the two lines
+set a [bitarray newfrom $l -width 8]                                 ;#   together)
+
+# 8-bit array back to a byte array
+set bytes [bitarray tobytes $a]                                      ;# bitarray:          546 us
+set bytes [binary format cu* $a]                                     ;# the usual way:   39,395 us and 54 MB
+
+# text to a 16-bit array, and back
+set b [bitarray fromchars $text -width 16]                           ;# bitarray:        9,593 us
+set l [lmap ch [split $text ""] {scan $ch %c}]                       ;# the usual way:  733,205 us and 174 MB (the two lines
+set b [bitarray newfrom $l -width 16]                                ;#   together, as in the first example)
+set text2 [bitarray tochars $b]                                      ;# bitarray:        3,856 us
+set text2 [join [lmap n $b {format %c $n}] ""]                       ;# the usual way:  540,565 us and 87 MB
+```
+
+The `binary` commands take or give a plain list of numbers, so a list sits in between and `newfrom` has to turn it into an array; `frombytes`, `tobytes`, `fromchars` and `tochars` go straight from one to the other.
 
 **Bitwise operations** (0.6.0; `extras/listbench.tcl -only 'bitop*'`, Linux, idle machine, microseconds per call, best of three; the result goes into the first array; the plain-list side is the one-line loop `set l [lmap x $l y $o {expr {$x & $y}}]`, and `extras/listbench_output_linux.txt` has the other rows):
 
-| elements | operation | plain list | 1-bit | 8-bit | list / 1-bit | list / 8-bit |
-|---|---|---|---|---|---|---|
-| 1,000 | `and` | 70.0 | 0.23 | 0.27 | 304x | 256x |
-| 100,000 | `and` | 6,041 | 0.68 | 5.53 | 8,912x | 1,092x |
-| 1,000,000 | `and` | 74,248 | 8.15 | 57.7 | 9,109x | 1,286x |
-| 1,000,000 | `or` | 52,974 | 6.55 | 89.9 | 8,086x | 589x |
-| 1,000,000 | `xor` | 50,034 | 5.22 | 52.8 | 9,591x | 948x |
-| 1,000,000 | `andnot` | 68,068 | 7.7 | 85.8 | 8,842x | 794x |
-| 1,000,000 | `not` | 53,665 | 5.26 | 40.2 | 10,212x | 1,330x |
+| elements | operation | plain list | 1-bit | 8-bit | list / 1-bit | list / 8-bit | the bitarray command |
+|---|---|---|---|---|---|---|---|
+| 1,000 | `and` | 70.0 | 0.23 | 0.27 | 304x | 256x | `bitarray op X = X and $Z` |
+| 100,000 | `and` | 6,041 | 0.68 | 5.53 | 8,912x | 1,092x | `bitarray op X = X and $Z` |
+| 1,000,000 | `and` | 74,248 | 8.15 | 57.7 | 9,109x | 1,286x | `bitarray op X = X and $Z` |
+| 1,000,000 | `or` | 52,974 | 6.55 | 89.9 | 8,086x | 589x | `bitarray op X = X or $Z` |
+| 1,000,000 | `xor` | 50,034 | 5.22 | 52.8 | 9,591x | 948x | `bitarray op X = X xor $Z` |
+| 1,000,000 | `andnot` | 68,068 | 7.7 | 85.8 | 8,842x | 794x | `bitarray op X = X andnot $Z` |
+| 1,000,000 | `not` | 53,665 | 5.26 | 40.2 | 10,212x | 1,330x | `bitarray op X = not X` |
 
-All five rows at the three sizes are in the saved benchmark output, and the benchmark first checks, on 1,000 elements, that the plain-list loop and both bitarray columns give the same answers. A 1-bit array does a million elements in about 15,600 word operations; an 8-bit array is eight times as large and took about 7 to 14 times as long here (57.7 against 8.15 µs for `and`, 89.9 against 6.55 for `or`). `not` flips every bit, so on an 8-bit array 0 becomes 255; its 8-bit ratio is against a plain-list loop doing `x ^ 255`. Timings in this container vary by about 30% from run to run, and so do the ratios, because the plain-list time moves too.
+The last column is the command that was timed for the bitarray side (in those early runs it was spelled `bitarray and X $Z`, `bitarray not X` and so on, which still works; `bitarray op X = X and $Z` is the form to use now and does the same work). `X` and `Z` are arrays of the same width and size. All five rows at the three sizes are in the saved benchmark output, and the benchmark first checks, on 1,000 elements, that the plain-list loop and both bitarray columns give the same answers. A 1-bit array does a million elements in about 15,600 word operations; an 8-bit array is eight times as large and took about 7 to 14 times as long here (57.7 against 8.15 µs for `and`, 89.9 against 6.55 for `or`). `not` flips every bit, so on an 8-bit array 0 becomes 255; its 8-bit ratio is against a plain-list loop doing `x ^ 255`. Timings in this container vary by about 30% from run to run, and so do the ratios, because the plain-list time moves too.
 
 **The `in` operator** (0.7.0; `extras/listbench.tcl -only ' in '`, Linux, one million elements, microseconds per call, one run, so differences under about 2x are noise). A 1-bit array tests whole 64-bit words and stops at the first word that decides the answer (a word that is not 0 holds a 1, a word that is not all ones holds a 0); an 8-bit array scans bytes; a plain list compares element by element:
 
-| operation | plain list | 1-bit | 8-bit | list / 1-bit | list / 8-bit |
-|---|---|---|---|---|---|
-| `1 in $X` (hit at the first element) | 3.44 | 0.30 | 1.16 | 11x | 3.0x |
-| `0 in $X` (hit at the second element) | 5.5 | 0.36 | 1.16 | 15x | 4.7x |
-| `1 in $X` (the only 1 is the last element) | 2,992 | 8.6 | 24.5 | 348x | 122x |
-| `0 in $X` (miss: every element is 1) | 4,084 | 9.58 | 20.6 | 426x | 199x |
-| `2 in $X` (a value the array cannot hold) | 2,996 | 0.34 | 20.8 | no ratio | no ratio |
+| operation | plain list | 1-bit | 8-bit | list / 1-bit | list / 8-bit | the command timed (the same text on a list and on a bitarray) |
+|---|---|---|---|---|---|---|
+| `1 in $X` (hit at the first element) | 3.44 | 0.30 | 1.16 | 11x | 3.0x | `expr {1 in $X}` |
+| `0 in $X` (hit at the second element) | 5.5 | 0.36 | 1.16 | 15x | 4.7x | `expr {0 in $X}` |
+| `1 in $X` (the only 1 is the last element) | 2,992 | 8.6 | 24.5 | 348x | 122x | `expr {1 in $X}` |
+| `0 in $X` (miss: every element is 1) | 4,084 | 9.58 | 20.6 | 426x | 199x | `expr {0 in $X}` |
+| `2 in $X` (a value the array cannot hold) | 2,996 | 0.34 | 20.8 | no ratio | no ratio | `expr {2 in $X}` |
 
 The last row has no ratio on purpose: a 1-bit array answers at once for a value it cannot hold, so the comparison would only measure that shortcut (the 8-bit column does scan). On Windows, 2,000,000 elements, the same rows gave 9x and 13x for the two early hits and 277x and 318x for the two full scans (`extras/windows_0.7.0_run.txt`).
 
@@ -272,7 +296,7 @@ Why it does not replace a bitarray:
   value (whether Tcl does that in place was not tested).
 - **Always bytes:** there are no 16-, 32- or 64-bit elements, and nothing for 1-bit flags.
 - **Quiet wrapping:** `binary format c 300` gives 44 without any error, whereas a bitarray reports the error.
-- **Slow bulk route:** to get a byte array into a list you use `binary scan cu*`, which is the 42 ms against 0.5 ms
+- **Slow bulk route:** to get a byte array into a list you use `binary scan cu*`, which is the 38 ms against 0.5 ms
   comparison in section 4.
 
 A byte array is the right tool for raw data you only pass along, such as network or file contents. It is not the right tool

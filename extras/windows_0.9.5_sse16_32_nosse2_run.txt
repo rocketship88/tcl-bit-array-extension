@@ -1,0 +1,127 @@
+
+A:\testit\bitarray>build.bat --no-sse2 --tclsh A:\aaa\tcltk-merged-release\bin\tclsh91.exe && run_tests.bat --tclsh A:\aaa\tcltk-merged-release\bin\tclsh91.exe && run_sieves.bat --tclsh A:\aaa\tcltk-merged-release\bin\tclsh91.exe
+tclsh:   A:\aaa\tcltk-merged-release\bin\tclsh91.exe   (Tcl 9.1.1, x64)
+headers: A:\aaa\tcltk-merged-release\include
+stubs:   A:\aaa\tcltk-merged-release\lib\tclstub.lib
+options:  default --no-sse2: SSE2 code left out; compiler command: cl /O2  /W3 /MD /LD /DUSE_TCL_STUBS /DBA_NO_SSE2
+bitarray.c
+   Creating library A:\temp\bitarray_build_14383\bitarray.lib and object A:\temp\bitarray_build_14383\bitarray.exp
+built A:\testit\bitarray\bitarray.dll
+tclsh: A:\aaa\tcltk-merged-release\bin\tclsh91.exe   (Tcl 9.1.1)
+lib:   A:\testit\bitarray\bitarray.dll
+------------------------------ test: 0.9.5 2026-10-20 15:32:43 ---------------
+bitarray.test:  Total   433     Passed  426     Skipped 7       Failed  0
+Number of tests skipped for each constraint:
+        6       coreTypeLoss
+        1       procfs
+sieve file: A:\testit\bitarray\sieve\frank_sieve.tcl
+tclsh:  A:/aaa/tcltk-merged-release/bin/tclsh91.exe   Tcl 9.1.1
+
+CORRECTNESS: number of primes found (expected count from the known table); all variants must also
+             produce exactly the same list of primes as variant A
+    limit  expected         A       B       C       D       E       F   same list as A
+       11         5         5       5       5       5       5       5   yes
+      100        25        25      25      25      25      25      25   yes
+     1000       168       168     168     168     168     168     168   yes
+    10000      1229      1229    1229    1229    1229    1229    1229   yes
+   100000      9592      9592    9592    9592    9592    9592    9592   yes
+  1000000     78498     78498   78498   78498   78498   78498   78498   yes
+
+TIMING: one full sieve pass at limit 1000000, best of 3 (each timed for 1.5 s), microseconds
+variant                                 us per pass   passes/sec       vs A
+A  Frank's sieve, unchanged                705901.5         1.42       1.0x
+B  bit proc inlined, no extension          223344.0         4.48       3.2x
+C  bitarray, lindex/lset                    93795.3        10.66       7.5x
+D  bitarray, fill step + next                1171.9       853.29     602.3x
+E  bitarray 8-bit, lindex/lset              94358.8        10.60       7.5x
+F  bitarray 8-bit, fill step + next          1197.6       835.02     589.4x
+
+RESULT: PASS -- every variant found the right number of primes, and the same primes, at every limit
+
+A:\testit\bitarray>A:\aaa\tcltk-merged-release\bin\tclsh91.exe a:\testit\bitarray\extras\listbench.tcl    -sizes 1000000
+check: 70 operations compared, same answers in every column (2 not comparable: creation and parsing)
+listbench (both): Tcl 9.1.1, bitarray 0.9.5, amd64 Windows NT, 2026-10-20
+------------------------------ bench: 0.9.5 2026-10-20 15:32:43 ---------------
+library A:/testit/bitarray/bitarray.dll
+calibration: empty loop of 1,000,000 iterations 36.9 ms (best of 5)
+
+1000000 elements: us per call, best of 3; memory 64x/8x less
+operation                                  list us    bit1 us    bit8 us  list/bit1  list/bit8
+create (lrepeat / bitarray new)               0.37       3.45        105      0.11x     <0.01x
+create from text (parse / newfrom)          33,805     47,646     46,062      0.71x      0.73x
+llength                                       0.12       0.12       0.16      0.97x      0.74x
+lindex (middle)                               0.12       0.16       0.17      0.74x      0.72x
+lset (middle, in place)                        0.2       0.22       0.26      0.93x      0.77x
+lappend (one element)                         0.21       0.22       0.22      0.97x      0.96x
+lrange 10..19                                 0.18       0.26       0.25      0.69x      0.71x
+lrange first half                              0.2        3.7       33.2      0.05x     <0.01x
+lreverse                                      0.19       61.0        434     <0.01x     <0.01x
+lreplace delete 100 at front                  0.21       34.4       97.1     <0.01x     <0.01x
+lreplace delete 100 in middle                4,020       21.1       81.6       191x        49x
+lreplace 10 for 10 (middle)                  3,814       7.34       65.2       520x        59x
+linsert 1 at front                           3,818       93.8        793        41x       4.8x
+linsert 1 in middle                          3,823       48.5        656        79x       5.8x
+linsert 1 at end                             3,886       16.3        622       238x       6.3x
+linsert 100 in middle                        3,764       50.2        656        75x       5.7x
+ledit 1 for 2 (shared: copies)               4,319       48.8        659        88x       6.6x
+ledit 1 for 1 (in place)                     4,731       7.39       68.0       641x        70x
+ledit delete 1 at front (in place)            0.27       32.6       98.6     <0.01x     <0.01x
+lremove 3 elements                           3,794       43.4        114        87x        33x
+lassign 3 variables (of lrange)               0.54        0.6       0.61      0.89x      0.89x
+lassign first 3 (rest returned)               6.62       32.9       70.9      0.20x      0.09x
+lsearch -exact (hit at 0, warm)               0.21       0.21       0.21      0.99x      0.99x
+lsearch -exact (hit at 0, cold)               5.64      2,277      3,161     <0.01x     <0.01x
+lsearch -exact (miss, scans all)             5,743      8,091      8,955      0.71x      0.64x
+1 in $X (hit at 0)                            4.68       0.42       0.72        11x       6.5x
+0 in $X (hit at 1)                            4.26        0.3       0.96        14x       4.4x
+1 in $X (hit at the last element)            2,765       10.1       37.7       273x        73x
+0 in $X (miss: all elements are 1)           2,753       8.84       37.9       311x        73x
+2 in $X (miss)                               2,770        0.5       37.7        n/a        n/a
+lsort -integer                              90,608     91,040     92,402      1.00x      0.98x
+foreach over all elements                  183,594    167,692    170,325       1.1x       1.1x
+lmap over all elements                     231,434    231,859    233,681      1.00x      0.99x
+join with a comma                           29,688     32,295     33,660      0.92x      0.88x
+fill first half with 1 (no step)             9,425        1.8       12.8      5240x       739x
+fill every 3rd element with 1               31,995        377        135        85x       238x
+count the 1s                                12,312       19.1        345       646x        36x
+minmax of the whole array                   20,754       19.2       24.1      1084x       860x
+minmax of a range (10 to end-10)            20,418       19.3       24.3      1060x       841x
+minmax of a signed 8-bit array              39,643          -       27.4        n/a      1445x
+minmax of a 16-bit array                    38,730          -       46.7        n/a       829x
+minmax of a 32-bit array                    39,796          -       92.7        n/a       429x
+minmax of a 64-bit array                    38,526          -        772        n/a        50x
+lnot of a 16-bit array                      50,114          -        701        n/a        72x
+lnot of a 32-bit array                      50,409          -        761        n/a        66x
+rel > 1000 (16-bit array, integer)         251,910          -        764        n/a       330x
+rel > 1000000 (32-bit array, integer)      250,932          -        818        n/a       307x
+next 1: one scan of the whole array          5,794       9.88       46.4       586x       125x
+next 1: visit every 1 (every 7th)           44,955     31,787     33,969       1.0x       1.0x
+bitop and (a AND b)                         86,533       7.82       60.4     11067x      1433x
+bitop or (a OR b)                           85,357       13.0       59.7      6542x      1430x
+bitop xor (a XOR b)                         88,046       7.88       59.9     11168x      1471x
+bitop andnot (a AND NOT b)                 101,570       8.39       63.2     12101x      1606x
+bitop not (flip every bit)                  73,680       6.08       47.0     12122x      1593x
+bitop op: X = $X and Z (new array)          89,007       13.3       95.2      6692x       935x
+bitop op: R = $X and Z (new array)          85,779       13.7       94.9      6265x       904x
+bitop op: value form (new array)            68,024       12.9       95.0      5293x       716x
+bitop xor integer (X xor 1)                253,835       15.6        124     16254x      2050x
+bitop land (both nonzero)                   94,503       12.9      1,018      7349x        93x
+bitop lor (either nonzero)                 113,674       13.0      1,020      8718x       111x
+bitop lnot (is zero)                        50,314       9.74        750      5167x        67x
+bitop rel == (array, array)                 60,136       15.3        803      3926x        75x
+bitop rel != (array, array)                 60,667       18.7        788      3241x        77x
+bitop rel < (array, array)                  59,873       21.2        787      2826x        76x
+bitop rel > 0 (integer operand)             49,398       11.3        755      4386x        65x
+bitop rel: any different? (1 in)            61,221       18.6        781      3297x        78x
+bitop rel: all over 0? (0 ni)               51,022       11.4        751      4478x        68x
+scenario 1: hot mask, count, first         275,947          -        778        n/a       355x
+scenario 2: all values in 10..20?          388,097          -      1,484        n/a       262x
+scenario 3: what changed (X vs Z)          369,490          -        806        n/a       459x
+scenario 4: valid flags and big values     796,239          -      2,045        n/a       389x
+scenario 5: one life generation            551,737          -      2,192        n/a       252x
+
+(add -verbose for notes on how to read these numbers)
+elapsed 61 seconds
+calibration at the end: empty loop of 1,000,000 iterations 32.1 ms (best of 5)  (a big difference from the start means the machine was busy)
+
+A:\testit\bitarray>

@@ -1,0 +1,7 @@
+Thanks for looking at this, Ashok.
+
+Some context on who is hitting it. The bit-array type I mentioned is a real extension ([name and link, if you want to give them]). It implements all eight abstract-list hooks of TCL_OBJTYPE_V2 (length, index, slice, reverse, getElements, setElement, replace and the in/ni operator). lappend, and linsert in the uncompiled case, are the only commands I have found where the core converts the value to an ordinary list itself instead of calling one of the hooks.
+
+On your point that there is no lappend hook: the Replace hook is indeed enough for us, since an insert at the end is cheap for this type, so routing lappend through it (as in the patch above) is all we need. I can see types where a dedicated hook would be faster, and if one is added we would be happy to implement it as well. Note that the patch I posted only covers the lappend paths; the uncompiled single-element linsert at the end goes through Tcl_LinsertObjCmd, which I have not patched, so that case still converts.
+
+An update on the "not tested" note in the ticket: I have since tried Tcl 9.0.4, and it differs a little from 9.1. A plain lappend of one element keeps the type at the top level of a script but loses it under eval and uplevel (9.1 keeps it there) as well as in a proc; lappend {*}$list keeps the type everywhere on 9.0.4, including in a proc, where 9.1 loses it. If a fix goes in, it may be worth backporting to 9.0.x.

@@ -1,0 +1,4 @@
+2476c2476
+< 	result = Tcl_ListObjAppendElement(NULL, listPtr, objv[3]);
+---
+> 	result = Tcl_ListObjReplace(NULL, listPtr, len, 0, 1, &objv[3]);

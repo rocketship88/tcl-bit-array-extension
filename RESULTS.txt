@@ -144,7 +144,7 @@ arrays only it is still true of the 1-bit code, which 0.3 keeps (the 66 old test
    tests/abstractlist.test in Tcl checks several [lstring] commands for type loss but, as far as I found, not lappend onto an
    lstring, a single-element linsert at the end, or compiled versus uncompiled.
    Reported to the Tcl core by the repository owner on 2026-10-13: https://core.tcl-lang.org/tcl/tktview/0c82728f85760f36361fe42a15f55453c94d285d
-   Not tested: other platforms, Tcl 9.0.x (no version-2 abstract lists), other compilers.  Whether the core team treats it as a bug
+   Not tested at the time: other platforms, Tcl 9.0.x, other compilers (9.0.4 and 9.0.5 were tried later: sections 13b and 40).  The posted patch covers the lappend paths only; the uncompiled one-element linsert at the end (Tcl_LinsertObjCmd) is not patched.  Whether the core team treats it as a bug
    is not known.  The text of the report is extras/typeloss_ticket.md.
 
 --- 0.2 results, kept for history (run 2026-10-12) ---
@@ -607,7 +607,7 @@ arrays only it is still true of the 1-bit code, which 0.3 keeps (the 66 old test
    the result is a 1-bit array.  Two integers, a float, a plain list or an integer beyond 64 bits are errors; -length is an error with an integer.
    Tests: bitarray.test 386 (op-9.1 to op-9.11, set-1.8a), Total 386, Passed 380, Skipped 6, Failed 0 (Windows expected: 386 / 379 / 7); op-9.11 compares random arrays of seven widths against a Tcl loop.
    faultinject.test 33 of 33 (fi-2.8 to fi-2.11: a failed allocation in op).  Also with -DBA_NO_BUILTINS and -DBA_FORCE_32BIT_LIMITS.
-   Coverage (extras/coverage_0.9.1 (superseded by coverage_0.9.4.txt)): 98.72% of 1172 production lines; the same 15 lines never run.
+   Coverage (extras/coverage_0.9.1 (superseded by coverage_0.9.5.txt)): 98.72% of 1172 production lines; the same 15 lines never run.
    Mutation: O41-O65 (25 for the new code): 24 caught, O55 first missed (op-9.8 changed).  O10 and O37 re-aimed.  282 mutants in the listing: 258 caught, 24 missed.  Not rerun: the 217 older mutants, and O01-O40 after
    the relational code was added.
    lset with no index: an attempt to make the hook accept a count of 0 crashed (heap corruption at proc exit) and was taken out; a minimal probe type with a free procedure crashed in the same way, the cause is not known
@@ -615,16 +615,16 @@ arrays only it is still true of the 1-bit code, which 0.3 keeps (the 66 old test
    Not run: Windows (MSVC), a 32-bit build.
 
 28. Version 0.9.2: `bitarray op a = a and $b` updates in place (2026-10-19, Linux container, gcc, Tcl 9.1.1)
-   The bare name of the destination variable as the first operand of a bitwise operator (no "$") is rewritten to the one-array command ("and a $b", "not a"), so it runs the same code as the older command and allocates nothing. "op a = $a and $b" is unchanged: it builds a new array, because the value $a may be held by something else. A destination name that looks like an integer is an error. Tests: 397 (391 passed, 6 skipped); op-10.1 to 10.11 (10.10 and 10.11: a shared array is copied first, b and list elements are not changed). Mutants O66, O67, O69, O70 caught (O68, the same condition for the logical operators, is equivalent: the in-place flag is only read by the bitwise rewrite, so it was dropped); O19 and O20 re-aimed at the moved lines and caught again. 286 mutants, 262 caught, 24 missed (the same 24). Coverage 98.73% of 1179 production lines (extras/coverage_0.9.4.txt). Variants -DBA_NO_BUILTINS and -DBA_FORCE_32BIT_LIMITS pass all 395 (before op-10.10 and 10.11). listbench: "bitop op-form: X = X and Z with bare X (in place)" 0.42 us at 1000 elements against 0.55 for "X = $X and Z" and 0.25 for the old "bitarray and X $Z".
+   The bare name of the destination variable as the first operand of a bitwise operator (no "$") is rewritten to the one-array command ("and a $b", "not a"), so it runs the same code as the older command and allocates nothing. "op a = $a and $b" is unchanged: it builds a new array, because the value $a may be held by something else. A destination name that looks like an integer is an error. Tests: 397 (391 passed, 6 skipped); op-10.1 to 10.11 (10.10 and 10.11: a shared array is copied first, b and list elements are not changed). Mutants O66, O67, O69, O70 caught (O68, the same condition for the logical operators, is equivalent: the in-place flag is only read by the bitwise rewrite, so it was dropped); O19 and O20 re-aimed at the moved lines and caught again. 286 mutants, 262 caught, 24 missed (the same 24). Coverage 98.73% of 1179 production lines (extras/coverage_0.9.5.txt). Variants -DBA_NO_BUILTINS and -DBA_FORCE_32BIT_LIMITS pass all 395 (before op-10.10 and 10.11). listbench: "bitop op-form: X = X and Z with bare X (in place)" 0.42 us at 1000 elements against 0.55 for "X = $X and Z" and 0.25 for the old "bitarray and X $Z".
 
 29. listbench scenario rows (2026-10-19, Linux container): the five README examples of bitarray op, no output, 8-bit data. 1,000,000 elements, list us against bit8 us: hot readings 211,928 / 3,050 (69x); values in range 316,103 / 10,066 (31x); what changed 287,372 / 6,598 (43x); validity flags 621,812 / 9,370 (66x); one life generation 424,244 / 10,837 (39x). The check (60 operations now) compares the answers.
 
 30. Version 0.9.3: integer operands for the bitwise operators and word-at-a-time 1-bit logical/relational operators (2026-10-19, Linux container, gcc, Tcl 9.1.1)
-   `bitarray op $a and 1`, `1 or $a`, `a = a and 6` ... Tests: 407 (401 passed, 6 skipped); op-11.1 to 11.10 (1-bit paths against the same data as 8-bit arrays, integer operands against a Tcl computation at every width, errors, in place, tails), fi-2.12 and 2.13 (35 fault tests). Variants -DBA_NO_BUILTINS and -DBA_FORCE_32BIT_LIMITS pass all 407; -Wall -Wextra clean. Coverage 98.81% of 1260 production lines (extras/coverage_0.9.4.txt), the same 15 lines never run. Mutation testing of the new code not done yet (286 mutants from 0.9.2 are unchanged). Benchmark at 1,000,000 elements, 1-bit column, list us / bit1 us: land 83,345 / 9.0; lor 96,243 / 13.7; lnot 49,561 / 16.8; == 53,239 / 24.4; != 59,254 / 22.8; < 57,563 / 22.7; > 0 41,319 / 14.0; xor integer 199,749 / 7.3. The 8-bit columns are as before (element at a time, 3 to 7 ms).
+   `bitarray op $a and 1`, `1 or $a`, `a = a and 6` ... Tests: 407 (401 passed, 6 skipped); op-11.1 to 11.10 (1-bit paths against the same data as 8-bit arrays, integer operands against a Tcl computation at every width, errors, in place, tails), fi-2.12 and 2.13 (35 fault tests). Variants -DBA_NO_BUILTINS and -DBA_FORCE_32BIT_LIMITS pass all 407; -Wall -Wextra clean. Coverage 98.81% of 1260 production lines (extras/coverage_0.9.5.txt), the same 15 lines never run. Mutation testing of the new code not done yet (286 mutants from 0.9.2 are unchanged). Benchmark at 1,000,000 elements, 1-bit column, list us / bit1 us: land 83,345 / 9.0; lor 96,243 / 13.7; lnot 49,561 / 16.8; == 53,239 / 24.4; != 59,254 / 22.8; < 57,563 / 22.7; > 0 41,319 / 14.0; xor integer 199,749 / 7.3. The 8-bit columns are as before (element at a time, 3 to 7 ms).
    Windows (extras/windows_0.9.3_run.txt, ET's machine): 407 tests, 400 passed, 7 skipped (6 core lappend, 1 procfs); sieve PASS; listbench check 61 operations, same answers. 1,000,000 elements, list us / bit1 us: land 93,393 / 12.7; lor 110,433 / 12.7; lnot 49,674 / 10.1; == 59,996 / 15.6; != 58,669 / 18.8; < 58,344 / 19.1; > 0 48,867 / 11.6; xor integer 250,178 / 16.8. 8-bit land 5,374 us. Scenarios list us / bit8 us: 268,393 / 4,469; 375,067 / 8,179; 359,953 / 5,927; 773,887 / 7,111; 541,043 / 11,247.
 
 31. Version 0.9.4: friendlier errors for bitarray op (2026-10-19, Linux container, gcc, Tcl 9.1.1)
-   The operator list only for a bad operator; messages for a missing operand, an operator in the wrong place and "name =" with nothing after it; computation errors named `bitarray op and:`. Tests: 412 (406 passed, 6 skipped); op-12.1 to 12.5 new, ten op tests' expected texts changed. Coverage 98.83% of 1282 production lines (extras/coverage_0.9.4.txt); the same 15 lines never run. The new code is not mutation tested (asked to wait).
+   The operator list only for a bad operator; messages for a missing operand, an operator in the wrong place and "name =" with nothing after it; computation errors named `bitarray op and:`. Tests: 412 (406 passed, 6 skipped); op-12.1 to 12.5 new, ten op tests' expected texts changed. Coverage 98.83% of 1282 production lines (extras/coverage_0.9.5.txt); the same 15 lines never run. The new code is not mutation tested (asked to wait).
 
 32. Mutation run of 0.9.4 and the new test op-11.11 (2026-10-20, Linux container, gcc, Tcl 9.1.1)
    Mutants O71-O126 (56) for the 0.9.3 and 0.9.4 code: OpValue 1-bit path, RelBits (all six comparisons, missing words, integer side), RelValue 1-bit path, ScalarWord, ScalarApply (every operator, andnot order),
@@ -637,3 +637,128 @@ arrays only it is still true of the 1-bit code, which 0.3 keeps (the 66 old test
    O10 (the names "xor" and "andnot" swapped in opNames) is equivalent now: opNames is used only to say which operator -length is refused for (not and lnot); the other entries are never printed.
    The older 24 missed are unchanged (unreachable code, stray bits, repeated checks).  Tests that failed on no mutant are listed in extras/mutation_summary.txt.
    Also with -DBA_NO_BUILTINS and -DBA_FORCE_32BIT_LIMITS: 414 / 408 / 6.  Not run: Windows (MSVC), a 32-bit build, valgrind on the 414 tests.
+
+33. Version 0.9.5: bitarray minmax (2026-10-20, Linux container, gcc, Tcl 9.1.1)
+   `bitarray minmax array ?first ?to? last?` -> {smallest largest}, one pass; MinMaxRange has a plain-typed loop for each of 8, 16, 32 (signed or not) and 64 bits, and the CountRange path for 1 bit.
+   Tests: minmax-1.1 to 4.1 (10): every width and lengths around a word against a plain list, the limits of each width at the first, last, middle and word-boundary positions, 1-bit cases, ranges with to / .. / end-relative / clamped,
+   the array unchanged, the abbreviations, the empty array and empty-range error, usage errors.  bitarray.test 424 (418 passed, 6 skipped; Windows expected 424 / 417 / 7).  Also with -DBA_NO_BUILTINS and -DBA_FORCE_32BIT_LIMITS: 424 / 418 / 6.  No compiler warnings (-Wall -Wextra).
+   valgrind --leak-check=full on the whole suite (bitarray.test, 424 tests): exit 0, no invalid reads or writes, no uninitialised values, 0 definitely and 0 indirectly lost; 245 "possibly lost" records, all from Tcl's own allocator, as in the earlier runs.
+   Stepper page re-embedded (node stepper_test.js: 14 scenes, 990 steps, 0 errors).  Coverage: extras/coverage_0.9.5.txt, 98.76% of 1,368 lines; the one new line that never runs is the BA_IMPOSSIBLE panic for a bad width in MinMaxRange.
+   Mutation testing of the new code: NOT done yet (ET asked to wait); the 342 mutants of section 32 were run before minmax existed.
+   Timing, 1,000,000 elements, one call (measured while valgrind was running in the background, so a little noisy): 1-bit 24 us; 8-bit 1,411 us; signed 8-bit 795 us; 16-bit 1,060 us; 32-bit 1,204 us; 64-bit 898 us.
+   The plain Tcl way for comparison (tcl::mathfunc::max {*}$a, the maximum alone, 8-bit): 28,457 us.  The loops are built with the package's usual -O2; with -O3 the compiler vectorizes the 8-bit loops (a standalone C test: 35 us).  No benchmark row in listbench.tcl.
+
+34. Faster builds (2026-10-20, Linux container, gcc): build.sh now defaults to -O3 (--safe gives -O2); --native is -O3 -march=native; build.bat --avx2 (/arch:AVX2, not run on Windows)
+   bitarray minmax, 1,000,000 elements, per call: 8-bit 847 us (-O2), 21 us (-O3), 14 us (-O3 -march=native); signed 8-bit 649 / 78 / 13; 16-bit 857 / 210 / 68; 32-bit 967 / 576 / 165; 64-bit 1,004 / 654 / 334.
+   ET decided the default should be the fastest build that is still portable, so build.sh now defaults to -O3 (checked first: bitarray.test 424 / 418 / 6 and faultinject.test 35 / 35 with -O3, valgrind --leak-check=full on the whole suite with the -O3 build: exit 0, no invalid reads or writes, 0 definitely and 0 indirectly lost, the same 245 possibly-lost Tcl records).  The mutation runs were -O2 builds.  bitarray.test: 424 / 418 / 6 with all three.  Each option prints a note at the end of the build; --native and --avx2 say the library may not be portable (illegal instruction on an older CPU).
+   Not measured: the other loops (count, next, the bitwise commands) with -O3; the full faultinject and valgrind runs with -O3; Windows.
+   listbench.tcl b, 100,000 and 1,000,000 elements, three builds (raw output: extras/bench_O2_O3_native_0.9.5.txt).  1,000,000 elements, us per call, -O2 / -O3 / native, 8-bit column: bitop and 103 / 38 / 36, or 103 / 39 / 64, xor 72 / 40 / 34, not 45 / 33 / 17;
+   land 3,176 / 2,045 / 2,593, lor 5,017 / 2,245 / 2,661, rel > 0 (integer) 4,251 / 2,734 / 2,866, rel == (arrays) 5,627 / 4,251 / 5,238; next 1 visiting every 7th: 40,438 / 21,045 / 21,853.  1-bit column: bitop and 8.2 / 3.6 / 4.1, or 10.3 / 3.6 / 5.4, andnot 11.6 / 3.1 / 4.2.
+   The other rows (the list commands, lsort, join, foreach) did not change in any consistent direction; differences of about 30% either way were seen in both directions and are noise at one run per build.  There is no minmax row in the benchmark.
+
+
+35. minmax in the list-vs-bitarray benchmark (0.9.5, -O3 default build)
+   extras/listbench.tcl has two new rows: "minmax of the whole array" and "minmax of a range (10 to end-10)"; plain-list side is
+   tcl::mathfunc::min/max {*}$list.  Answers are compared across columns like the other rows (62 operations compared, all agree).
+   At 1,000,000 elements: list 16.6 ms vs bitarray 0.03 ms (about 440x-740x).  Full run saved in extras/listbench_O3_0.9.5.txt.
+
+36. Signed 8-bit minmax (0.9.5, 2026-10-20)
+   ET's Windows run of the (since removed) extras/minmax_bench.tcl, now the minmax rows of extras/listbench.tcl (default /O2 and --avx2, 1,000,000 elements, us): width 1 19.5-22.4 / 12.1; 8 25 / 26-28;
+   -8 844-853 / 835-841; 16 46 / 50; 32 93 / 101; 64 770-778 / 776-795.  /arch:AVX2 gave no gain except width 1 (popcount); signed 8-bit
+   and 64-bit were scalar with MSVC.  MinMaxRange now handles signed 8-bit by flipping the top bit of each byte (x ^ 0x80), comparing
+   as unsigned and flipping the results back, so the loop is the unsigned one that vectorizes.  Linux gcc -O3: -8 now 43.6 us next to 35.0 us
+   for unsigned 8 on the same (busy) run.  Tests minmax-5.1 (extremes, lengths 1-70, starts) and minmax-5.2; 426 tests (420 passed, 6 skipped),
+   also with -DBA_NO_BUILTINS and -DBA_FORCE_32BIT_LIMITS.  Mutants not run (ET's instruction).  Windows result of the new code: not yet known.
+
+37. minmax rows for every width are now in extras/listbench.tcl (2026-10-20): "minmax of the whole array" and "of a range" (1-bit and 8-bit
+   columns), and "minmax of a signed 8-bit / 16-bit / 32-bit / 64-bit array" (the bit8 column holds the array of that width; data modes
+   wm8, w16, w32, w64).  extras/minmax_bench.tcl was removed (one benchmark to keep).  Linux gcc -O3, 1,000,000 elements, list us / bitarray us:
+   signed 8-bit 23,232 / 32; 16-bit 23,167 / 190; 32-bit 27,302 / 605; 64-bit 24,380 / 775 (busy machine; 66 operations compared, all answers agree).
+
+38. Word-at-a-time loops for land/lor/lnot and the relational operators on widths above 1 (2026-10-20, Linux gcc -O3, 1,000,000 elements)
+   Before: one loop for every width asking "what width is this?" for each element and setting one result bit at a time (OpValue, RelValue).
+   Now LogicWide and RelWide (fixed element type per loop, 64 results collected into a word) take the common cases: both arrays the
+   same width (and sign for the relational ones) and the second array not shorter, or an integer operand (an integer first swaps the
+   operator).  Everything else (different widths, -length zero with a shorter second array, 1-bit mixed with wider) keeps the old loop.
+   8-bit, list us / old bit8 us / new bit8 us:  land 83,990 / 4,773 / 1,265; lor 94,706 / 2,876 / 775; lnot 44,894 / 1,651 / 750;
+   rel == 4,636 / 818; != 4,512 / 1,036; < 5,371 / 1,045; > 0 (integer) 3,157 / 968; any different 4,602 / 1,035; all over 0 3,191 / 974.
+   About 3-6x faster.  Tests wide-rel-1.1, 1.2, wide-log-1.1, 1.2 (every width and sign, every operator, array/array and integer on either
+   side, lengths 1..200 around the 64-element word, mixed widths, -length zero): 430 tests (424 passed, 6 skipped).  The new tests also pass
+   on the old code (same answers), and four deliberately broken copies of the new code were each caught.  Also with -DBA_NO_BUILTINS and
+   -DBA_FORCE_32BIT_LIMITS.  Not done: SSE2 intrinsics (stage 2), valgrind, coverage, mutants (ET's instruction).  To back out: the 0.9.5
+   bitarray.c from before this change is the one in the previous zip.
+   Windows (ET, MSVC /O2, same machine, busier than usual: calibration 31-39 ms): tests 430 / 423 / 7, sieve PASS, listbench check 66 agree.
+   8-bit us before -> after: land 5,502 -> 1,130; lor 5,908 -> 1,014; lnot 2,695 -> 699; rel == 6,093 -> 780; != 6,302 -> 793; < 5,766 -> 805;
+   > 0 3,362 -> 718.  Scenario rows (list / bit8 ratio): 70x -> 338x, 46x -> 281x, 73x -> 473x, 99x -> 222x, 50x -> 235x.  Saved as
+   extras/windows_0.9.5_wideops_run.txt.  Decision: keep (ET to confirm).
+
+39. SSE2 for the 8-bit logical and relational operators (2026-10-20, Linux gcc -O3, 1,000,000 elements; ET: "can it be #if so by a build switch")
+   LogicSse8 and RelSse8 (bitarray.c) compare 16 bytes per step (pcmpeqb / pcmpgtb / pcmpltb, then movemask for 16 result bits); unsigned
+   bytes get their top bit flipped on both sides first; an integer outside the range of the elements, a shorter or differently typed second
+   array and every other width use the stage 1 loops.  Compiled only where SSE2 is known (__SSE2__, _M_X64, 32-bit x86 with SSE2);
+   -DBA_NO_SSE2 leaves it out (build.bat --no-sse2; build.sh: CFLAGS=-DBA_NO_SSE2).
+   8-bit us, stage 1 -> SSE2:  land 1,265 -> 153; lor 775 -> 156; lnot 750 -> 80; rel == 818 -> 110; != 1,036 -> 180; < 1,045 -> 114;
+   > 0 968 -> 83; any different 1,035 -> 169; all over 0 974 -> 112.  Scenarios (list / bit8): 1,260x, 1,021x, 2,141x, 205x, 960x.
+   Tests: wide-rel-1.3 added (8 and -8, lengths around 16 and 32, integers outside the element range, land/lor/lnot): 431 tests.  Passing
+   with and without -DBA_NO_SSE2, -DBA_NO_BUILTINS, -DBA_FORCE_32BIT_LIMITS.  Six deliberately broken copies of the SSE2 code (unsigned flip
+   dropped, <= not inverted, lor mask, integer range, chunk shift, tail start) were each caught.  Not done: 16/32-bit SSE2, valgrind,
+   coverage, mutants (ET's instruction), Windows run.  The version before SSE2 is the previous zip.
+   Windows (ET, MSVC /O2, same machine, calibration 32 ms): default build and build.bat --no-sse2 both 431 tests, 424 passed, 7 skipped, sieve PASS,
+   listbench 66 answers agree.  8-bit us SSE2 / without: land 129 / 1,023; lor 126 / 1,001; lnot 75 / 655; rel == 130 / 866; != 142 / 767; < 151 / 770;
+   > 0 142 / 711.  Scenario ratios (list / bit8) 1,653x, 1,217x, 2,200x, 225x, 1,345x with SSE2 against 381x, 262x, 450x, 209x, 230x without.
+   Saved as extras/windows_0.9.5_sse2_run.txt.  Observed: a mistyped "build.bat -no-sse2" printed "unknown argument" and stopped the build,
+   but the && chain still went on to run the tests on the old DLL (the batch file's exit code 2 did not stop it).  Checked by ET: errorlevel was 2, and "call build.bat -zzz && echo ..." does stop; it is the cmd quirk that && ignores the exit code of a batch file run without call.  README now says to use call in chains.
+
+40. Tcl 9.0.4 (2026-10-20; tag core-9-0-4 built in the container; bitarray 0.9.5 with Tcl_InitStubs relaxed to 9.0 in a scratch copy)
+   It compiles with no warnings and loads.  431 tests: 414 passed, 6 skipped, 11 failed; all 11 use lappend in the test body (elem-1.12, elem-1.13,
+   grow-1.1, grow-1.4, lpop-1.11, op-7.12, op-11.2, op-11.5, op-11.9, signed-1.5, signed-1.6): on 9.0.4 the value becomes an ordinary list after
+   lappend of plain arguments even in the tcltest bodies, where 9.1.1 keeps the type.  The six --testbug tests: four fail (1.1, 1.3, 1.4, 1.6),
+   two pass (1.2 and 1.5, the lappend {*}$list forms).  Every other command, including all the whole-array commands, passes, and the speed
+   is the same as on 9.1 (extras/tcl_9.0.4_run.txt).  Not done yet: the version check in bitarray.c is still 9.1.
+   Context table (measured with a script file run by tclsh, a bitarray after "lappend x 7" and "lappend x {*}$l"): 9.0.4 keeps the type at the top
+   level, loses it under uplevel #0, eval and in a proc; the {*}$l form keeps it everywhere including in a proc.  9.1.1 keeps it at the top level, under
+   uplevel #0 and eval; loses it in a proc for both forms.
+
+41. Mixed-width logical operators and SSE2 for 16-bit and 32-bit (2026-10-20, Linux gcc -O3, 1,000,000 elements)
+   (a) Scenario 4 (valid flags and big values) was slow (2,418 us, 205x a list on Windows) because X && B, an 8-bit array with a 1-bit array, took
+       the element loop.  LogicWide now takes a wider array with a 1-bit array in either order (land and lor are symmetric, so the wider array
+       goes first); the 1-bit side is read 16 bits at a time.  Scenario 4: 2,418 -> 299 us (2,108x a plain list on Linux).  Scenarios 1-5 on Linux:
+       1,931x, 1,455x, 2,074x, 2,108x, 1,361x.
+   (b) 16-bit and 32-bit: LogicSse (was LogicSse8) and RelSse use compare + saturating pack + movemask, 16 elements per step.
+       us per call: lnot 16-bit 999 -> 159, 32-bit 846 -> 232; "> 1000" on 16 bits 994 -> 272, "> 1000000" on 32 bits 979 -> 287.  Integers outside
+       the range of the elements, a differently typed second array and a shorter second array keep the plain loops.
+   Tests wide-log-1.3 (wide with 1-bit, either order, lengths around 16 and 64, -length zero with a longer operand on either side) and
+   wide-rel-1.4 (16 and 32 bits, integers at and beyond the ends of the range): 433 tests (427 passed, 6 skipped).  Same with -DBA_NO_SSE2,
+   -DBA_NO_BUILTINS, -DBA_FORCE_32BIT_LIMITS, and the previous code passes the new tests.  Deliberately broken copies: 5 of 6 (mixed width) and 9 of 10 (16/32-bit)
+   were caught; the ones not caught only divert a case to the plain loop, which gives the same answers (disabling the operand swap; the lower bound of
+   the integer range check).  Not done: valgrind, coverage, mutants (ET's instruction), a Windows run.
+   Windows (ET, MSVC /O2, calibration 33-37 ms, steady within each run): default build and --no-sse2 both 433 tests, 426 passed, 7 skipped, sieve PASS, listbench 70 answers agree.
+   us SSE2 / without: 8-bit land 151 / 1,018, lor 172 / 1,020, lnot 102 / 750, rel == 140 / 803, != 138 / 788, < 146 / 787, > 0 137 / 755;
+   16-bit lnot 118 / 701, "> 1000" 308 / 764; 32-bit lnot 146 / 761, "> 1000000" 554 / 818 (the smallest gain; Linux 287).  Scenarios (list / bit8):
+   1,733x, 1,212x, 2,265x, 2,209x, 1,339x with SSE2; 355x, 262x, 459x, 389x, 252x without.  Saved as extras/windows_0.9.5_sse16_32_run.txt
+   and extras/windows_0.9.5_sse16_32_nosse2_run.txt.
+
+42. Full mutation run on 0.9.5 (2026-10-20, Tcl 9.1.1 build, gcc -O2, SSE2 build, 2 jobs, about 55 minutes)
+   407 mutants: the 342 of the 0.9.4 run plus 65 new ones for the 0.9.5 code (signed 8-bit minmax, ZeroMask16, LogicSse, LogicWide,
+   RelSse8, Cmp16, Cmp32, RelSse, RelWide, RelSwap and the RelValue call).  374 caught, 32 missed, 1 pattern stale (I01: the text it
+   matched is gone).  Of the 65 new ones 63 were caught.  The two missed were real gaps: X30 (LogicWide swaps for a longer 1-bit array
+   first although the wide array is shorter) and X93 (RelWide le on two 64-bit arrays: no test had equal elements).  Added
+   test wide-log-1.3 lines (1-bit array first, shorter wide second, land and lor) and test wide-rel-1.5 (equal elements in
+   array-against-array compares of every width): 434 tests (428 passed, 6 skipped on 9.1.1; 417 / 17 on 9.0.4); re-running just X30 and X93
+   catches both.  Compared with the 0.9.4 run one more old mutant is missed: O31 (OpValue lnot does not invert), because the
+   element-by-element lnot is now unreachable (LogicWide takes every lnot of a wider array, the word path every 1-bit one); it is dead code.
+   Not mutated: the plain 8/16/32-bit word loops in LogicWide and RelWide, which an SSE2 build never runs (they run, and pass the tests,
+   with -DBA_NO_SSE2).  The run was on 9.1 only (ET's decision), the tests on 9.0.4 and 9.0.2 pass with the 11 lappend tests skipped.
+   Files: extras/mutation_summary.txt, mutants.json, bitarray.mutants, bitarray.mutants.stacked.
+
+43. Version 1.0 (2026-10-20)
+   The code of 0.9.5 with BA_VERSION and pkgIndex.tcl set to 1.0 and the version-1.1 test changed to accept a two-part version.  Linux 9.1.1:
+   434 tests, 428 passed, 6 skipped, 0 failed; Tcl 9.0.4: 417 / 17 / 0.  Windows (ET, 18:08, the code before the version change): 9.1.1 434 / 427 / 7,
+   9.0.2 434 / 416 / 18 (extras/windows_0.9.5_434_run.txt).  Coverage of the final code: extras/coverage_1.0.txt (98.66% of 1571 lines).
+   The mutation run (RESULTS 42), valgrind and the coverage were done on the code before the version change; nothing else differs.
+
+44. File and text conversions re-measured (2026-10-20, Linux, extras/filebench.tcl, median of three runs, one route per process)
+   1,040,000-byte file: frombytes 478 us; binary scan cu* + newfrom -width 8 37,942 us (12 MB); split + scan %c loop + newfrom 787,125 us (174 MB).
+   tobytes 546 us; binary format cu* 39,395 us (54 MB).  1,040,000-character text: fromchars -width 16 9,593 us; split + lmap scan %c + newfrom 733,205 us (174 MB);
+   tochars 3,856 us (6 MB); join of lmap format %c 540,565 us (87 MB).  These replace the one-run figures of the earlier section (543 / 42,326 / 648,298 us ...)
+   in performance_analysis.md section 4; the code that was timed is shown there.

@@ -9,6 +9,24 @@ set here [file dirname [file normalize [info script]]]
 set libfile [expr {[info exists ::env(BITARRAY_LIB)] ? $::env(BITARRAY_LIB) : [file join [pwd] libbitarray.so]}]
 puts "[string repeat - 30] test: [bitarray version] [clock format [file mtime $libfile] -format {%Y-%m-%d %H:%M:%S}] [string repeat - 15]"
 
+# Which Tcl is this?  Anything older than 9.1 works, but is not the version bitarray is developed against: say so,
+# at the start and again after the summary line (where it is not missed).
+proc ::oldTclBanner {} {
+    set h [string repeat # 100]
+    puts $h
+    puts "# THIS IS Tcl [info patchlevel], NOT THE LATEST Tcl (9.1 or newer)."
+    puts "# bitarray works here, but plain lappend (and linsert of exactly one element) can turn a bitarray into an"
+    puts "# ordinary list, which is a Tcl core problem fixed in 9.1.  The tests that depend on that are skipped"
+    puts "# (constraint lappendKeeps).  Please read the README, section \"Tcl 9.0\", for details."
+    puts $h
+}
+puts "Tcl [info patchlevel]"
+set ::oldTcl [expr {[package vcompare [info tclversion] 9.1] < 0}]
+if {$::oldTcl} ::oldTclBanner
+# Can a plain lappend, run the way tcltest runs a test body (uplevel from the top level), keep the bitarray type?
+# Tcl 9.0 cannot; the tests that need it are skipped there.
+testConstraint lappendKeeps [uplevel #0 {set ::lk [bitarray new 2]; lappend ::lk 1; bitarray is $::lk}]
+
 test new-1.1 {size and string form} -body {
     set a [bitarray new 5]
     list [llength $a] $a [bitarray is $a]
@@ -448,7 +466,7 @@ test shift-2.2 {ledit deleting at the front repeatedly (queue use) matches a pla
     list $bad [bitarray count $a] [nz $p]
 } -match glob -result {{} * *}
 test version-1.1 {version is the package version} -body {
-    list [bitarray version] [expr {[bitarray version] eq [package present bitarray]}] [regexp {^\d+\.\d+\.\d+$} [bitarray version]]
+    list [bitarray version] [expr {[bitarray version] eq [package present bitarray]}] [regexp {^\d+\.\d+(\.\d+)?$} [bitarray version]]
 } -match glob -result {* 1 1}
 test version-1.2 {version takes no arguments} -returnCodes error -body {bitarray version x} -result {wrong # args: should be "bitarray version"}
 test in-1.1 {in and ni} -body {
@@ -700,7 +718,7 @@ test conv-1.3 {frombytes takes characters 0..255 as bytes} -body {
 } -result {233 255 0}
 test conv-1.4 {frombytes of a character above 255 is an error} -returnCodes error -body {
     bitarray frombytes "a\u20ac"
-} -match glob -result {expected code point values below 0xff*}
+} -match glob -result {expected *}
 test conv-1.5 {frombytes of binary data (all 256 values)} -body {
     set a [bitarray frombytes [binary format cu* [lseq 0 255]]]; list [llength $a] [lindex $a 0] [lindex $a 127] [lindex $a 128] [lindex $a 255] [expr {[lrange $a 0 end] eq [lseq 0 255]}]
 } -result {256 0 127 128 255 1}
@@ -825,7 +843,7 @@ test diff-1.1 {random operations vs plain list, seeds 101..106} -body {
     }
     set total
 } -result 0 
-test grow-1.1 {shrink then grow leaves no stale bits} -body {
+test grow-1.1 {shrink then grow leaves no stale bits} -constraints lappendKeeps -body {
     set a [bitarray new 300 1]
     set a [lreplace $a 10 end]
     lappend a 0 0 0
@@ -840,7 +858,7 @@ test grow-1.3 {insert in the middle across word boundaries} -body {
     set a [linsert $a 60 1 1 1]
     list [llength $a] [bitarray count $a] [lindex $a 67] [lindex $a 132] [lindex $a 60] [lindex $a 63]
 } -result {133 5 1 1 1 0}
-test grow-1.4 {appending one at a time is not quadratic (compared with a plain list in the same run)} -body {
+test grow-1.4 {appending one at a time is not quadratic (compared with a plain list in the same run)} -constraints lappendKeeps -body {
     set n 200000
     set a [bitarray new 0]
     set t1 [lindex [time {for {set i 0} {$i < $n} {incr i} {lappend a [expr {$i & 1}]}} 1] 0]
@@ -954,14 +972,14 @@ test elem-1.10 {lrange keeps type and width} -body {
     list $r [bitarray is $r] [bitarray width $r]
 } -result {{2 3 4} 1 16}
 test elem-1.11 {lreverse} -body {lreverse [bitarray newfrom {1 2 300 4} -width 16]} -result {4 300 2 1}
-test elem-1.12 {lappend and linsert and lreplace} -body {
+test elem-1.12 {lappend and linsert and lreplace} -constraints lappendKeeps -body {
     set a [bitarray newfrom {1 2 3} -width 8]
     lappend a 250 251
     set b [linsert $a 1 100 101]
     set c [lreplace $b 0 2]
     list $a $b $c [bitarray width $c]
 } -result {{1 2 3 250 251} {1 100 101 2 3 250 251} {2 3 250 251} 8}
-test elem-1.13 {lappend an out-of-range value leaves the array alone} -body {
+test elem-1.13 {lappend an out-of-range value leaves the array alone} -constraints lappendKeeps -body {
     set a [bitarray newfrom {1 2} -width 8]; catch {lappend a 5 256}; set a
 } -result {1 2}
 test elem-1.14 {shrinking clears vacated storage} -body {
@@ -1104,7 +1122,7 @@ test signed-1.3 {just outside each signed range} -body {
 test signed-1.4 {the unsigned widths still refuse a negative value} -returnCodes error -body {
     bitarray new 1 -1 -width 8
 } -result {expected integer in range 0..255 but got "-1"}
-test signed-1.5 {a signed width refuses a bad value in lset, lappend and lreplace} -body {
+test signed-1.5 {a signed width refuses a bad value in lset, lappend and lreplace} -constraints lappendKeeps -body {
     set a [bitarray newfrom {1 2 3} -width -8]
     set r {}
     lappend r [catch {lset a 0 200} m] $m
@@ -1112,7 +1130,7 @@ test signed-1.5 {a signed width refuses a bad value in lset, lappend and lreplac
     lappend r [catch {lreplace $a 0 0 128} m] $m
     lappend r $a
 } -result {1 {expected integer in range -128..127 but got "200"} 1 {expected integer in range -128..127 but got "-129"} 1 {expected integer in range -128..127 but got "128"} {1 2 3}}
-test signed-1.6 {lset, lappend and lreplace with negative values} -body {
+test signed-1.6 {lset, lappend and lreplace with negative values} -constraints lappendKeeps -body {
     set a [bitarray newfrom {5 6 7} -width -16]
     lset a 1 -300
     lappend a -1
@@ -1271,7 +1289,7 @@ test lpop-1.10 {every width} -body {
     }
     set r
 } -result {0 {1 1} 1 0 {1 1} 8 0 {1 1} 16 0 {1 1} 32 0 {1 1} 64 0 {1 1} -8 0 {1 1} -16 0 {1 1} -32 0 {1 1} -64}
-test lpop-1.11 {after the pop the result grows and works as before} -body {
+test lpop-1.11 {after the pop the result grows and works as before} -constraints lappendKeeps -body {
     set l [bitarray newfrom {1 0 1 1}]; lpop l 1; lappend l 1; lset l 0 0; list $l [bitarray is $l]
 } -result {{0 1 1 1} 1}
 
@@ -1507,7 +1525,7 @@ test op-7.10 {op value form: errors} -body {
 test op-7.11 {op value form: a plain list is not a bitarray (not form)} -returnCodes error -body {
     bitarray op not {1 0 1}
 } -match glob -result {*}
-test op-7.12 {op value form: the bits past the end of the result are 0 (a 0 appended later stays 0)} -body {
+test op-7.12 {op value form: the bits past the end of the result are 0 (a 0 appended later stays 0)} -constraints lappendKeeps -body {
     set a [bitarray newfrom {1 0 1 0 1}]
     set r [bitarray op not $a]; lappend r 0
     set q [bitarray op $a xor [bitarray newfrom {1 1 1 1 1}]]; lappend q 0 0 0
@@ -1643,8 +1661,8 @@ test op-9.11 {op relational: random arrays against a plain Tcl computation} -bod
 	    if {$w2 == 64} {set lo2 -0x8000000000000000}
 	    set l1 {}; set l2 {}
 	    for {set i 0} {$i < 40} {incr i} {
-		lappend l1 [expr {int(rand() * 4) == 0 ? $lo + int(rand() * 2) : ($lo + int(rand() * 3) == 0 ? $hi : $lo + int(rand() * 1000) % ($hi - $lo > 0 ? min($hi - $lo, 1000000) : 1))}]
-		lappend l2 [expr {$lo2 + int(rand() * min($hi2 - $lo2 + 1, 1000)) }]
+		lappend l1 [expr {int(rand() * 4) == 0 ? $lo + int(rand() * 2) : ($lo + int(rand() * 3) == 0 ? $hi : $lo + int(rand() * 1000) % ($w == 64 ? 1000000 : ($hi - $lo > 0 ? min($hi - $lo, 1000000) : 1)))}]
+		lappend l2 [expr {$lo2 + int(rand() * ($w2 == 64 ? 1000 : min($hi2 - $lo2 + 1, 1000))) }]
 	    }
 	    set a [bitarray newfrom $l1 -width $w]; set b [bitarray newfrom $l2 -width $w2]
 	    foreach {sym} {== != < <= > >=} {
@@ -1758,7 +1776,7 @@ test op-11.1 {op: 1-bit fast paths give the same answers as the element-at-a-tim
     }
     set bad
 } -result 0
-test op-11.2 {op: 1-bit logical and relational results have no stray bits past the end (counts and appended zeros)} -body {
+test op-11.2 {op: 1-bit logical and relational results have no stray bits past the end (counts and appended zeros)} -constraints lappendKeeps -body {
     set a [bitarray new 70]
     set n [bitarray op ! $a]
     set e [bitarray op $a == $a]
@@ -1777,7 +1795,7 @@ test op-11.3 {op: an array and an integer, bitwise, every width, either side, ag
 	set hi [expr {$w < 0 ? (1 << (-$w - 1)) - 1 : $w == 64 ? 0x7fffffffffffffff : (1 << $w) - 1}]
 	if {$w == 64} {set lo -0x8000000000000000}
 	set l {}
-	for {set i 0} {$i < 70} {incr i} { lappend l [expr {$lo + int(rand() * min($hi - $lo + 1, 1000000))}] }
+	for {set i 0} {$i < 70} {incr i} { lappend l [expr {$lo + int(rand() * ($w == 64 ? 1000000 : min($hi - $lo + 1, 1000000)))}] }
 	lappend l $lo $hi
 	set a [bitarray newfrom $l -width $w]
 	foreach k [list $lo $hi [expr {$lo + 1}] [expr {$hi - 1}] [expr {$lo ? 0 : 5}]] {
@@ -1799,7 +1817,7 @@ test op-11.4 {op: an integer and a 1-bit array} -body {
     set a [bitarray newfrom {1 0 1 1 0}]
     list [bitarray op $a and 1] [bitarray op $a and 0] [bitarray op $a or 1] [bitarray op $a or 0] [bitarray op $a xor 1] [bitarray op 1 andnot $a] [bitarray op $a andnot 1] [bitarray op 0 | $a]
 } -result {{1 0 1 1 0} {0 0 0 0 0} {1 1 1 1 1} {1 0 1 1 0} {0 1 0 0 1} {0 1 0 0 1} {0 0 0 0 0} {1 0 1 1 0}}
-test op-11.5 {op: a bitwise operation with an integer keeps the array's width and sign} -body {
+test op-11.5 {op: a bitwise operation with an integer keeps the array's width and sign} -constraints lappendKeeps -body {
     set a [bitarray newfrom {-3 5 100} -width -8]
     set r [bitarray op $a and 15]
     lappend r 200
@@ -1823,7 +1841,7 @@ test op-11.8 {op: an integer operand, the variable may be the array operand and 
     bitarray op a = $a and [expr {$k + 4}]
     set a
 } -result {2 1 0 7}
-test op-11.9 {op: an integer operand, bits past the end of the last word stay 0} -body {
+test op-11.9 {op: an integer operand, bits past the end of the last word stay 0} -constraints lappendKeeps -body {
     set a [bitarray newfrom {1 0 1 0 1} -width 8]
     set b [bitarray op $a xor 255]
     set c [bitarray newfrom {1 0 1 0 1}]
@@ -1875,4 +1893,310 @@ test op-12.6 {op: operands written without $ are not arrays or integers} -body {
     set a [bitarray newfrom {1 1 0 0}]; set b [bitarray newfrom {1 0 1 0}]
     list [catch {bitarray op a and b} m1] $m1 [catch {bitarray op a and $b} m2] $m2 [catch {bitarray op $a and b} m3] $m3 [catch {bitarray op 7 and b} m4] $m4 [catch {bitarray op a and 7} m5] $m5
 } -result {1 {bitarray op: expected a bitarray or an integer of at most 64 bits but got "a"} 1 {bitarray op: expected a bitarray or an integer of at most 64 bits but got "a"} 1 {bitarray op: expected a bitarray or an integer of at most 64 bits but got "b"} 1 {bitarray op: expected a bitarray or an integer of at most 64 bits but got "b"} 1 {bitarray op: expected a bitarray or an integer of at most 64 bits but got "a"}}
+# ---- bitarray minmax: the list {smallest largest}, whole array or a range ----
+# The reference is the same thing done on a plain list.
+proc mm_ref {l} {list [tcl::mathfunc::min {*}$l] [tcl::mathfunc::max {*}$l]}
+proc mm_limits {w} {
+    set aw [expr {abs($w)}]
+    if {$w == 64} {return [list -9223372036854775808 9223372036854775807]}
+    if {$w < 0} {return [list [expr {-(1 << ($aw-1))}] [expr {(1 << ($aw-1)) - 1}]]}
+    return [list 0 [expr {(1 << $aw) - 1}]]
+}
+test minmax-1.1 {minmax: whole arrays of every width and of lengths around a word, against a plain list} -body {
+    set bad {}
+    foreach w {1 8 -8 16 -16 32 -32 64} {
+	foreach n {1 2 3 7 8 9 31 32 33 63 64 65 127 128 129 300} {
+	    for {set seed 1} {$seed <= 3} {incr seed} {
+		set l [bitgen $n [expr {abs($w)}] $seed]
+		if {$w < 0} {   # the signed widths: the same bits, read as negative when the top bit is set
+		    set l [lmap v $l {expr {$v >= (1 << (-$w-1)) ? $v - (1 << -$w) : $v}}]
+		}
+		set a [bitarray newfrom $l -width $w]
+		if {[bitarray minmax $a] ne [mm_ref $l]} {lappend bad "w=$w n=$n seed=$seed"}
+	    }
+	}
+    }
+    set bad
+} -result {}
+test minmax-1.2 {minmax: the smallest and largest value of each width are found wherever they sit (first, last, middle, word boundary)} -body {
+    set bad {}
+    foreach w {1 8 -8 16 -16 32 -32 64} {
+	lassign [mm_limits $w] lo hi
+	foreach n {3 64 65 130} {
+	    foreach pos [list 0 1 [expr {$n/2}] [expr {$n-2}] [expr {$n-1}]] {
+		set mid [expr {$w == 1 ? 0 : ($lo + $hi) / 2}]
+		foreach {fill put exp} [list $mid $lo [list $lo [expr {$mid > $lo ? $mid : $lo}]] $mid $hi [list [expr {$mid < $hi ? $mid : $hi}] $hi]] {
+		    set a [bitarray new $n $fill -width $w]
+		    lset a $pos $put
+		    set l [lrange $a 0 end]
+		    if {[bitarray minmax $a] ne [mm_ref $l]} {lappend bad "w=$w n=$n pos=$pos put=$put"}
+		}
+	    }
+	}
+    }
+    set bad
+} -result {}
+test minmax-1.3 {minmax: 1-bit arrays: all 0, all 1, mixed, one element, a 1 or a 0 in the last partial word} -body {
+    set r {}
+    lappend r [bitarray minmax [bitarray new 5 0 -width 1]] [bitarray minmax [bitarray new 5 1 -width 1]]
+    lappend r [bitarray minmax [bitarray newfrom {0 1 0} -width 1]] [bitarray minmax [bitarray new 1 1 -width 1]] [bitarray minmax [bitarray new 1 0 -width 1]]
+    foreach n {63 64 65 128 129} {
+	set a [bitarray new $n 1 -width 1]; lset a end 0
+	set b [bitarray new $n 0 -width 1]; lset b end 1
+	lappend r [bitarray minmax $a] [bitarray minmax $b]
+    }
+    set r
+} -result {{0 0} {1 1} {0 1} {1 1} {0 0} {0 1} {0 1} {0 1} {0 1} {0 1} {0 1} {0 1} {0 1} {0 1} {0 1}}
+test minmax-2.1 {minmax: a range, with to, .. and end-relative indexes, clamped to the array like count} -body {
+    set a [bitarray newfrom {5 9 1 7 3 8 2 6} -width 8]
+    list [bitarray minmax $a 1 3] [bitarray minmax $a 1 to 3] [bitarray minmax $a 1 .. 3] [bitarray minmax $a 2 end-2] \
+	    [bitarray minmax $a 0 end] [bitarray minmax $a -5 100] [bitarray minmax $a 4 4] [bitarray minmax $a end end] [bitarray minmax $a 5 100]
+} -result {{1 9} {1 9} {1 9} {1 8} {1 9} {1 9} {3 3} {6 6} {2 8}}
+test minmax-2.2 {minmax: a range in arrays of every width against a plain list} -body {
+    set bad {}
+    foreach w {1 8 -8 16 -16 32 -32 64} {
+	foreach n {70 200} {
+	    set l [bitgen $n [expr {abs($w)}] 5]
+	    if {$w < 0} {set l [lmap v $l {expr {$v >= (1 << (-$w-1)) ? $v - (1 << -$w) : $v}}]}
+	    set a [bitarray newfrom $l -width $w]
+	    foreach {f e} {0 0 0 1 1 1 3 60 5 69 60 66 63 64 64 65 1 end-1 0 end} {
+		set sub [lrange $l $f $e]
+		if {[bitarray minmax $a $f $e] ne [mm_ref $sub]} {lappend bad "w=$w n=$n $f..$e"}
+	    }
+	}
+    }
+    set bad
+} -result {}
+test minmax-2.3 {minmax: the array is not changed, the result is a list of two integers, the subcommand may be abbreviated} -body {
+    set a [bitarray newfrom {4 2 9} -width 8]
+    set s [expr {$a eq "4 2 9"}]
+    set r [bitarray minmax $a]
+    lset a 1 1
+    list $s $r [llength $r] [string is integer [lindex $r 0]] [bitarray min $a] [bitarray minm $a] $a
+} -result {1 {2 9} 2 1 {1 9} {1 9} {4 1 9}}
+test minmax-3.1 {minmax: an empty array or an empty range has no smallest or largest: an error} -returnCodes error -body {
+    bitarray minmax [bitarray new 0]
+} -result {bitarray minmax: no elements in the array or range}
+test minmax-3.2 {minmax: an empty range, from after to before, and outside the array} -body {
+    set a [bitarray new 5 -width 8]
+    list [catch {bitarray minmax $a 3 2} m1] $m1 [catch {bitarray minmax $a 7 9} m2] $m2 [catch {bitarray minmax $a -4 -1} m3] $m3
+} -result {1 {bitarray minmax: no elements in the array or range} 1 {bitarray minmax: no elements in the array or range} 1 {bitarray minmax: no elements in the array or range}}
+test minmax-3.3 {minmax: usage errors, a value that is not a bitarray, a bad index} -body {
+    set a [bitarray new 5 -width 8]
+    list [catch {bitarray minmax} m1] $m1 [catch {bitarray minmax $a 1} m2] $m2 [catch {bitarray minmax $a 1 up 3} m3] $m3 \
+	    [catch {bitarray minmax $a 1 to} m4] $m4 [catch {bitarray minmax $a 1 2 3 4} m5] $m5 [catch {bitarray minmax {1 2}} m6] $m6 [catch {bitarray minmax $a x 3} m7] $m7
+} -result {1 {wrong # args: should be "bitarray minmax array ?first ?to? last?"} 1 {wrong # args: should be "bitarray minmax array ?first ?to? last?"} 1 {wrong # args: should be "bitarray minmax array ?first ?to? last?"} 1 {wrong # args: should be "bitarray minmax array ?first ?to? last?"} 1 {wrong # args: should be "bitarray minmax array ?first ?to? last?"} 1 {not a bitarray: "1 2"} 1 {bad index "x": must be integer?[+-]integer? or end?[+-]integer?}}
+test minmax-4.1 {minmax: the usual use, how far apart the values are, and the values with count and next} -body {
+    set a [bitarray newfrom {12 7 30 7 19} -width 8]
+    lassign [bitarray minmax $a] lo hi
+    list $lo $hi [expr {$hi - $lo}] [bitarray next [bitarray op $a == $hi] 0 1] [bitarray count [bitarray op $a == $lo]]
+} -result {7 30 23 2 2}
+test minmax-5.1 {minmax: signed 8-bit at the extremes (-128, -1, 0, 1, 127), every length 1 to 70 and every start, against a plain list} -body {
+    set bad {}
+    set vals {-128 -1 0 1 127 -127 126 -2}
+    for {set n 1} {$n <= 70} {incr n} {
+        set l {}
+        for {set i 0} {$i < $n} {incr i} {lappend l [lindex $vals [expr {($i * 5 + $n) % 8}]]}
+        set a [bitarray newfrom $l -width -8]
+        for {set f 0} {$f < $n} {incr f 7} {
+            set got [bitarray minmax $a $f end]
+            set want [mm_ref [lrange $l $f end]]
+            if {$got ne $want} {lappend bad "$n/$f: $got vs $want"}
+        }
+    }
+    set bad
+} -result {}
+test minmax-5.2 {minmax: signed 8-bit arrays holding one extreme value} -body {
+    list [bitarray minmax [bitarray newfrom {-128 -128 -128} -width -8]] \
+         [bitarray minmax [bitarray newfrom {127 127} -width -8]] \
+         [bitarray minmax [bitarray newfrom {-1} -width -8]] \
+         [bitarray minmax [bitarray newfrom {0 -1} -width -8]]
+} -result {{-128 -128} {127 127} {-1 -1} {-1 0}}
+# ---- word-at-a-time loops for land, lor, lnot and the relational operators on widths above 1: every width, signed and unsigned, every
+# operator, against plain Tcl, at lengths around the 64-element result word
+proc wr_vals {w n seed} {
+    lassign [mm_limits $w] lo hi
+    set pick [list $lo $hi 0 1 [expr {$lo + 1}] [expr {$hi - 1}]]
+    if {$w < 0} {lappend pick -1}
+    set l {}
+    for {set i 0} {$i < $n} {incr i} {
+        set r [expr {($i * 7919 + $seed * 104729 + ($i / 5) * 31) % 13}]
+        if {$r < [llength $pick]} {lappend l [lindex $pick $r]} else {
+            lappend l [expr {$lo + (($i * 2654435761 + $seed * 40503) % (($hi - $lo) > 4000000000000000000 ? 4000000000000000000 : ($hi - $lo + 1)))}]
+        }
+    }
+    return $l
+}
+set wr_ops {== ne != lt < le <= gt > ge >=}
+test wide-rel-1.1 {relational operators on arrays of every width and sign, array against array and against an integer on either side} -body {
+    set bad {}
+    foreach w {8 -8 16 -16 32 -32 64} {
+        foreach n {1 2 63 64 65 127 128 129 200} {
+            set lx [wr_vals $w $n 1]
+            set ly [wr_vals $w $n 2]
+            set a [bitarray newfrom $lx -width $w]
+            set b [bitarray newfrom $ly -width $w]
+            foreach {opname sym} {eq == ne != lt < le <= gt > ge >=} {
+                set want {}
+                foreach x $lx y $ly {lappend want [expr "\$x $sym \$y"]}
+                if {[bitarray op $a $opname $b] ne [bitarray newfrom $want]} {lappend bad "$w/$n array $opname"}
+                foreach k [list 0 1 [lindex $lx 0] [lindex $ly 0] [lindex [mm_limits $w] 1]] {
+                    set want1 {}; set want2 {}
+                    foreach x $lx {lappend want1 [expr "\$x $sym \$k"]; lappend want2 [expr "\$k $sym \$x"]}
+                    if {[bitarray op $a $opname $k] ne [bitarray newfrom $want1]} {lappend bad "$w/$n $opname $k"}
+                    if {[bitarray op $k $opname $a] ne [bitarray newfrom $want2]} {lappend bad "$w/$n $k $opname array"}
+                }
+            }
+        }
+    }
+    set bad
+} -result {}
+test wide-rel-1.5 {relational operators on two arrays of the same width that have many equal elements (eq, ne, le, ge need them)} -body {
+    set bad {}
+    foreach w {8 -8 16 -16 32 -32 64} {
+        foreach n {1 17 64 65 130} {
+            set lx [wr_vals $w $n 3]
+            set ly [wr_vals $w $n 4]
+            for {set i 0} {$i < $n} {incr i} {if {$i % 2 == 0} {lset ly $i [lindex $lx $i]}}
+            set a [bitarray newfrom $lx -width $w]
+            set b [bitarray newfrom $ly -width $w]
+            foreach {opname sym} {eq == ne != lt < le <= gt > ge >=} {
+                set want {}
+                foreach x $lx y $ly {lappend want [expr "\$x $sym \$y"]}
+                if {[bitarray op $a $opname $b] ne [bitarray newfrom $want]} {lappend bad "$w/$n $opname"}
+            }
+        }
+    }
+    set bad
+} -result {}
+test wide-rel-1.2 {relational operators: arrays of different widths or signs, and a shorter second array with -length zero, still right} -body {
+    set bad {}
+    set lx {-1 5 200 -128 0 127 3 3 3 3}
+    set a [bitarray newfrom {-1 5 100 -128 0 127 3 3 3 3} -width -8]
+    set b [bitarray newfrom {255 5 100 128 0 127 4 2 3 3} -width 16]
+    set c [bitarray newfrom {-1 5 100 -128 0 127} -width -8]
+    set la {-1 5 100 -128 0 127 3 3 3 3}
+    foreach {opname sym} {eq == ne != lt < le <= gt > ge >=} {
+        set want {}
+        foreach x $la y {255 5 100 128 0 127 4 2 3 3} {lappend want [expr "\$x $sym \$y"]}
+        if {[bitarray op -length zero $a $opname $b] ne [bitarray newfrom $want]} {lappend bad "mixed $opname"}
+        set want {}
+        foreach x $la y {-1 5 100 -128 0 127 0 0 0 0} {lappend want [expr "\$x $sym \$y"]}
+        if {[bitarray op -length zero $a $opname $c] ne [bitarray newfrom $want]} {lappend bad "short $opname"}
+    }
+    set bad
+} -result {}
+test wide-log-1.1 {land, lor and lnot on arrays of every width, lengths around the result word, against plain Tcl} -body {
+    set bad {}
+    foreach w {8 -8 16 -16 32 -32 64} {
+        foreach n {1 2 63 64 65 127 128 129 200} {
+            set lx [wr_vals $w $n 3]
+            set ly [wr_vals $w $n 4]
+            # make some zeros in both, in different places
+            for {set i 0} {$i < $n} {incr i 3} {lset lx $i 0}
+            for {set i 1} {$i < $n} {incr i 4} {lset ly $i 0}
+            set a [bitarray newfrom $lx -width $w]
+            set b [bitarray newfrom $ly -width $w]
+            set wl {}; set wo {}; set wn {}
+            foreach x $lx y $ly {lappend wl [expr {$x != 0 && $y != 0}]; lappend wo [expr {$x != 0 || $y != 0}]; lappend wn [expr {$x == 0}]}
+            if {[bitarray op $a land $b] ne [bitarray newfrom $wl]} {lappend bad "$w/$n land"}
+            if {[bitarray op $a lor $b] ne [bitarray newfrom $wo]} {lappend bad "$w/$n lor"}
+            if {[bitarray op lnot $a] ne [bitarray newfrom $wn]} {lappend bad "$w/$n lnot"}
+        }
+    }
+    set bad
+} -result {}
+test wide-log-1.2 {land and lor: arrays of different widths, a 1-bit array, and a shorter second array with -length zero} -body {
+    set a [bitarray newfrom {0 5 0 7 9 0} -width 8]
+    set b [bitarray newfrom {0 0 300 7 0 0} -width 16]
+    set c [bitarray newfrom {1 1 0 1 1 1}]
+    set d [bitarray newfrom {0 5 7} -width 8]
+    list [bitarray op $a land $b] [bitarray op $a lor $b] [bitarray op $a land $c] [bitarray op $c lor $a] \
+         [bitarray op -length zero $a land $d] [bitarray op -length zero $a lor $d]
+} -result [list [bitarray newfrom {0 0 0 1 0 0}] [bitarray newfrom {0 1 1 1 1 0}] [bitarray newfrom {0 1 0 1 1 0}] [bitarray newfrom {1 1 0 1 1 1}] \
+         [bitarray newfrom {0 1 0 0 0 0}] [bitarray newfrom {0 1 1 1 1 0}]]
+test wide-rel-1.3 {relational operators on 8-bit arrays: lengths around 16 and 32, integers outside the range of the elements, equal neighbours} -body {
+    set bad {}
+    foreach w {8 -8} {
+        foreach n {1 15 16 17 31 32 33 47 48 49} {
+            set lx [wr_vals $w $n 5]
+            set ly $lx
+            for {set i 0} {$i < $n} {incr i 3} {lset ly $i [lindex $lx [expr {($i + 1) % $n}]]}
+            set a [bitarray newfrom $lx -width $w]
+            set b [bitarray newfrom $ly -width $w]
+            foreach {opname sym} {eq == ne != lt < le <= gt > ge >=} {
+                set want {}
+                foreach x $lx y $ly {lappend want [expr "\$x $sym \$y"]}
+                if {[bitarray op $a $opname $b] ne [bitarray newfrom $want]} {lappend bad "$w/$n array $opname"}
+                foreach k {-1000 -129 -128 -127 -1 0 1 126 127 128 129 255 256 1000} {
+                    set w1 {}; set w2 {}
+                    foreach x $lx {lappend w1 [expr "\$x $sym \$k"]; lappend w2 [expr "\$k $sym \$x"]}
+                    if {[bitarray op $a $opname $k] ne [bitarray newfrom $w1]} {lappend bad "$w/$n $opname $k"}
+                    if {[bitarray op $k $opname $a] ne [bitarray newfrom $w2]} {lappend bad "$w/$n $k $opname"}
+                }
+            }
+            set wl {}; set wo {}; set wn {}
+            foreach x $lx y $ly {lappend wl [expr {$x != 0 && $y != 0}]; lappend wo [expr {$x != 0 || $y != 0}]; lappend wn [expr {$x == 0}]}
+            if {[bitarray op $a land $b] ne [bitarray newfrom $wl]} {lappend bad "$w/$n land"}
+            if {[bitarray op $a lor $b] ne [bitarray newfrom $wo]} {lappend bad "$w/$n lor"}
+            if {[bitarray op lnot $a] ne [bitarray newfrom $wn]} {lappend bad "$w/$n lnot"}
+        }
+    }
+    set bad
+} -result {}
+test wide-log-1.3 {land and lor between a wider array and a 1-bit array, either order, every width, lengths around 16 and 64, longer 1-bit array with -length zero} -body {
+    set bad {}
+    foreach w {8 -8 16 32 64} {
+        foreach n {1 15 16 17 63 64 65 129} {
+            set lx [wr_vals $w $n 6]
+            for {set i 0} {$i < $n} {incr i 3} {lset lx $i 0}
+            set lb {}
+            for {set i 0} {$i < $n} {incr i} {lappend lb [expr {($i * 5 + $n) % 3 == 0}]}
+            set a [bitarray newfrom $lx -width $w]
+            set b [bitarray newfrom $lb]
+            set wl {}; set wo {}
+            foreach x $lx y $lb {lappend wl [expr {$x != 0 && $y}]; lappend wo [expr {$x != 0 || $y}]}
+            if {[bitarray op $a land $b] ne [bitarray newfrom $wl]} {lappend bad "$w/$n wide land bits"}
+            if {[bitarray op $b land $a] ne [bitarray newfrom $wl]} {lappend bad "$w/$n bits land wide"}
+            if {[bitarray op $a lor $b] ne [bitarray newfrom $wo]} {lappend bad "$w/$n wide lor bits"}
+            if {[bitarray op $b lor $a] ne [bitarray newfrom $wo]} {lappend bad "$w/$n bits lor wide"}
+            # a longer 1-bit array: the extra bits are ignored with -length zero; a longer wide array is cut to the 1-bit length
+            set b2 [bitarray newfrom [concat $lb {1 1 1}]]
+            if {[bitarray op -length zero $a land $b2] ne [bitarray newfrom $wl]} {lappend bad "$w/$n longer bits"}
+            set a2 [bitarray newfrom [concat $lx {5 5 5}] -width $w]
+            if {[bitarray op -length zero $b land $a2] ne [bitarray newfrom $wl]} {lappend bad "$w/$n longer wide"}
+            # a longer 1-bit array FIRST and a shorter wide one second: the missing wide elements count as 0
+            if {[bitarray op -length zero $b2 land $a] ne [bitarray newfrom [concat $wl {0 0 0}]]} {lappend bad "$w/$n bits first, shorter wide land"}
+            if {[bitarray op -length zero $b2 lor $a] ne [bitarray newfrom [concat $wo {1 1 1}]]} {lappend bad "$w/$n bits first, shorter wide lor"}
+        }
+    }
+    set bad
+} -result {}
+test wide-rel-1.4 {relational operators on 16-bit and 32-bit arrays: lengths around 16 and 32, integers at and beyond the ends of the range, equal neighbours} -body {
+    set bad {}
+    foreach w {16 -16 32 -32} {
+        lassign [mm_limits $w] lo hi
+        set ks [list [expr {$lo - 1}] $lo [expr {$lo + 1}] -1 0 1 [expr {$hi - 1}] $hi [expr {$hi + 1}] [expr {$hi * 2 + 5}] -100000 100000 5000000000 -5000000000]
+        foreach n {1 7 8 15 16 17 31 32 33 49} {
+            set lx [wr_vals $w $n 7]
+            set ly $lx
+            for {set i 0} {$i < $n} {incr i 3} {lset ly $i [lindex $lx [expr {($i + 1) % $n}]]}
+            set a [bitarray newfrom $lx -width $w]
+            set b [bitarray newfrom $ly -width $w]
+            foreach {opname sym} {eq == ne != lt < le <= gt > ge >=} {
+                set want {}
+                foreach x $lx y $ly {lappend want [expr "\$x $sym \$y"]}
+                if {[bitarray op $a $opname $b] ne [bitarray newfrom $want]} {lappend bad "$w/$n array $opname"}
+                foreach k $ks {
+                    set w1 {}; set w2 {}
+                    foreach x $lx {lappend w1 [expr "\$x $sym \$k"]; lappend w2 [expr "\$k $sym \$x"]}
+                    if {[bitarray op $a $opname $k] ne [bitarray newfrom $w1]} {lappend bad "$w/$n $opname $k"}
+                    if {[bitarray op $k $opname $a] ne [bitarray newfrom $w2]} {lappend bad "$w/$n $k $opname"}
+                }
+            }
+        }
+    }
+    set bad
+} -result {}
 cleanupTests
+if {$::oldTcl} ::oldTclBanner

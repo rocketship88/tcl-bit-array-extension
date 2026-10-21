@@ -212,6 +212,9 @@ proc walkList {l} {
     while {$i >= 0} { incr c; set i [lsearch -exact -start [expr {$i + 1}] $l 1] }
     return $c
 }
+# minmax: the plain list needs the min and max functions applied to the whole list (or to an lrange of it)
+proc minmaxList {l} { list [tcl::mathfunc::min {*}$l] [tcl::mathfunc::max {*}$l] }
+proc minmaxListRange {l first last} { minmaxList [lrange $l $first $last] }
 proc walkBits {a} {
     set c 0; set i [bitarray next $a 0]
     while {$i >= 0} { incr c; set i [bitarray next $a [expr {$i + 1}]] }
@@ -220,6 +223,18 @@ proc walkBits {a} {
 op "fill first half with 1 (no step)" {} s_plain {fillList X 0 @HALF 1} s_w1 {bitarray fill X 0 @HALF 1} s_w8 {bitarray fill X 0 @HALF 1} prep own after {set X}
 op "fill every 3rd element with 1"  {} s_plain {fillList X 0 @LAST 1 3} s_w1 {bitarray fill X 0 @LAST 1 3} s_w8 {bitarray fill X 0 @LAST 1 3} prep own after {set X}
 op "count the 1s"                   {} s_plain {countList $X} s_w1 {bitarray count $X} s_w8 {bitarray count $X}
+op "minmax of the whole array"      {} s_plain {minmaxList $X} s_w1 {bitarray minmax $X} s_w8 {bitarray minmax $X}
+op "minmax of a range (10 to end-10)" {} s_plain {minmaxListRange $X 10 end-10} s_w1 {bitarray minmax $X 10 end-10} s_w8 {bitarray minmax $X 10 end-10}
+# minmax on the wider widths: the "bit8" column of these rows holds the array of the width in the name (-8 signed, 16, 32 unsigned, 64 signed).
+op "minmax of a signed 8-bit array"  {} data wm8 s_plain {minmaxList $X} s_w1 {} s_w8 {bitarray minmax $X}
+op "minmax of a 16-bit array"        {} data w16 s_plain {minmaxList $X} s_w1 {} s_w8 {bitarray minmax $X}
+op "minmax of a 32-bit array"        {} data w32 s_plain {minmaxList $X} s_w1 {} s_w8 {bitarray minmax $X}
+op "minmax of a 64-bit array"        {} data w64 s_plain {minmaxList $X} s_w1 {} s_w8 {bitarray minmax $X}
+# logical and relational operators on 16-bit and 32-bit arrays (the bit8 column holds the array of that width; data w16, w32)
+op "lnot of a 16-bit array"          {} data w16 s_plain {lnotList $X} s_w1 {} s_w8 {bitarray op lnot $X}
+op "lnot of a 32-bit array"          {} data w32 s_plain {lnotList $X} s_w1 {} s_w8 {bitarray op lnot $X}
+op "rel > 1000 (16-bit array, integer)" {} data w16 s_plain {lmap v $X {expr {$v > 1000}}} s_w1 {} s_w8 {bitarray op $X > 1000}
+op "rel > 1000000 (32-bit array, integer)" {} data w32 s_plain {lmap v $X {expr {$v > 1000000}}} s_w1 {} s_w8 {bitarray op $X > 1000000}
 op "next 1: one scan of the whole array" {} s_plain {nextList $X 0} s_w1 {bitarray next $X 0} s_w8 {bitarray next $X 0} data sparse
 op "next 1: visit every 1 (every 7th)" {} s_plain {walkList $X} s_w1 {walkBits $X} s_w8 {walkBits $X}
 
@@ -370,7 +385,32 @@ proc scenData {n} {
 	lappend ::LC [expr {($i * 5 + $i / 3) % 9}]
     }
 }
+# data wm8 / w16 / w32 / w64: X is an array of that width (signed 8, unsigned 16 and 32, signed 64) in the bit8 column, filled with scattered
+# values over the whole range of the width; the plain column has the same values in a list.  Used by the minmax rows for the wider widths.
+proc wideData {mode n} {
+    if {[info exists ::WIDEMODE] && $::WIDEMODE eq "$mode $n"} return
+    set l {}
+    for {set i 0} {$i < $n} {incr i} {
+	switch $mode {
+	    wm8 { lappend l [expr {(($i * 2654435761) % 256) - 128}] }
+	    w16 { lappend l [expr {($i * 2654435761) % 65536}] }
+	    w32 { lappend l [expr {($i * 2654435761) % 4294967296}] }
+	    w64 { lappend l [expr {(($i * 2654435761 * 1000) % 4611686018427387904) - 2305843009213693952}] }
+	}
+    }
+    set ::WIDEL $l; set ::WIDEMODE "$mode $n"
+}
 proc setBase {type {mode normal} {needZ 0}} {
+    if {$mode in {wm8 w16 w32 w64}} {
+	wideData $mode [llength $::L]
+	set wd [dict get {wm8 -8 w16 16 w32 32 w64 64} $mode]
+	switch $type {
+	    plain - plain8 { set ::BASE $::WIDEL }
+	    w8 { set ::BASE [bitarray newfrom $::WIDEL -width $wd] }
+	    default { error "the wide-element rows are for the plain and bit8 columns" }
+	}
+	return
+    }
     if {$mode eq "scen"} {
 	scenData [llength $::L]
 	switch $type {

@@ -1,0 +1,10 @@
+Tcl 9.0.4 (git tag core-9-0-4, built with ./configure --disable-shared) against bitarray 0.9.5 with Tcl_InitStubs relaxed from 9.1 to 9.0 (2026-10-20, Linux gcc -O3)
+
+tests/bitarray.test: Total 431 Passed 414 Skipped 6 Failed 11
+failed (all 11 use lappend in the test body): elem-1.12 elem-1.13 grow-1.1 grow-1.4 lpop-1.11 op-11.2 op-11.5 op-11.9 op-7.12 signed-1.5 signed-1.6 
+
+with -constraints coreTypeLoss (the 6 lappend-in-a-proc tests run too): Total 431 Passed 416 Skipped 0 Failed 15
+of the 6: 1.1 (one element), 1.3 ({*}{literal list}), 1.4 (array element), 1.6 (lappend $name) fail; 1.2 and 1.5 (lappend {*}$list) pass
+
+listbench (answers agree, 66 compared), 1,000,000 elements, us: count 24.6 (1-bit) 169 (8-bit); minmax whole 26.4 / 38.4; land 8-bit 148; rel == 8-bit 110; scenario 1 111 (1,952x a plain list)
+minmax of a signed 8-bit array 33, 16-bit 356, 32-bit 714, 64-bit 781

@@ -11,6 +11,12 @@
 # Other options:
 #   --cc COMPILER               default: $CC, else cc          (extra flags: $CFLAGS and $LDFLAGS)
 #   --out FILE                  default: libbitarray.so next to this script
+#   --safe                      compile with -O2 instead of the default -O3 (the most conservative build; slower in the element loops)
+#   --native                    -O3 plus -march=native: also uses the newest instructions of THIS machine's CPU (AVX2 and so on).
+#                               NOT PORTABLE: the library may crash with "illegal instruction" on an older CPU.  Use it only on the machine that builds it.
+# SSE2 (16 bytes at a time) is used by default for the 8-bit logical and relational operators on x86-64 (every x86-64 CPU has it).
+# To leave it out:  CFLAGS=-DBA_NO_SSE2 ./build.sh ...    (the plain loops do the same work, slower).
+# (The default, -O3, uses no CPU-specific instructions, so it runs wherever -O2 does.)
 #   -h, --help
 # Examples:
 #   ./build.sh --tclsh /opt/tcl9.1/bin/tclsh9.1
@@ -22,7 +28,7 @@ usage() { sed -n '2,/^# Nothing is installed/p' "$0" | sed 's/^# \{0,1\}//'; }
 die() { echo "build.sh: $*" >&2; exit 1; }
 need_arg() { [ "$2" -ge 2 ] || die "option $1 needs an argument (try --help)"; }
 
-PREFIX= TREE= TCLSH_ARG= INC= STUB= OUT="$HERE/libbitarray.so"
+PREFIX= TREE= TCLSH_ARG= INC= STUB= OUT="$HERE/libbitarray.so" OPT=-O3 MODE=default
 CC_CMD="${CC:-cc}"
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -33,6 +39,8 @@ while [ $# -gt 0 ]; do
         --stub)       need_arg "$1" $#; STUB=$2; shift 2 ;;
         --cc)         need_arg "$1" $#; CC_CMD=$2; shift 2 ;;
         --out)        need_arg "$1" $#; OUT=$2; shift 2 ;;
+        --safe)       OPT=-O2; MODE=safe; shift ;;
+        --native)     OPT="-O3 -march=native"; MODE=native; shift ;;
         -h|--help)    usage; exit 0 ;;
         *) echo "build.sh: unknown argument: $1" >&2; usage >&2; exit 2 ;;
     esac
@@ -125,7 +133,16 @@ echo "found Tcl via $HOW"
 echo "headers: $INC${INC2:+ $INC2}"
 echo "stubs:   $STUB"
 if [ -n "$INC2" ]; then set -- -I"$INC" -I"$INC2"; else set -- -I"$INC"; fi
+case "$MODE" in
+    safe)   LABEL="--safe: -O2" ;;
+    native) LABEL="--native: -O3 -march=native (NOT PORTABLE)" ;;
+    *)      LABEL="default: -O3 (portable: no CPU-specific instructions)" ;;
+esac
+echo "options:  $LABEL; compiler command: $CC_CMD $OPT -Wall -Wextra -fPIC -shared -DUSE_TCL_STUBS${CFLAGS:+ $CFLAGS}${LDFLAGS:+ $LDFLAGS}"
 # $CC_CMD, $CFLAGS and $LDFLAGS are deliberately unquoted (they may hold several words)
-$CC_CMD -O2 -Wall -Wextra -fPIC -shared -DUSE_TCL_STUBS $CFLAGS "$@" "$HERE/bitarray.c" "$STUB" $LDFLAGS -o "$OUT" ||
+$CC_CMD $OPT -Wall -Wextra -fPIC -shared -DUSE_TCL_STUBS $CFLAGS "$@" "$HERE/bitarray.c" "$STUB" $LDFLAGS -o "$OUT" ||
     die "compilation failed"
 echo "built $OUT"
+case "$MODE" in
+    native) echo "note: built with -O3 -march=native (--native).  THIS LIBRARY MAY NOT BE PORTABLE: it uses the newest instructions of this machine's CPU and can crash with \"illegal instruction\" on an older one.  Do not copy it to another computer; build it there instead.  Run ./run_tests.sh after building." ;;
+esac

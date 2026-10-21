@@ -1,0 +1,38 @@
+Line coverage of bitarray.c by tests/bitarray.test and tests/faultinject.test, measured with gcov, 2026-10-20, version 0.9.5 (the code of 1.0; only the version string differs)
+Run: extras/coverage.sh --tclsh TCLBUILD/tclsh --include TCLSRC/generic --stub TCLBUILD/libtclstub.a
+
+== tests/bitarray.test
+bitarray.test:	Total	433	Passed	427	Skipped	6	Failed	0
+== tests/faultinject.test
+faultinject.test:	Total	35	Passed	35	Skipped	0	Failed	0
+File 'bitarray.c'
+Lines executed:98.66% of 1571
+Branches executed:82.84% of 2284
+Taken at least once:78.77% of 2284
+Calls executed:83.44% of 652
+Creating 'bitarray.c.gcov'
+
+Lines that never ran (line number, text); those marked [can't happen] are BA_IMPOSSIBLE panics, which are meant never to run:
+707:	    Tcl_Panic("bitarray: out of memory in string rep");   // no test reaches this (Tcl's own allocator failed); kep
+788:        from = 0;   // not reached: the core clamps first; harmless to check anyway
+791:        to = b->len - 1;   // not reached: the core clamps first; harmless to check anyway
+794:	*newObjPtr = Tcl_NewObj();   // not reached: the core answers an empty range itself; harmless to check anyway
+795:	return TCL_OK;   // not reached (see above)
+883:	    if (interp) {   // not reached on 64-bit (needs more than 2^60 elements; only a 32-bit build can get here)
+884:		Tcl_SetObjResult(interp, Tcl_NewStringObj("out of memory", -1));   // not reached (see above)
+886:	    return TCL_ERROR;   // not reached (see above)
+942:	return NULL;   // not reached: the core has checked the index syntax; harmless to check anyway
+958:	    BA_IMPOSSIBLE("lpop: deleting one element failed", 0);   // not reached: deleting never grows the array, so BAR   [can't happen]
+1115:        first = oldLen;   // not reached by scripts (lreplace / linsert clamp first); needed for a C caller of the 
+1118:        numToDelete = 0;   // same: not reached by scripts, but the list-replace API is documented to accept it
+1789:    case 8:  if (ybits) { LOG_DISPATCH(LdU8, BITOF(j)) }  else { LOG_DISPATCH(LdU8, LdU8(py, base + j)) }   break;
+1790:    case 16: if (ybits) { LOG_DISPATCH(LdU16, BITOF(j)) } else { LOG_DISPATCH(LdU16, LdU16(py, base + j)) } break;
+1791:    case 32: if (ybits) { LOG_DISPATCH(LdU32, BITOF(j)) } else { LOG_DISPATCH(LdU32, LdU32(py, base + j)) } break;
+1846:	    r = !r;
+1969:    default: BA_IMPOSSIBLE("bad width", b->width);   // not reached: the widths are 1, 8, 16, 32 and 64   [can't happen]
+3062:	    BA_IMPOSSIBLE("objc too small", objc);   // not reached: objc is at least 6 and k at most 5 here   [can't happen]
+3165:    BA_IMPOSSIBLE("no case matched", 0);   // not reached: every case returns   [can't happen]
+3179:    _exit(128 + sig);
+3225:        return TCL_ERROR;   // not reached: only a Tcl older than 9.1 gets here
+(full listing: /tmp/claude-0/-home-claude/c65d3956-49cc-5b06-b086-4ca354d4bd07/scratchpad/cov_run/bitarray.c.gcov; bitarray.c with a marker on the lines that never ran: /tmp/claude-0/-home-claude/c65d3956-49cc-5b06-b086-4ca354d4bd07/scratchpad/cov_run/bitarray.nocoverage)
+COVERAGE-DONE

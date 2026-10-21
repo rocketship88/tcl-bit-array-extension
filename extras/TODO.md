@@ -70,3 +70,57 @@ Pending small items:
 - [ ] (next) `&=`-style shorthand was considered and dropped in favour of the bare-name rule.
 - [ ] (2026-10-19) `lset var value` (no index) on a bitarray: making the hook return a copy of the value crashed (see DESIGN_LOG 0.9.1); ask on the core list how a hook's result must be reference counted when the count of indices is 0, or find the cause; until then it stays an error.
 - [ ] (2026-10-19) Last of the plan agreed with ET: an integer for the bitwise operators (`$a and 1`).
+- [x] DONE 2026-10-20 (0.9.5): `bitarray minmax array ?first ?to? last?` returns {smallest largest}; 10 tests (424 total).
+- [ ] (2026-10-20, ET said wait) mutants for MinMaxRange and the minmax case in BitarrayCmd (the range parsing and clamp, the empty-range error, the 1-bit path, every width and sign loop); then one full run.
+- [x] DONE 2026-10-20: Windows run of 0.9.5 (426 / 419 / 7, sieve PASS, listbench check 66 compared) saved as extras/windows_0.9.5_run.txt.
+- [x] DONE 2026-10-20: build.sh defaults to -O3 (--safe = -O2), --native, build.bat --avx2, each printing its options and a not-portable note where it applies (RESULTS 34).
+- [ ] (2026-10-20) Try build.bat --avx2 on Windows; (ET's machines: Ryzen 7 6800H, i7-12700K, i7-4790K, all with AVX2); run extras\listbench.tcl -only minmax -sizes 1000000 on each; rerun the list-vs-bitarray listbench with the -O3 default for the README numbers.
+
+- [x] DONE: signed 8-bit minmax on Windows 27 us (was 840).  Not done: 64-bit unrolling (762 us), __popcnt64 for count on MSVC, 8-bit land/lor/relational loops (9-18x only).
+- [ ] (2026-10-20) Wide-op loops (RESULTS 38) kept (Windows 4-8x faster, 430/423/7); then mutants for MinMaxRange, minmax case, LogicWide, RelWide, RelSwap in one full run; valgrind and coverage rerun.
+- [ ] (2026-10-20) SSE2 8-bit loops (RESULTS 39): Windows run (expect 433 / 426 / 7; also build.bat --no-sse2); then valgrind, coverage, one full mutation run for MinMaxRange, minmax, LogicWide, RelWide, RelSwap, LogicSse8, RelSse8.
+- [ ] (2026-10-20) Tcl ticket 0c82728f... (lappend/linsert ignore the Replace hook): status Open, Type Bug, assigned to apnadkarni (Ashok) 2026-10-17; his comment 2026-10-20 09:53: "Considering other C list functions have been changed to account for abstract list hooks, I can only surmise this was an oversight. Will take a look." He also notes there is no abstract-list hook for lappend (lreplace is a superset but may cost more for some implementations).  No fix version known.  The ticket (reporter ET) says "Not tested: Tcl 9.0.x".  To do: (1) README, extras/typeloss_ticket.md and the announcement: say "reported as a bug, assigned to a core maintainer, no release yet" (do not promise 9.1 fixes it); (2) after the 9.0.4 test run, a short ticket comment: the 9.0 result (lappend loses the type almost everywhere there), that a published extension (bitarray) is affected, and that a Replace-hook fix is enough for bitarray (core_lappend_typeloss.patch: the 6 --testbug tests pass), a dedicated lappend hook would also be implemented; ET decides whether to name the repo.
+- [ ] (2026-10-20) 9.0.4 tried (RESULTS 40, extras/tcl_9.0.4_run.txt): 414 pass, 11 fail (all lappend), InitStubs still 9.1 - relax to 9.0 for 1.0 and mark the lappend-dependent tests for 9.0.
+- [ ] (2026-10-20) 1.0 plan (ET): finish the optimizations; allow Tcl 9.0.x as a fallback (relax Tcl_InitStubs to 9.0 after testing exactly 9.0.4 with the full suite; README section for 9.0 users on the lappend limitation); chase the lset zero-index crash; valgrind, coverage and one full mutation run; update all docs, version 1.0; draft the comp.lang.tcl announcement (lead with the whole-array commands and SSE2 numbers; new code, not drop-in speed-ups for existing lists; lappend caveat; 9.0 note).  Remaining optimization candidates: SSE2 for 16/32-bit logical and relational, scenario 4 (3.5 ms, look at why), __popcnt64 for count on MSVC, 64-bit minmax unrolling.
+- [ ] (2026-10-20) The posted core patch (extras/core_lappend_typeloss.patch) covers lappend only; Tcl_LinsertObjCmd (uncompiled one-element linsert at the end) is not patched.  Decide whether to look at it and extend patch and tests.
+- [ ] (2026-10-20) RESULTS 41 (mixed-width logic, SSE2 16/32-bit): Windows run DONE (433 / 426 / 7, with and without SSE2); next: valgrind, coverage and the full mutation run (now also LogicWide ybits/swap, LogicSse, ZeroMask16, RelSse, Cmp16, Cmp32).
+- (2026-10-20) 64-bit minmax with four independent running min/max pairs tried on Linux gcc -O3: 774/782/688 -> 652/614/498 us per 1M elements (about 1.2-1.4x), not kept (small gain, more code to test).  popcnt for count on MSVC not done.
+- (2026-10-20) Why lappend {*}$list in a proc keeps the type on 9.0.4 but loses it on 9.1.1: a git bisect (core-9-0-4 .. e36db33) was inconclusive (history is not a clean good-then-bad line); git log -S found dkf 46f009d004 (2025-05-12, "fix INST_LAPPEND_LIST semantics with zero-length lists", adds the objc && checks) but git says it is already an ancestor of core-9-0-4 while the 9.0.4 file lacks the change - unresolved, not needed for the ticket.
+
+## 9.0 fallback (done 2026-10-20)
+- Tcl_InitStubs and pkgIndex relaxed to 9.0; tests print the Tcl version and a #### banner below 9.1 (start and after the summary);
+  11 lappend-dependent tests carry constraint lappendKeeps. 9.0.4: 433/416/17/0; 9.1.1: 433/427/6/0.
+- ET decision: mutation run on 9.1 only. Still to do: valgrind, coverage, stepper re-embed, one full mutation run (when ET asks), version bump to 1.0.
+
+## Why 9.0.4 loses the type more often than 9.1.1 (found 2026-10-20)
+- In tclExecute.c, TEBCresume, label lappendListPtr (INST_LAPPEND_LIST, taken when the variable is not a plain direct local:
+  uplevel #0, eval, namespace/array variables, ...): 9.0.4 calls TclListObjAppendElements() (no hook; converts the abstract
+  list), 9.1 calls Tcl_ListObjReplace(interp, valueToAssign, len, 0, objc, objv) (calls our Replace hook).
+- Trunk has it from dkf's "fix INST_LAPPEND_LIST semantics with zero-length lists" (2025-05-12; commits 08aafd16b / 46f009d00 /
+  edf5dfe3e). The hook becoming reachable looks like a side effect of that fix, not the aim of it. Not a regression: 9.1 loses LESS.
+- Verified: patching just that call in a 9.0.4 build gives the 9.1.1 results (uplevel #0 and eval keep the type; a proc still loses).
+  Diff: scratchpad lappend_904_one_line.diff (one call replaced). The 9.0 branch tip still has the old call.
+- Git ancestry in the tcltk/tcl mirror is tangled (46f009d00 is reported as an ancestor of core-9-0-4 although the 9.0.4 file has
+  the old call), so name the commit only as "dkf, 2025-05-12, trunk"; the file diff is the solid evidence.
+
+## linsert cause (found 2026-10-20)
+- tclCmdIL.c, Tcl_LinsertObjCmd: special case `if ((objc == 4) && (index == len))` (one element at the end) calls
+  Tcl_ListObjAppendElement() (no hook, converts the abstract list); every other form calls Tcl_ListObjReplace() (hook).
+  Same code in 9.0.4 and 9.1.1 (only the objc/objv declarations differ).
+- Fix tested on a 9.0.4 build: replace that call with Tcl_ListObjReplace(NULL, listPtr, len, 0, 1, &objv[3]): all six
+  linsert cases in $S/ty2.tcl then keep the type. Diff saved as extras/core_linsert_typeloss.diff (not yet in extras/README.md).
+- Compiled linsert in a proc takes another path (keeps the type), which is why only the uncompiled forms show it.
+- 2026-10-20: the linsert fix also tested on a 9.1.1 build: six cases keep the type; core cmdIL/listObj/list/linsert tests 0 failed.
+- Background checks of 2026-10-20 (0.9.5 + 9.0 relax): stepper re-embedded (990 steps, 0 errors); coverage bitarray.c 98.66% of 1571 lines, 82.84% branches
+  (never-run lines are the can't-happen/not-reached ones plus LogicWide 8/16/32 dispatch which SSE2 replaces; those run with -DBA_NO_SSE2);
+  valgrind of the full suite: 0 invalid reads/writes, 0 uninitialised, 0 definitely lost; 193 "possibly lost" records from Tcl's own allocator at exit.
+
+## Mutation run on 0.9.5 (done 2026-10-20) -- see RESULTS 42
+- 407 mutants: 374 caught, 32 missed, 1 stale (I01 pattern). X30 and X93 were real gaps; tests added (wide-log-1.3 lines, wide-rel-1.5), both now caught.
+- Still open: I01 pattern needs re-aiming (GetElem "bad width" text changed; MinMaxRange has the same line now); O31 is dead code (could be removed);
+  no mutants for the non-SSE2 word loops (run a mutation round with -DBA_NO_SSE2 if wanted); Windows run of the 434-test suite; version bump to 1.0; announcement.
+
+- 2026-10-20 18:08 Windows run of the 434-test code: 9.1.1 434/427/7/0, 9.0.2 434/416/18/0, sieves PASS (extras/windows_0.9.5_434_run.txt). Nothing left to run before 1.0 except ET's go.
+
+- 2026-10-20: version set to 1.0 (bitarray.c, pkgIndex.tcl, README, test version-1.1 relaxed to accept two parts). Release notes: extras/release_notes_1.0.md.
+  Still to do: ET uploads and creates the GitHub release; the comp.lang.tcl announcement draft; Windows run of the 1.0 build (only the version string changed).

@@ -3046,11 +3046,20 @@ EXTERN void		Tcl_WrongNumArgs(Tcl_Interp *interp, Tcl_Size objc,
  */
 
 #include <tcl.h>
-#define BA_VERSION "0.9.4"	/* the one place the version is set (also in pkgIndex.tcl) */
+#define BA_VERSION "1.0"	/* the one place the version is set (also in pkgIndex.tcl) */
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
+/*
+ * SSE2 (16 bytes at a time) for the 8-bit logical and relational operators.  Every x86-64 CPU has it, so it is on by default there;
+ * -DBA_NO_SSE2 leaves it out (the plain loops below do the same work), and other processors never see it.
+ */
+#if !defined(BA_NO_SSE2) && (defined(__SSE2__) || defined(_M_X64) || (defined(_M_IX86_FP) && _M_IX86_FP >= 2))
+#   define BA_SSE2 1
+#   include <emmintrin.h>
+#endif
 #ifdef BA_TEST
 #   include <signal.h>
 #   include <unistd.h>
@@ -4624,6 +4633,184 @@ ElemNonzero(const BitArr *b, Tcl_Size i)
 }
 
 /*
+ * Element loaders for the word-at-a-time loops below: one function per element type, so that each loop has its types fixed and
+ * the compiler can do its best with it.  (memcpy, not a cast: no alignment or aliasing problem.)
+ */
+#define LDFUNC(NAME, T) \
+static Tcl_WideInt NAME(const unsigned char *p, Tcl_Size i) \
+{ \
+    T v; \
+    memcpy(&v, p + (size_t)i * sizeof(T), sizeof(T)); \
+    return (Tcl_WideInt)v; \
+}
+LDFUNC(LdU8, uint8_t)
+LDFUNC(LdS8, int8_t)
+LDFUNC(LdU16, uint16_t)
+LDFUNC(LdS16, int16_t)
+LDFUNC(LdU32, uint32_t)
+LDFUNC(LdS32, int32_t)
+LDFUNC(LdS64, int64_t)
+#undef LDFUNC
+
+#ifdef BA_SSE2
+/*
+ * Sixteen "is element i zero" bits for the 16 elements of the array of WIDTH bits (8, 16 or 32) that start at P (bit set: it is 0).
+ * Wider elements are compared eight or four to a vector, narrowed to bytes (a compare gives all ones or all zeros per lane, which
+ * the saturating packs keep as 0 or -1) and collected with one movemask.
+ */
+static unsigned
+ZeroMask16(const unsigned char *p, int width)
+{
+    const __m128i zero = _mm_setzero_si128();
+
+    if (width == 8) {
+	return (unsigned)_mm_movemask_epi8(_mm_cmpeq_epi8(_mm_loadu_si128((const __m128i *)p), zero));
+    }
+    if (width == 16) {
+	return (unsigned)_mm_movemask_epi8(_mm_packs_epi16(
+		_mm_cmpeq_epi16(_mm_loadu_si128((const __m128i *)p), zero),
+		_mm_cmpeq_epi16(_mm_loadu_si128((const __m128i *)(p + 16)), zero)));
+    }
+    return (unsigned)_mm_movemask_epi8(_mm_packs_epi16(
+	    _mm_packs_epi32(_mm_cmpeq_epi32(_mm_loadu_si128((const __m128i *)p), zero),
+		    _mm_cmpeq_epi32(_mm_loadu_si128((const __m128i *)(p + 16)), zero)),
+	    _mm_packs_epi32(_mm_cmpeq_epi32(_mm_loadu_si128((const __m128i *)(p + 32)), zero),
+		    _mm_cmpeq_epi32(_mm_loadu_si128((const __m128i *)(p + 48)), zero))));
+}
+
+/*
+ * land, lor, lnot for the first N elements of the array X of 8, 16 or 32 bits, 16 per step (see LogicWide for the conditions).  Y
+ * is NULL (lnot), another array of the same width, or a 1-bit array (YBITS: its bit is the element's "not 0").  Result bits are
+ * ORed into a cleared D.
+ */
+static void
+LogicSse(BitArr *d, int op, const BitArr *x, const BitArr *y, int ybits, Tcl_Size n)
+{
+    const unsigned char *px = (const unsigned char *)x->words;
+    const unsigned char *py = (y != NULL) ? (const unsigned char *)y->words : px;
+    const int w = x->width, eb = w / 8;   // bytes per element
+    Tcl_Size n16 = n >> 4, c, i;
+
+    memset(d->words, 0, (size_t)d->nwords * sizeof(uint64_t));
+    for (c = 0; c < n16; c++) {
+	unsigned za = ZeroMask16(px + (size_t)16 * eb * c, w);   // bit set: element is 0
+	unsigned m;
+
+	if (op == BO_LNOT) {
+	    m = za;
+	} else {
+	    unsigned zb;
+
+	    if (ybits) {   // 16 bits of the 1-bit array: a chunk of 16 never straddles a word, and a set bit is a non-zero element
+		zb = (unsigned)(~(y->words[(16 * c) >> 6] >> ((16 * c) & 63))) & 0xFFFFu;
+	    } else {
+		zb = ZeroMask16(py + (size_t)16 * eb * c, w);
+	    }
+	    m = (op == BO_LAND) ? (~(za | zb) & 0xFFFFu) : (~(za & zb) & 0xFFFFu);
+	}
+	d->words[c >> 2] |= (uint64_t)m << ((c & 3) * 16);
+    }
+    for (i = n16 * 16; i < n; i++) {   // the last 0 to 15 elements
+	int a = 0, b = 0, r;
+
+	switch (w) {
+	case 8:  a = px[i] != 0; break;
+	case 16: a = LdU16(px, i) != 0; break;
+	default: a = LdU32(px, i) != 0; break;
+	}
+	if (y != NULL) {
+	    if (ybits) {
+		b = (int)((y->words[i >> 6] >> (i & 63)) & 1);
+	    } else {
+		switch (w) {
+		case 8:  b = py[i] != 0; break;
+		case 16: b = LdU16(py, i) != 0; break;
+		default: b = LdU32(py, i) != 0; break;
+		}
+	    }
+	}
+	r = (op == BO_LNOT) ? !a : (op == BO_LAND) ? (a && b) : (a || b);
+	if (r) {
+	    d->words[i >> 6] |= (uint64_t)1 << (i & 63);
+	}
+    }
+}
+#endif
+
+/*
+ * LogicWide --
+ *	land, lor and lnot (OP) for arrays with elements wider than 1 bit, 64 results to a word.  The result D is a 1-bit array as
+ *	long as X.  It applies when X is wider than 1 bit and Y is NULL (lnot), another array of the same width, or a 1-bit array,
+ *	with at least as many elements as X; and, because land and lor give the same answer with their operands swapped, when X
+ *	is a 1-bit array and Y is wider.  Everything else takes the element-by-element loop in OpValue (returns 0).
+ */
+#define LOG_LOOP(LD, BEXPR, EXPR) \
+    for (k = 0; k < d->nwords; k++) { \
+	Tcl_Size base = k << 6, cnt = n - base, j; \
+	uint64_t acc = 0; \
+	if (cnt > 64) cnt = 64; \
+	for (j = 0; j < cnt; j++) { \
+	    Tcl_WideInt a = LD(px, base + j), b = (BEXPR); \
+	    acc |= (uint64_t)(EXPR) << j; \
+	} \
+	d->words[k] = acc; \
+    }
+#define LOGNOT_LOOP(LD) \
+    for (k = 0; k < d->nwords; k++) { \
+	Tcl_Size base = k << 6, cnt = n - base, j; \
+	uint64_t acc = 0; \
+	if (cnt > 64) cnt = 64; \
+	for (j = 0; j < cnt; j++) { \
+	    acc |= (uint64_t)(LD(px, base + j) == 0) << j; \
+	} \
+	d->words[k] = acc; \
+    }
+#define LOG_DISPATCH(LD, BEXPR) \
+    switch (op) { \
+    case BO_LAND: LOG_LOOP(LD, BEXPR, (a != 0) & (b != 0)) break; \
+    case BO_LOR:  LOG_LOOP(LD, BEXPR, (a != 0) | (b != 0)) break; \
+    default:      LOGNOT_LOOP(LD) break; \
+    }
+#define BITOF(j) ((Tcl_WideInt)((y->words[(base + (j)) >> 6] >> ((base + (j)) & 63)) & 1))
+static int
+LogicWide(BitArr *d, int op, const BitArr *x, const BitArr *y)
+{
+    Tcl_Size n = x->len, k;
+    int ybits;
+    const unsigned char *px, *py;
+
+    if (y != NULL && x->width == 1 && y->width > 1 && y->len >= x->len) {   // land and lor are symmetric: put the wider array first
+	const BitArr *t = x;
+
+	x = y;
+	y = t;
+    }
+    if (x->width == 1 || (y != NULL && ((y->width != x->width && y->width != 1) || y->len < n))) {
+	return 0;
+    }
+    ybits = (y != NULL && y->width == 1);
+    px = (const unsigned char *)x->words;
+    py = (y != NULL) ? (const unsigned char *)y->words : px;
+#ifdef BA_SSE2
+    if (x->width != 64) {   // 8, 16 and 32 bits
+	LogicSse(d, op, x, y, ybits, n);
+	return 1;
+    }
+#endif
+    switch (x->width) {   // "not 0" does not depend on the sign, so the unsigned loaders do for 8, 16 and 32
+    case 8:  if (ybits) { LOG_DISPATCH(LdU8, BITOF(j)) }  else { LOG_DISPATCH(LdU8, LdU8(py, base + j)) }   break;
+    case 16: if (ybits) { LOG_DISPATCH(LdU16, BITOF(j)) } else { LOG_DISPATCH(LdU16, LdU16(py, base + j)) } break;
+    case 32: if (ybits) { LOG_DISPATCH(LdU32, BITOF(j)) } else { LOG_DISPATCH(LdU32, LdU32(py, base + j)) } break;
+    default: if (ybits) { LOG_DISPATCH(LdS64, BITOF(j)) } else { LOG_DISPATCH(LdS64, LdS64(py, base + j)) } break;
+    }
+    return 1;
+}
+#undef LOG_LOOP
+#undef LOGNOT_LOOP
+#undef LOG_DISPATCH
+#undef BITOF
+
+/*
  * OpValue --
  *	The new array X OP Y (Y is NULL for the one-array operators), or NULL with an error in the interp.  The bitwise
  *	operators give an array of X's width, the logical ones (land, lor, lnot) test each element for "not 0" and give
@@ -4653,6 +4840,10 @@ OpValue(Tcl_Interp *interp, int op, const BitArr *x, const BitArr *y, int zero)
     }
     if (x->width == 1 && (y == NULL || y->width == 1)) {   // 1-bit arrays: nonzero is the bit itself, so land, lor and lnot are the bitwise ones, a word at a time
 	BitOpWords(d, x, y, op == BO_LAND ? BO_AND : op == BO_LOR ? BO_OR : BO_NOT);
+	MaskTail(d);
+	return WrapRep(d);
+    }
+    if (LogicWide(d, op, x, y)) {   // widths above 1, the usual case: a word of results at a time
 	MaskTail(d);
 	return WrapRep(d);
     }
@@ -4737,6 +4928,62 @@ GetOperand(Tcl_Interp *interp, Tcl_Obj *obj, const BitArr **bPtr, Tcl_WideInt *w
 }
 
 /*
+ * MinMaxRange --
+ *	The smallest and largest number among elements FIRST..LAST of B (FIRST <= LAST, both inside the array), as the
+ *	numbers the elements stand for (the signed widths and width 64 can be negative).  One pass; each width has its own
+ *	loop over the plain type, so the compiler can do several elements at a time.
+ */
+static void
+MinMaxRange(const BitArr *b, Tcl_Size first, Tcl_Size last, Tcl_WideInt *loPtr, Tcl_WideInt *hiPtr)
+{
+    const unsigned char *p = (const unsigned char *)b->words;
+    Tcl_Size i;
+
+    if (b->width == 1) {   // 1-bit: the smallest is 1 only if every element is, the largest is 1 if any is
+	Tcl_WideInt ones = CountRange((BitArr *)b, first, last);
+
+	*loPtr = (ones == (Tcl_WideInt)(last - first + 1)) ? 1 : 0;
+	*hiPtr = (ones > 0) ? 1 : 0;
+	return;
+    }
+#define MM_LOOP(T) { \
+	T v, lo, hi; \
+	memcpy(&v, p + (size_t)first * sizeof(T), sizeof(T)); \
+	lo = hi = v; \
+	for (i = first + 1; i <= last; i++) { \
+	    memcpy(&v, p + (size_t)i * sizeof(T), sizeof(T)); \
+	    if (v < lo) lo = v; \
+	    if (v > hi) hi = v; \
+	} \
+	*loPtr = (Tcl_WideInt)lo; *hiPtr = (Tcl_WideInt)hi; \
+    }
+    switch (b->width) {
+    case 8:
+	if (b->isSigned) {
+	    /* Signed bytes: flip the top bit of each, so signed order becomes unsigned order, and compare as unsigned
+	     * (compilers vectorize that: SSE2 has unsigned byte min/max but no signed one).  Flip the results back. */
+	    const uint8_t *q = (const uint8_t *)p;
+	    uint8_t ulo, uhi, u;
+
+	    ulo = uhi = (uint8_t)(q[first] ^ 0x80);
+	    for (i = first + 1; i <= last; i++) {
+		u = (uint8_t)(q[i] ^ 0x80);
+		if (u < ulo) ulo = u;
+		if (u > uhi) uhi = u;
+	    }
+	    *loPtr = (Tcl_WideInt)(int8_t)(uint8_t)(ulo ^ 0x80);
+	    *hiPtr = (Tcl_WideInt)(int8_t)(uint8_t)(uhi ^ 0x80);
+	} else MM_LOOP(uint8_t)
+	break;
+    case 16: if (b->isSigned) MM_LOOP(int16_t) else MM_LOOP(uint16_t) break;
+    case 32: if (b->isSigned) MM_LOOP(int32_t) else MM_LOOP(uint32_t) break;
+    case 64: MM_LOOP(int64_t) break;   // 64 is always signed
+    default: BA_IMPOSSIBLE("bad width", b->width);   // not reached: the widths are 1, 8, 16, 32 and 64
+    }
+#undef MM_LOOP
+}
+
+/*
  * RelTest --
  *	The truth of "A op B" for the relational codes BO_EQ .. BO_GE.
  */
@@ -4792,6 +5039,255 @@ RelBits(BitArr *d, int op, const BitArr *x, const BitArr *y, Tcl_WideInt w)
     }
 }
 
+#ifdef BA_SSE2
+/*
+ * RelSse8 --
+ *	RelWide for 8-bit arrays, 16 elements per step: a compare instruction and a movemask give 16 result bits.  Unsigned bytes have
+ *	their top bit flipped on both sides first, which makes the signed compare right for them.  An integer W outside the range of the
+ *	elements is left to the plain loop (returns 0).
+ */
+static int
+RelSse8(BitArr *d, int op, const BitArr *x, const BitArr *y, Tcl_WideInt w)
+{
+    const unsigned char *px = (const unsigned char *)x->words;
+    const unsigned char *py = (y != NULL) ? (const unsigned char *)y->words : NULL;
+    const int sg = x->isSigned;
+    const __m128i flip = _mm_set1_epi8((char)0x80);
+    __m128i vb = _mm_setzero_si128();
+    Tcl_Size n16 = x->len >> 4, c, i;
+
+    if (y == NULL) {
+	if (sg ? (w < -128 || w > 127) : (w < 0 || w > 255)) {
+	    return 0;
+	}
+	vb = _mm_set1_epi8((char)(w & 0xFF));
+	if (!sg) {
+	    vb = _mm_xor_si128(vb, flip);
+	}
+    }
+    memset(d->words, 0, (size_t)d->nwords * sizeof(uint64_t));
+    for (c = 0; c < n16; c++) {
+	__m128i a = _mm_loadu_si128((const __m128i *)(px + 16 * c)), b;
+	unsigned m;
+
+	if (!sg) {
+	    a = _mm_xor_si128(a, flip);
+	}
+	if (y != NULL) {
+	    b = _mm_loadu_si128((const __m128i *)(py + 16 * c));
+	    if (!sg) {
+		b = _mm_xor_si128(b, flip);
+	    }
+	} else {
+	    b = vb;
+	}
+	switch (op) {
+	case BO_EQ: m = (unsigned)_mm_movemask_epi8(_mm_cmpeq_epi8(a, b)); break;
+	case BO_NE: m = (unsigned)_mm_movemask_epi8(_mm_cmpeq_epi8(a, b)) ^ 0xFFFFu; break;
+	case BO_LT: m = (unsigned)_mm_movemask_epi8(_mm_cmplt_epi8(a, b)); break;
+	case BO_LE: m = (unsigned)_mm_movemask_epi8(_mm_cmpgt_epi8(a, b)) ^ 0xFFFFu; break;
+	case BO_GT: m = (unsigned)_mm_movemask_epi8(_mm_cmpgt_epi8(a, b)); break;
+	default:    m = (unsigned)_mm_movemask_epi8(_mm_cmplt_epi8(a, b)) ^ 0xFFFFu; break;   // BO_GE
+	}
+	d->words[c >> 2] |= (uint64_t)m << ((c & 3) * 16);
+    }
+    for (i = n16 * 16; i < x->len; i++) {   // the last 0 to 15 elements
+	Tcl_WideInt a = sg ? (Tcl_WideInt)(int8_t)px[i] : (Tcl_WideInt)px[i];
+	Tcl_WideInt b = (y == NULL) ? w : sg ? (Tcl_WideInt)(int8_t)py[i] : (Tcl_WideInt)py[i];
+
+	if (RelTest(op, a, b)) {
+	    d->words[i >> 6] |= (uint64_t)1 << (i & 63);
+	}
+    }
+    return 1;
+}
+#endif
+
+#ifdef BA_SSE2
+/* All ones in the lanes where A OP B holds (signed compare of 16-bit lanes), for the relational operator OP. */
+static __m128i
+Cmp16(int op, __m128i a, __m128i b)
+{
+    const __m128i ones = _mm_set1_epi16(-1);
+
+    switch (op) {
+    case BO_EQ: return _mm_cmpeq_epi16(a, b);
+    case BO_NE: return _mm_xor_si128(_mm_cmpeq_epi16(a, b), ones);
+    case BO_LT: return _mm_cmplt_epi16(a, b);
+    case BO_LE: return _mm_xor_si128(_mm_cmpgt_epi16(a, b), ones);
+    case BO_GT: return _mm_cmpgt_epi16(a, b);
+    default:    return _mm_xor_si128(_mm_cmplt_epi16(a, b), ones);   // BO_GE
+    }
+}
+
+/* The same for 32-bit lanes. */
+static __m128i
+Cmp32(int op, __m128i a, __m128i b)
+{
+    const __m128i ones = _mm_set1_epi32(-1);
+
+    switch (op) {
+    case BO_EQ: return _mm_cmpeq_epi32(a, b);
+    case BO_NE: return _mm_xor_si128(_mm_cmpeq_epi32(a, b), ones);
+    case BO_LT: return _mm_cmplt_epi32(a, b);
+    case BO_LE: return _mm_xor_si128(_mm_cmpgt_epi32(a, b), ones);
+    case BO_GT: return _mm_cmpgt_epi32(a, b);
+    default:    return _mm_xor_si128(_mm_cmplt_epi32(a, b), ones);   // BO_GE
+    }
+}
+
+/*
+ * RelSse --
+ *	RelWide for 16-bit and 32-bit arrays, 16 elements per step: compare, narrow the lane results to bytes with the saturating
+ *	packs (all ones and all zeros survive it) and collect them with one movemask.  Unsigned elements have their top bit flipped on
+ *	both sides first, which makes the signed compare right for them.  An integer W outside the range of the elements is left to
+ *	the plain loop (returns 0).
+ */
+static int
+RelSse(BitArr *d, int op, const BitArr *x, const BitArr *y, Tcl_WideInt w)
+{
+    const unsigned char *px = (const unsigned char *)x->words;
+    const unsigned char *py = (y != NULL) ? (const unsigned char *)y->words : NULL;
+    const int sg = x->isSigned, wd = x->width, eb = wd / 8;
+    const __m128i flip = (wd == 16) ? _mm_set1_epi16((short)0x8000) : _mm_set1_epi32((int)0x80000000u);
+    __m128i vb = _mm_setzero_si128();
+    Tcl_Size n16 = x->len >> 4, c, i;
+
+    if (y == NULL) {
+	Tcl_WideInt lo = sg ? -((Tcl_WideInt)1 << (wd - 1)) : 0, hi = sg ? (((Tcl_WideInt)1 << (wd - 1)) - 1) : (((Tcl_WideInt)1 << wd) - 1);
+
+	if (w < lo || w > hi) {
+	    return 0;
+	}
+	vb = (wd == 16) ? _mm_set1_epi16((short)(w & 0xFFFF)) : _mm_set1_epi32((int)(w & 0xFFFFFFFF));
+	if (!sg) {
+	    vb = _mm_xor_si128(vb, flip);
+	}
+    }
+    memset(d->words, 0, (size_t)d->nwords * sizeof(uint64_t));
+    for (c = 0; c < n16; c++) {
+	const unsigned char *pa = px + (size_t)16 * eb * c, *pb = (y != NULL) ? py + (size_t)16 * eb * c : NULL;
+	__m128i v[4];
+	int nv = eb, q;   // vectors in this chunk: 2 for 16-bit, 4 for 32-bit
+	unsigned m;
+
+	for (q = 0; q < nv; q++) {
+	    __m128i a = _mm_loadu_si128((const __m128i *)(pa + 16 * q)), b;
+
+	    if (!sg) {
+		a = _mm_xor_si128(a, flip);
+	    }
+	    if (y != NULL) {
+		b = _mm_loadu_si128((const __m128i *)(pb + 16 * q));
+		if (!sg) {
+		    b = _mm_xor_si128(b, flip);
+		}
+	    } else {
+		b = vb;
+	    }
+	    v[q] = (wd == 16) ? Cmp16(op, a, b) : Cmp32(op, a, b);
+	}
+	if (wd == 16) {
+	    m = (unsigned)_mm_movemask_epi8(_mm_packs_epi16(v[0], v[1]));
+	} else {
+	    m = (unsigned)_mm_movemask_epi8(_mm_packs_epi16(_mm_packs_epi32(v[0], v[1]), _mm_packs_epi32(v[2], v[3])));
+	}
+	d->words[c >> 2] |= (uint64_t)m << ((c & 3) * 16);
+    }
+    for (i = n16 * 16; i < x->len; i++) {   // the last 0 to 15 elements
+	Tcl_WideInt a, b;
+
+	if (wd == 16) {
+	    a = sg ? LdS16(px, i) : LdU16(px, i);
+	    b = (y == NULL) ? w : sg ? LdS16(py, i) : LdU16(py, i);
+	} else {
+	    a = sg ? LdS32(px, i) : LdU32(px, i);
+	    b = (y == NULL) ? w : sg ? LdS32(py, i) : LdU32(py, i);
+	}
+	if (RelTest(op, a, b)) {
+	    d->words[i >> 6] |= (uint64_t)1 << (i & 63);
+	}
+    }
+    return 1;
+}
+#endif
+
+/*
+ * RelWide --
+ *	The relational operators (OP) for an array X that is not 1-bit, 64 results to a word.  Y is another array of the same
+ *	width and signedness with at least as many elements as X, or NULL: then X is compared with the integer W.  Fills D, a
+ *	1-bit array of X's length.  Returns 0 if it does not apply (the element-by-element loop in RelValue takes those).
+ */
+#define REL_LOOP(INIT, LDB, CMP, LD) \
+    for (k = 0; k < d->nwords; k++) { \
+	Tcl_Size base = k << 6, cnt = x->len - base, j; \
+	uint64_t acc = 0; \
+	if (cnt > 64) cnt = 64; \
+	for (j = 0; j < cnt; j++) { \
+	    Tcl_WideInt a = LD(px, base + j), b = LDB; \
+	    acc |= (uint64_t)(CMP) << j; \
+	} \
+	d->words[k] = acc; \
+    }
+#define REL_DISPATCH(LD) \
+    if (y != NULL) { \
+	switch (op) { \
+	case BO_EQ: REL_LOOP(0, LD(py, base + j), a == b, LD) break; \
+	case BO_NE: REL_LOOP(0, LD(py, base + j), a != b, LD) break; \
+	case BO_LT: REL_LOOP(0, LD(py, base + j), a <  b, LD) break; \
+	case BO_LE: REL_LOOP(0, LD(py, base + j), a <= b, LD) break; \
+	case BO_GT: REL_LOOP(0, LD(py, base + j), a >  b, LD) break; \
+	default:    REL_LOOP(0, LD(py, base + j), a >= b, LD) break; \
+	} \
+    } else { \
+	switch (op) { \
+	case BO_EQ: REL_LOOP(0, w, a == b, LD) break; \
+	case BO_NE: REL_LOOP(0, w, a != b, LD) break; \
+	case BO_LT: REL_LOOP(0, w, a <  b, LD) break; \
+	case BO_LE: REL_LOOP(0, w, a <= b, LD) break; \
+	case BO_GT: REL_LOOP(0, w, a >  b, LD) break; \
+	default:    REL_LOOP(0, w, a >= b, LD) break; \
+	} \
+    }
+static int
+RelWide(BitArr *d, int op, const BitArr *x, const BitArr *y, Tcl_WideInt w)
+{
+    const unsigned char *px = (const unsigned char *)x->words;
+    const unsigned char *py = (y != NULL) ? (const unsigned char *)y->words : px;
+    Tcl_Size k;
+
+    if (x->width == 1 || (y != NULL && (y->width != x->width || y->isSigned != x->isSigned || y->len < x->len))) {
+	return 0;
+    }
+#ifdef BA_SSE2
+    if (x->width == 8 ? RelSse8(d, op, x, y, w) : (x->width == 16 || x->width == 32) && RelSse(d, op, x, y, w)) {
+	return 1;
+    }
+#endif
+    switch (x->width) {
+    case 8:  if (x->isSigned) { REL_DISPATCH(LdS8) }  else { REL_DISPATCH(LdU8) }  break;
+    case 16: if (x->isSigned) { REL_DISPATCH(LdS16) } else { REL_DISPATCH(LdU16) } break;
+    case 32: if (x->isSigned) { REL_DISPATCH(LdS32) } else { REL_DISPATCH(LdU32) } break;
+    default: REL_DISPATCH(LdS64) break;   // 64 is always signed
+    }
+    return 1;
+}
+#undef REL_LOOP
+#undef REL_DISPATCH
+
+/* The relational operator that gives the same answer with its two operands swapped (an integer first becomes an integer second). */
+static int
+RelSwap(int op)
+{
+    switch (op) {
+    case BO_LT: return BO_GT;
+    case BO_LE: return BO_GE;
+    case BO_GT: return BO_LT;
+    case BO_GE: return BO_LE;
+    default:    return op;   // BO_EQ and BO_NE
+    }
+}
+
 /*
  * RelValue --
  *	The 1-bit array with a 1 where "A op B" is true, op being eq, ne, lt, le, gt or ge.  Each operand is a bitarray or an
@@ -4829,6 +5325,10 @@ RelValue(Tcl_Interp *interp, int op, Tcl_Obj *objA, Tcl_Obj *objB, int hasLength
     }
     if ((x != NULL && x->width == 1 && (y == NULL || y->width == 1)) || (x == NULL && y->width == 1)) {   // 1-bit arrays: a word at a time
 	RelBits(d, op, x, y, x == NULL ? wx : wy);
+	MaskTail(d);
+	return WrapRep(d);
+    }
+    if (x != NULL ? RelWide(d, op, x, y, wy) : RelWide(d, RelSwap(op), y, NULL, wx)) {   // not 1-bit: a word of results at a time
 	MaskTail(d);
 	return WrapRep(d);
     }
@@ -5147,11 +5647,11 @@ static int
 BitarrayCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 {
     static const char *const subs[] = {
-	"new", "newfrom", "width", "is", "count", "next", "fill",
+	"new", "newfrom", "width", "is", "count", "next", "minmax", "fill",
 	"frombytes", "tobytes", "fromchars", "tochars",
 	"and", "or", "xor", "andnot", "not", "op", "version", NULL
     };
-    enum { S_NEW, S_NEWFROM, S_WIDTH, S_IS, S_COUNT, S_NEXT, S_FILL,
+    enum { S_NEW, S_NEWFROM, S_WIDTH, S_IS, S_COUNT, S_NEXT, S_MINMAX, S_FILL,
 	   S_FROMBYTES, S_TOBYTES, S_FROMCHARS, S_TOCHARS,
 	   S_AND, S_OR, S_XOR, S_ANDNOT, S_NOT, S_OP, S_VERSION };
     int sub, bit, width, isSigned = 0;
@@ -5338,6 +5838,48 @@ BitarrayCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	return TCL_OK;
     countUsage:
 	Tcl_WrongNumArgs(interp, 2, objv, "array ?first ?to? last ?with? ?value??");
+	return TCL_ERROR;
+    }
+    case S_MINMAX: {   // bitarray minmax array ?first ?to? last?: the list {smallest largest}
+	Tcl_WideInt lo, hi;
+	Tcl_Obj *pair[2];
+	int km = 4;                                   // km: the next argument to look at
+
+	if (objc < 3 || objc == 4 || objc > 6) {      // "minmax BA FIRST" with no LAST is incomplete
+	    goto minmaxUsage;
+	}
+	if (NeedBA(interp, objv[2], &b) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	first = 0; last = b->len - 1;                 // the default range is the whole array
+	if (objc >= 5) {
+	    if (IsWord(objv[km], "to") || IsWord(objv[km], "..")) {   // optional "to" or ".."
+		km++;
+	    }
+	    if (km != objc - 1) {                     // the last index must be the last word
+		goto minmaxUsage;
+	    }
+	    if (Tcl_GetIntForIndex(interp, objv[3], b->len - 1, &first) != TCL_OK
+		    || Tcl_GetIntForIndex(interp, objv[km], b->len - 1, &last) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (first < 0) {                          // clamp to the array, as count does
+		first = 0;
+	    }
+	    if (last >= b->len) {
+		last = b->len - 1;
+	    }
+	}
+	if (first > last) {                           // an empty array or range has no smallest or largest
+	    return OpError(interp, Tcl_NewStringObj("bitarray minmax: no elements in the array or range", -1));
+	}
+	MinMaxRange(b, first, last, &lo, &hi);
+	pair[0] = Tcl_NewWideIntObj(lo);
+	pair[1] = Tcl_NewWideIntObj(hi);
+	Tcl_SetObjResult(interp, Tcl_NewListObj(2, pair));
+	return TCL_OK;
+    minmaxUsage:
+	Tcl_WrongNumArgs(interp, 2, objv, "array ?first ?to? last?");
 	return TCL_ERROR;
     }
     case S_NEXT: {
@@ -5691,8 +6233,8 @@ BitarrayTestCmd(void *cd, Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv
 DLLEXPORT int
 Bitarray_Init(Tcl_Interp *interp)
 {
-    if (Tcl_InitStubs(interp, "9.1", 0) == NULL) {                // Tcl 9.1 or newer: the abstract-list hooks need it
-        return TCL_ERROR;   // not reached: only a Tcl older than 9.1 gets here
+    if (Tcl_InitStubs(interp, "9.0", 0) == NULL) {                // Tcl 9.0 or newer: the abstract-list hooks need it (9.1 is the one to use: see the README)
+        return TCL_ERROR;   // not reached: only a Tcl older than 9.0 (Tcl 8) gets here
     }
     Tcl_CreateObjCommand2(interp, "bitarray", BitarrayCmd, NULL, NULL);   // the Tcl_Size (64-bit) form of the command procedure
 #ifdef BA_TEST

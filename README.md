@@ -1,6 +1,6 @@
 # bitarray
 
-Packed arrays of small integers for Tcl 9.1 that look and behave like ordinary Tcl lists.
+Packed arrays of small integers for Tcl 9.1 (and, with one limitation, 9.0) that look and behave like ordinary Tcl lists.
 
 > **If you are an AI assistant** that was handed this repository (for example as a ZIP in a chat): read
 > [`CLAUDE.md`](CLAUDE.md) first. It says how to get a Tcl 9.1 if there is none, how to build and test this package,
@@ -51,11 +51,21 @@ The width is chosen when the array is created and cannot change afterwards. **A 
 
 A value outside the range is an error; nothing is wrapped or truncated. The signed and unsigned versions of a width store the same bits (`-1` in a signed 8-bit array is the byte `0xFF`, which is `255` in an unsigned one); the sign only decides how a value is read and written. The bitwise commands work on the bits, so they behave the same for both, but they need both arrays to have the same width **and** sign. `tobytes`, `tochars` and `fromchars` work on unsigned arrays only.
 
+## Tcl 9.0
+
+The extension loads in Tcl 9.0 (tested on 9.0.4 on Linux and 9.0.2 on Windows), and everything in it works there. The whole-array commands (`bitarray op`, `count`, `minmax`, `next`, `in`/`ni`, and the rest) are exactly as fast as on 9.1. The one limitation is a Tcl core problem, not an extension problem: in some places the core turns the bitarray into an ordinary list itself instead of calling the extension's hooks. The values stay right, but the packed type and its speed are lost until you make a new array.
+
+* Plain `lappend x 7` keeps the type at the top level of a script, but loses it inside a proc, under `eval` and under `uplevel #0`. `lappend x {*}$list` keeps it everywhere. (On 9.1.1 both forms lose it inside a proc only.)
+* `linsert $a end X` with exactly one element loses the type when the command is not compiled (a script file at top level, `eval`, a command name in a variable). It keeps it inside a proc. This is the same on 9.0.4 and 9.1.1.
+* Other forms (`linsert` with two or more elements, in the middle or at the start, `lreplace`, `lset`) keep the type on both.
+
+If you must build up an array element by element on 9.0, use `lset a end+1 $v` or `lappend a {*}$list`, or make the array at its final size with `bitarray new`. The test suite prints a boxed `####` warning with the Tcl version when it runs on anything older than 9.1, and skips the 11 tests that depend on `lappend` keeping the type (constraint `lappendKeeps`): 433 total, 416 passed, 17 skipped on 9.0.4. The mutation testing was done on 9.1 only. See the ticket notes (`extras/typeloss_ticket.md`).
+
 ## Requirements
 
-* **Tcl 9.1 (trunk).** Tested only against trunk revision `3d77be8951` (2026-10-11), which reports itself as 9.1.1. That is a Fossil id; if you use the
+* **Tcl 9.1 (trunk) is the one to use; Tcl 9.0.4 or newer works with one limitation** (see "Tcl 9.0" below). Tested against trunk revision `3d77be8951` (2026-10-11), which reports itself as 9.1.1. That is a Fossil id; if you use the
   GitHub mirror (`tcltk/tcl`) the ids differ. The package also built and passed all tests on mirror commit `7e6fd02` (2026-10-14). It needs
-  `TCL_OBJTYPE_V2`, i.e. the abstract-list hooks. Tcl 8.x cannot work. Tcl 9.0.x: tried on 9.0.5 (the tip of the 9.0 branch, 2026-10-16). The code compiles against its headers, but `bitarray.c` refuses to load below 9.1 on purpose (`Tcl_InitStubs(interp, "9.1", 0)`: "version conflict for package tcl: have 9.0.5, need 9.1"). With that check relaxed, 276 of the 282 tests pass; the 6 that fail all use `lappend`, which in the 9.0 core turns the bitarray into a plain list almost everywhere (in 9.1 only inside a proc, see the notes on `lappend` below); the values stay right, but the packed type and the speed are lost.
+  `TCL_OBJTYPE_V2`, i.e. the abstract-list hooks. Tcl 8.x cannot work.
 * **Headers and the stubs library**: `tcl.h` and `libtclstub.a`, from an installed Tcl or a built source tree. No Tcl 9.1 yet? `extras/CLAUDE_NOTES.md`, section "Setting up from nothing", has the steps to clone and build trunk (about 40 seconds) and then build and test this package.
 * A C compiler (`cc`, tested with gcc) and a POSIX `sh`; on Windows, Visual Studio 2022 and `cmd` (see the next section).
 * Tested on 64-bit Linux and, with Visual Studio 2022, on 64-bit Windows (see below). Not tested anywhere else.
@@ -78,13 +88,14 @@ sh ./run_tests.sh --tclsh /path/to/tcl9.1/bin/tclsh9.1
 sh ./run_sieves.sh --tclsh /path/to/tcl9.1/bin/tclsh9.1   # optional: the prime-sieve benchmark, see below
 ```
 
-Expected last line of the tests: `bitarray.test:	Total	414	Passed	408	Skipped	6	Failed	0`. The 6 skipped tests show the Tcl core's `lappend` type-loss problem (see the notes on `lappend` below) and are run only on request: `./run_tests.sh --testbug`. They fail on Tcl 9.1.1 and pass on a core with the fix in `extras/core_lappend_typeloss.patch`.
+Expected last line of the tests: `bitarray.test:	Total	434	Passed	428	Skipped	6	Failed	0`. The 6 skipped tests show the Tcl core's `lappend` type-loss problem (see the notes on `lappend` below) and are run only on request: `./run_tests.sh --testbug`. They fail on Tcl 9.1.1 and pass on a core with the fix in `extras/core_lappend_typeloss.patch`.
+On Tcl 9.0.4 the last line is `Total	434	Passed	417	Skipped	17	Failed	0` and a boxed warning is printed (see "Tcl 9.0" above).
 
 (`sh ./script` works even if unpacking lost the executable bit, which happens when a ZIP is made or unpacked on Windows.)
 
 ### On Windows (Visual Studio 2022)
 
-`build.bat`, `run_tests.bat` and `run_sieves.bat` do the same three jobs with Microsoft Visual C. Version 0.7.0 has been built and run on Windows by the repository owner (a 64-bit machine, Visual Studio 2022, Tcl 9.1.1 built from trunk): no build warnings, `Total 282  Passed 281  Skipped 1  Failed 0`, the sieve passed, and `listbench.tcl` ran; the output is saved in `extras/windows_0.7.0_run.txt`. Version 0.8.0 was run the same way (same machine and Tcl 9.1.1): `Total 288  Passed 281  Skipped 7  Failed 0` (`extras/windows_0.8.0_run.txt`). The latest Windows run is of version 0.9.3 (same machine and Tcl 9.1.1): no build warnings, `Total 407  Passed 400  Skipped 7  Failed 0` (6 are the `--testbug` tests, 1 is the procfs test), the sieve passed, and `listbench.tcl` ran with the same answers in every column (`extras/windows_0.9.3_run.txt`). Version 0.9.4 adds 7 tests, so its Windows run should end with `Total 414  Passed 407  Skipped 7  Failed 0`; it has not been run on Windows yet. Earlier versions were also run on Windows (see `RESULTS.txt`). A 32-bit build and other Visual Studio versions are untried.
+`build.bat`, `run_tests.bat` and `run_sieves.bat` do the same three jobs with Microsoft Visual C. To run them one after the other on one line, put `call` in front of each (`call build.bat ... && call run_tests.bat ... && call run_sieves.bat ...`): without `call`, Windows `cmd` ignores a batch file's failure code and goes on to the next command even after a build error or a mistyped option. Version 0.7.0 has been built and run on Windows by the repository owner (a 64-bit machine, Visual Studio 2022, Tcl 9.1.1 built from trunk): no build warnings, `Total 282  Passed 281  Skipped 1  Failed 0`, the sieve passed, and `listbench.tcl` ran; the output is saved in `extras/windows_0.7.0_run.txt`. Version 0.8.0 was run the same way (same machine and Tcl 9.1.1): `Total 288  Passed 281  Skipped 7  Failed 0` (`extras/windows_0.8.0_run.txt`). The latest Windows run is of the code that became version 1.0 (same machine and Tcl 9.1.1): no build warnings, `Total 434  Passed 427  Skipped 7  Failed 0` (6 are the `--testbug` tests, 1 is the procfs test), the sieve passed, and `listbench.tcl` ran with the same answers in every column (`extras/windows_0.9.5_run.txt`; later runs with the faster 8-bit loops: `extras/windows_0.9.5_wideops_run.txt`, `extras/windows_0.9.5_sse2_run.txt`). The previous run, of 0.9.3, had `Total 407  Passed 400  Skipped 7` (`extras/windows_0.9.3_run.txt`). Earlier versions were also run on Windows (see `RESULTS.txt`). A 32-bit build and other Visual Studio versions are untried.
 
 Unpack the ZIP anywhere and, from a Command Prompt, go into the unpacked folder and run the three scripts:
 
@@ -97,7 +108,7 @@ run_sieves.bat --tclsh C:\path\to\tcl9.1\bin\tclsh91.exe     rem optional: the p
 
 `build.bat` finds the headers and the stubs library (`include\tcl.h`, `lib\tclstub.lib`) from the shell you name, or from
 `--tcl-prefix DIR`, finds Visual Studio itself with `vswhere` if `cl` is not already on your `PATH` (so a plain `cmd` window works; it was run that way on 2026-10-13 and set up `vcvars64.bat` itself), and builds the 64-bit or
-32-bit DLL to match the shell. `run_tests.bat` should end with `Total 414  Passed 407  Skipped 7  Failed 0` (the last Windows run, of 0.9.3, had 407 tests and 400 passed): one test, which
+32-bit DLL to match the shell. `run_tests.bat` should end with `Total 434  Passed 427  Skipped 7  Failed 0` (the last Windows run, of the code that became 1.0, gave exactly that, with no build warnings): one test, which
 reads `/proc`, is skipped on Windows, and so are the 6 `--testbug` tests (to run those: `tclsh91 tests\bitarray.test -constraints coreTypeLoss`). `--help` on each prints the options.
 
 ### Telling `build.sh` where Tcl is
@@ -117,6 +128,27 @@ extension links to instead of linking Tcl itself).
 Other options: `--cc COMPILER` (default `$CC`, else `cc`), `--out FILE` (default `libbitarray.so` next to the script);
 extra compiler and linker flags go in `$CFLAGS` and `$LDFLAGS`. `sh ./build.sh --help` prints all of it.
 Nothing is installed anywhere; the only file written is the library.
+
+### Build speed options
+
+`build.sh` prints the compiler options it uses just before it compiles.
+
+* The default is `-O3`. The compiler may then process several elements at a time, which makes the loops over 8 and 16 bit elements much faster. It uses no CPU-specific instructions, so the library runs wherever a `-O2` build would. The full test suite, the fault-injection tests and valgrind all passed with it.
+* `--safe` compiles with `-O2` instead, the most conservative build.
+* `--native` is `-O3` plus `-march=native`: the compiler may also use the newest instructions of the CPU it is running on (AVX2 and so on). **The library may not be portable:** on an older CPU it can crash with "illegal instruction". Build it on the machine that will use it, and do not copy it elsewhere. It is rarely much faster than the default; the clear exception so far is `minmax` on 16 and 32 bit elements.
+
+`bitarray minmax` on 1,000,000 elements, one call (Linux, gcc, Intel i7-4790K; the full test suite passed with all three builds):
+
+| Width | `--safe` (`-O2`) | default (`-O3`) | `--native` |
+|---|---|---|---|
+| 8-bit | 847 µs | 21 µs | 14 µs |
+| 16-bit | 857 µs | 210 µs | 68 µs |
+| 32-bit | 967 µs | 576 µs | 165 µs |
+| 64-bit | 1,004 µs | 654 µs | 334 µs |
+
+* **SSE2 code for the logical and relational operators.** For arrays of 8, 16 and 32 bits, `land`, `lor`, `lnot` and the relational operators of `bitarray op` (`==`, `!=`, `<`, `<=`, `>`, `>=`) are written with SSE2 instructions, 16 elements per step. SSE2 is in every x86-64 CPU, so this is portable, and it is on by default on x86-64 with gcc, clang and Visual C. Other processors, and a build with `-DBA_NO_SSE2`, use plain C loops that give the same answers, a few times slower (`build.sh`: `CFLAGS=-DBA_NO_SSE2 ./build.sh ...`; `build.bat --no-sse2`). A wider array combined with a 1-bit array (`$X && $flags`) is also handled a word at a time. The bitwise operators (`and`, `or`, `xor`, `andnot`, `not`) work 64 bits at a time and do not need it.
+
+`build.bat` builds with `/O2`, which in Visual C already vectorizes with the basic instructions. `--avx2` adds `/arch:AVX2` (not portable: it needs a CPU with AVX2). On the author's Windows machine it made no difference except for the 1-bit population count (about 20 to 12 microseconds per million elements), so it is not recommended. `extras/listbench.tcl -only minmax` times `minmax` at every width, for comparing builds and machines. The mutation tests were run on `-O2` builds. How much the other loops (`count`, `next`, the bitwise commands) gain was measured with listbench only on Linux: see `extras/bench_O2_O3_native_0.9.5.txt` and RESULTS.txt section 34.
 
 ### `run_tests.sh`
 
@@ -181,10 +213,11 @@ that do not mention `$a` or `$w` create their own arrays. With no `value` given,
 | `new` | `bitarray new size ?value? ?-width w?`<br><br>**Returns** a new bitarray of `size` elements, all `value` (default 0). `-width` may come before or after `value`.<br><br>`bitarray new 4` => `0 0 0 0`<br>`bitarray new 4 7 -width 8` => `7 7 7 7`<br>`bitarray new 3 -width 16 500` => `500 500 500` |
 | `newfrom` | `bitarray newfrom list ?-width w?`<br><br>**Returns** a new bitarray packed from a list of integers.<br><br>`bitarray newfrom {200 5 255} -width 8` => `200 5 255` |
 | `width` | `bitarray width array`<br><br>**Returns** the element width in bits, as it was given when the array was created: `1`, `8`, `16`, `32`, `64`, or `-8`, `-16`, `-32`, `-64` for the signed ones.<br><br>`bitarray width [bitarray new 3]` => `1`<br>`bitarray width [bitarray new 3 -width -16]` => `-16` |
-| `version` | `bitarray version`<br><br>**Returns** the version of the extension, for example `0.9.4` (the same string `package require bitarray` returns). Takes no arguments.<br><br>`bitarray version` => `0.9.4` |
+| `version` | `bitarray version`<br><br>**Returns** the version of the extension, for example `1.0` (the same string `package require bitarray` returns). Takes no arguments.<br><br>`bitarray version` => `0.9.5` |
 | `is` | `bitarray is value`<br><br>**Returns** `1` if `value` currently has the bitarray representation, `0` if not (any value is accepted).<br><br>`a` -> `{1 0 1 1 0 1 1 1}`<br>`bitarray is $a` => `1`<br>`bitarray is {1 0 1}` => `0` |
 | `count` | `bitarray count array ?first ?to? last ?with? ?value??`<br><br>**Returns** the number of elements equal to `value`, or the number of non-zero elements if no `value`; whole array or an index range (`end-N` allowed). `value` needs a range.<br><br>For 1-bit arrays without `value` this is a popcount.<br><br>`a` -> `{1 0 1 1 0 1 1 1}`<br>`bitarray count $a` => `6`<br>`bitarray count $a 0 3 1` => `3`<br>`bitarray count $a 4 end 0` => `1`<br>`bitarray count $a 2 end-1 1` => `4`<br>`bitarray count $a 0 to 3 with 1` => `3`<br>`bitarray count $a 4 .. end with 0` => `1`<br>`w` -> `{0 7 0 9}`<br>`bitarray count $w` => `2` (value omitted means != 0) |
 | `next` | `bitarray next array start ?with? ?value?`<br><br>**Returns** the index of the first element **at or after** `start` equal to `value` (non-zero if omitted), or `-1` if there is none.<br><br>`a` -> `{1 0 1 1 0 1 1 1}`<br>`bitarray next $a 0 0` => `1`<br>`bitarray next $a 2 0` => `4`<br>`bitarray next $a 5 0` => `-1`<br>`bitarray next $a 2 with 0` => `4`<br>`w` -> `{0 7 0 9}`<br>`bitarray next $w 0` => `1` (value omitted means != 0)<br>`bitarray next $w 0 0` => `0` (element 0 is itself 0) |
+| `minmax` | `bitarray minmax array ?first ?to? last?`<br><br>**Returns** the list `{smallest largest}` of the numbers in the array, or in the range `first` to `last` (the same range words as `count`), found in one pass. The signed widths and width 64 can give negative numbers. An empty array or an empty range is an error.<br><br>`a` -> `{12 7 30 7 19}` (8-bit)<br>`bitarray minmax $a` => `7 30`<br>`bitarray minmax $a 3 4` => `7 19`<br>`lassign [bitarray minmax $a] lo hi` sets `lo` to 7 and `hi` to 30<br>`s` -> `{-5 3 -128 100}` (width -8), `bitarray minmax $s` => `-128 100`<br>For a 1-bit array it is rarely needed: `1 in $a` says whether there is a 1, and `0 ni $a` whether every element is 1. |
 | `fill` | `bitarray fill varName first ?to? last ?with? value ?by? ?step?`<br><br>Sets every element from `first` to `last` to `value`, or only every `step`-th one if `step` is given, in the array stored in variable `varName`. **Returns** the empty string; the result is the changed array in `varName`.<br><br>`set b [bitarray new 10 1]` => `1 1 1 1 1 1 1 1 1 1`<br>`bitarray fill b 0 end 0 2` -> `0 1 0 1 0 1 0 1 0 1`<br>`set b [bitarray new 10 1]` => `1 1 1 1 1 1 1 1 1 1`<br>`bitarray fill b 0 to end with 0 by 2` -> `0 1 0 1 0 1 0 1 0 1`<br>`set c [bitarray new 10 5 -width 8]` => `5 5 5 5 5 5 5 5 5 5`<br>`bitarray fill c 2 5 0` -> `5 5 0 0 0 0 5 5 5 5`<br>`bitarray fill c 2 .. 5 with 0` -> same result |
 | `and or xor andnot not` | `bitarray and\|or\|xor\|andnot ?-length strict\|zero? varName ?<-? array ?array?`<br>`bitarray not varName ?<-? array?`<br><br>The older bitwise commands. `bitarray op` does everything they do (see `op` below and the Appendix at the end, which gives the `op` spelling of each), so new code should use `op`.<br><br>They are still here, and still the fastest way to update an array in place, but they are not guaranteed to be in future versions. |
 | `frombytes` | `bitarray frombytes data`<br><br>**Returns** a new 8-bit array with one element per byte of `data`, without making a temporary list. Characters 0 to 255 are taken as bytes (read a file with `open ... rb`); a character above 255 is an error.<br><br>`bitarray frombytes "Hi!"` => `72 105 33` |
@@ -437,7 +470,7 @@ built library on `auto_path`, and then `package require bitarray` finds and load
 
 ```tcl
 lappend auto_path /full/path/to/bitarray     ;# the folder with pkgIndex.tcl and libbitarray.so (bitarray.dll on Windows)
-package require bitarray                     ;# returns 0.9.4
+package require bitarray                     ;# returns 1.0
 ```
 
 You can also set the environment variable `TCLLIBPATH` to that folder before starting `tclsh`. The two files do not have to stay where
@@ -528,16 +561,16 @@ Whether an extension like this counts as a "faithful" entry in Dave's Garage rul
 
 ## Quality checks
 
-* **414 tests** (`tests/bitarray.test`; plus 6 more for the core's `lappend` problem, run with `--testbug`): option parsing, ranges and error messages at every width, every list command on
+* **434 tests** (`tests/bitarray.test`; plus 6 more for the core's `lappend` problem, run with `--testbug`): option parsing, ranges and error messages at every width, every list command on
   every width, copy-on-write, `fill`/`count`/`next`, the bitwise commands, word-boundary cases, memory growth.
 * **Random comparison against plain Tcl lists** (`tests/diff_*.tcl`): thousands of random operations per run, values and error
   messages compared. Last big run: 5 widths × 10 seeds × 100 iterations × 40 steps, 0 differences (the signed widths `-8`, `-16`, `-32` and `-64` were added afterwards: 3 seeds × 150 iterations each, 0 differences). The bitwise commands have their own (`tests/diff_bitops.tcl`: 15,000 random cases over all widths, lengths, forms and both `-length` modes, 0 differences).
 * **valgrind** on the whole suite: 0 invalid accesses, 0 definite leaks.
 * **Memory:** `unset` returns the memory (a 953 MiB array: 960 MB → 6.6 MB resident); building and dropping wide arrays in a
   loop leaves memory flat.
-* **Mutation testing** (`extras/mutate5.py`, run with `extras/mutate6.py`): 342 deliberate bugs inserted into the C code, 313 caught by the tests, all 342 from one full run on 0.9.4 (2026-10-20, with the test build and both test files; 12 older mutants of the relational code were re-aimed at the new text and run again separately). The 29 missed are explained in `RESULTS.txt` (mostly unreachable code, stray bits nobody can read, or checks that are repeated elsewhere on a 64-bit build). `extras/bitarray.mutants` is `bitarray.c` with every one of the bugs applied and, beside each, the tests that caught it, for reading in a side-by-side compare tool (see `extras/README.md`).
-* **Line coverage** (gcov, `extras/coverage_0.9.4.txt`, repeat it with `extras/coverage.sh`): 98.8% of the 1260 lines of `bitarray.c` outside the test support code; the 15 lines that never run (3 of them `BA_IMPOSSIBLE` panics, which are meant never to run) are listed there, each with the reason. `tests/faultinject.test` (29 tests, test build only: a small size limit, allocations that fail on request, a process that panics) runs the error paths for that.
-* The same 414 tests also pass with `-DBA_NO_BUILTINS` (portable popcount code) and `-DBA_FORCE_32BIT_LIMITS`.
+* **Mutation testing** (`extras/mutate5.py`, run with `extras/mutate6.py`): 407 deliberate bugs inserted into the C code in one full run on 0.9.5 (2026-10-20, Tcl 9.1.1, SSE2 build, both test files). 374 were caught and 32 missed, and one pattern no longer matches the code (I01, stale). Two of the misses were real gaps in the tests of the new code (a longer 1-bit array first with a shorter wide array second; `le` between two 64-bit arrays); tests for both were added afterwards and those two bugs are now caught (re-run of just those two), so the counts in `extras/mutation_summary.txt` are one better on each side. The rest of the misses are explained in `RESULTS.txt` (mostly unreachable code, stray bits nobody can read, or checks that are repeated elsewhere on a 64-bit build; one, O31, is the old element-by-element `lnot`, which no input reaches any more). The mutation run was done on 9.1 only, not on 9.0. `extras/bitarray.mutants` is `bitarray.c` with every one of the bugs applied and, beside each, the tests that caught it, for reading in a side-by-side compare tool (see `extras/README.md`).
+* **Line coverage** (gcov, `extras/coverage_1.0.txt`, repeat it with `extras/coverage.sh`): 98.66% of the 1571 lines of `bitarray.c` outside the test support code; the 16 lines that never run (4 of them `BA_IMPOSSIBLE` panics, which are meant never to run) are listed there, each with the reason. `tests/faultinject.test` (35 tests, test build only: a small size limit, allocations that fail on request, a process that panics) runs the error paths for that.
+* The same 434 tests also pass with `-DBA_NO_BUILTINS` (portable popcount code) and `-DBA_FORCE_32BIT_LIMITS`.
 
 Details and numbers: `RESULTS.txt`.
 
@@ -581,10 +614,10 @@ I would like people who are interested in this to read it critically, and to use
 | `I do not know where Tcl 9.1 is` | no Tcl 9 `tclsh` on `PATH`; use `--tcl-prefix`, `--tclsh`, `--tcl-tree` or `--include`/`--stub` |
 | `no tcl.h in PREFIX/include` | `--tcl-prefix` must be the directory that *contains* `include/` and `lib/` |
 | `no libtclstub*.a …` | the stubs library is missing: install the Tcl development files, or build Tcl in the tree first |
-| `… is Tcl '8.6.x'; bitarray needs Tcl 9.1` | wrong Tcl; point at the 9.1 one |
+| `… is Tcl '8.6.x'; bitarray needs Tcl 9.1` | wrong Tcl; point at a Tcl 9 one (9.1 preferred) |
 | `… has no TCL_OBJTYPE_V2` | this Tcl 9 predates the abstract-list hooks the extension uses |
 | `libtcl9.1.so: cannot open shared object file` | add the directory holding it to `LD_LIBRARY_PATH` |
-| `version conflict for package "tcl": have 9.0.x, need 9.1` | the shell running the tests is older than the Tcl the library was built for; use the 9.1 one |
+| `version conflict for package "tcl": have 8.x, need 9.0` | Tcl 8 cannot load it; use a Tcl 9 shell |
 | `undefined symbol: Tcl_…` when loading | the library was built against a different Tcl than the one running it; rebuild with the same one |
 | `bad interpreter: …^M` or `\r: command not found` | the scripts got Windows line endings; run `sed -i 's/\r$//' *.sh` (the repository's `.gitattributes` keeps them as LF) |
 | `Permission denied` running `./build.sh` | run it as `sh ./build.sh` |
